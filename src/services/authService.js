@@ -1,0 +1,127 @@
+import { API_URL } from "../config/app";
+
+async function parseJsonResponse(response) {
+  const text = await response.text();
+  if (!text) {
+    return {};
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      error: `The API returned non-JSON (HTTP ${response.status}). Start the server from the "server" folder (port 5000) and use "npm run dev" in the Chat folder so /api is proxied.`,
+    };
+  }
+}
+
+function ensureJsonContentType(response) {
+  const ct = response.headers.get("content-type") || "";
+  if (!ct.includes("application/json")) {
+    throw new Error(
+      "Chat API is not reachable as JSON. From the project folder: run \"docker compose up -d\" for MongoDB, then start the API (cd server && npm run dev), then this app (cd Chat && npm run dev).",
+    );
+  }
+}
+
+function normalizeUser(user) {
+  if (!user || typeof user !== "object") {
+    return null;
+  }
+  const id = user.id != null ? String(user.id) : "";
+  return {
+    ...user,
+    id,
+    username: user.username ?? "",
+    email: user.email ?? "",
+  };
+}
+
+export const register = async ({ username, email, password }) => {
+  const body = {
+    username: String(username ?? "").trim(),
+    email: String(email ?? "").trim().toLowerCase(),
+    password: String(password ?? ""),
+  };
+
+  let response;
+  try {
+    response = await fetch(`${API_URL}/api/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error("Cannot reach the server. Is it running on port 5000?");
+  }
+
+  if (response.ok) {
+    ensureJsonContentType(response);
+  }
+
+  const data = await parseJsonResponse(response);
+
+  if (!response.ok) {
+    throw new Error(data.error || `Registration failed (${response.status}).`);
+  }
+
+  if (!data.user && !data.message) {
+    throw new Error(data.error || "Unexpected response from server after registration.");
+  }
+
+  if (data.user) {
+    data.user = normalizeUser(data.user);
+  }
+
+  return data;
+};
+
+export const login = async ({ email, password }) => {
+  const body = {
+    email: String(email ?? "").trim().toLowerCase(),
+    password: String(password ?? ""),
+  };
+
+  let response;
+  try {
+    response = await fetch(`${API_URL}/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error("Cannot reach the server. Is it running on port 5000?");
+  }
+
+  if (response.ok) {
+    ensureJsonContentType(response);
+  }
+
+  const data = await parseJsonResponse(response);
+
+  if (!response.ok) {
+    throw new Error(data.error || `Login failed (${response.status}).`);
+  }
+
+  if (!data.token || !data.user) {
+    throw new Error(data.error || "Login response was incomplete. Check API and database.");
+  }
+
+  data.user = normalizeUser(data.user);
+  if (!data.user?.id) {
+    throw new Error("Login response contained an invalid user profile.");
+  }
+
+  localStorage.setItem("chat-user", JSON.stringify(data.user));
+  localStorage.setItem("chat-token", data.token);
+
+  return data;
+};
+
+export const logout = () => {
+  localStorage.removeItem("chat-user");
+  localStorage.removeItem("chat-token");
+};
