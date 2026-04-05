@@ -19,7 +19,7 @@ const CHAT_STATE_VERSION = 2;
 const loadStoredChatState = (userId) => {
   try {
     const key = getChatStorageKey(userId);
-    const rawValue = window.localStorage.getItem(key);
+    const rawValue = window.sessionStorage.getItem(key);
 
     if (!rawValue) {
       return null;
@@ -96,7 +96,7 @@ function useChatController() {
   useEffect(() => {
     if (!currentUserId) return;
 
-    window.localStorage.setItem(
+    window.sessionStorage.setItem(
       getChatStorageKey(currentUserId),
       JSON.stringify({
         activeChatId,

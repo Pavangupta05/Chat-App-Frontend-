@@ -18,8 +18,8 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("chat-user");
-    const storedToken = localStorage.getItem("chat-token");
+    const storedUser = sessionStorage.getItem("chat-user");
+    const storedToken = sessionStorage.getItem("chat-token");
 
     if (storedUser && storedToken) {
       try {
@@ -56,8 +56,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     logoutService();
-    localStorage.removeItem("chat-user");
-    localStorage.removeItem("chat-token");
+    sessionStorage.removeItem("chat-user");
+    sessionStorage.removeItem("chat-token");
     setUser(null);
     setToken(null);
   };

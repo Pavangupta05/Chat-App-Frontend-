@@ -52,7 +52,7 @@ function ChatLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(() => window.innerWidth >= 768);
   const [theme, setTheme] = useState(
-    () => window.localStorage.getItem("chat-theme") || "light",
+    () => window.sessionStorage.getItem("chat-theme") || "light",
   );
   const [confirmAction, setConfirmAction] = useState(null);
   // null | "chat" | "group"
@@ -86,7 +86,7 @@ function ChatLayout() {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    window.localStorage.setItem("chat-theme", theme);
+    window.sessionStorage.setItem("chat-theme", theme);
   }, [theme]);
 
   const isMobileView = viewport === "mobile";

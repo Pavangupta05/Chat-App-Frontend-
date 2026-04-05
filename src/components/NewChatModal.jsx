@@ -16,7 +16,7 @@ function getInitials(name) {
 
 function readStoredToken() {
   try {
-    return window.localStorage.getItem("chat-token") || "";
+    return window.sessionStorage.getItem("chat-token") || "";
   } catch {
     return "";
   }
