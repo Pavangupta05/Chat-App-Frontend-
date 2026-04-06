@@ -8,6 +8,7 @@ import Call from "./Call";
 import AudioCallModal from "./AudioCallModal";
 import useChatController from "../hooks/useChatController";
 import { useAuth } from "../context/AuthContext";
+import { AnimatePresence } from "framer-motion";
 
 function ChatLayout() {
   const {
@@ -66,6 +67,7 @@ function ChatLayout() {
       if (window.innerWidth < 768) {
         setViewport("mobile");
         setIsSidebarOpen(false);
+        setIsMobileChatOpen(false); // always show chat list first on mobile
         return;
       }
 
@@ -93,18 +95,12 @@ function ChatLayout() {
 
   const isMobileView = viewport === "mobile";
 
-  const handleSelectChat = (chatId) => {
-    selectChat(chatId);
+  const handleSelectChat = (id) => {
+    selectChat(id);
     if (viewport === "mobile") {
       setIsMobileChatOpen(true);
-    } else {
-        setIsMobileChatOpen(true);
     }
   };
-
-  const showSidebar = viewport !== "mobile" || !isMobileChatOpen;
-  const showChatWindow = viewport !== "mobile" || isMobileChatOpen;
-
   const closeConfirmModal = () => setConfirmAction(null);
 
   const handleConfirmAction = () => {
@@ -119,10 +115,13 @@ function ChatLayout() {
     closeConfirmModal();
   };
 
+  const showSidebar = viewport !== "mobile" || !isMobileChatOpen;
+  const showChatWindow = viewport !== "mobile" || (isMobileChatOpen && !!currentChat);
+
   return (
     <main className="app">
       <section className={`telegram-layout telegram-layout--${viewport}`}>
-        {showSidebar ? (
+        {showSidebar && (
           <Sidebar
             activeChatId={currentChat?.id}
             activeTab={activeTab}
@@ -147,9 +146,9 @@ function ChatLayout() {
             theme={theme}
             username={username}
           />
-        ) : null}
+        )}
 
-        {showChatWindow ? (
+        {showChatWindow && (
           <ChatWindow
             callProps={{
               acceptCall: call.acceptCall,
@@ -167,7 +166,7 @@ function ChatLayout() {
             chat={currentChat}
             draftMessage={draftMessage}
             isCompactInput={viewport !== "desktop"}
-            isMobileView={isMobileView}
+            isMobileView={viewport === "mobile"}
             onClearReply={clearReply}
             onConfirmClearChat={() => setConfirmAction("clear-chat")}
             onConfirmDeleteChat={() => setConfirmAction("delete-chat")}
@@ -187,7 +186,7 @@ function ChatLayout() {
             replyMessage={replyMessage}
             typingText={socketState.isConnected ? typing.text : ""}
           />
-        ) : null}
+        )}
       </section>
 
       <ForwardModal

@@ -3,6 +3,8 @@ import { useAuth } from "../context/AuthContext";
 import { fetchMessagesBetween, fetchUserChats, isPeerMongoId } from "../services/messageService";
 import useCall from "./useCall";
 import useMessageStatus from "./useMessageStatus";
+import useNotifications from "./useNotifications";
+import usePresence from "./usePresence";
 import useReply from "./useReply";
 import useSocket from "./useSocket";
 import useTyping from "./useTyping";
@@ -62,6 +64,8 @@ function useChatController() {
   const [draftMessage, setDraftMessage] = useState("");
   const [forwardingMessage, setForwardingMessage] = useState(null);
   const { emit, isConnected, socketId, subscribe } = useSocket();
+  const { isUserOnline, getUserLastSeen } = usePresence({ subscribe });
+  const { notify } = useNotifications();
 
   const createChatRecord = useCallback(
     ({ id, name, accent = "#69b2ff", avatar, createdAt, messages = [] }) => {
@@ -270,6 +274,12 @@ function useChatController() {
               ...currentChats,
             ],
       );
+
+      // Browser notification when tab is hidden
+      notify({
+        title: payload.username || "New Message",
+        body: payload.text || (payload.type === "file" ? "📎 Sent a file" : ""),
+      });
 
       // Clear typing for this user now that their message arrived
       clearTypingForChat(payload.chatId, payload.username);
@@ -775,7 +785,9 @@ function useChatController() {
     deleteMessageForMe,
     draftMessage,
     forwardingMessage,
+    getUserLastSeen,
     handleTypingInputChange,
+    isUserOnline,
     markAsDelivered,
     markAsSeen,
     newChatName,

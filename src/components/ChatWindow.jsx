@@ -1,53 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Menu, Phone, Video, ChevronLeft, Trash2, Forward, X } from "lucide-react";
 
 import MessageBubble from "./MessageBubble";
 import InputBox from "./InputBox";
 import TypingIndicator from "./TypingIndicator";
-
-const SearchIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path
-      d="M10.5 4.75a5.75 5.75 0 1 0 0 11.5a5.75 5.75 0 0 0 0-11.5Zm0-1.5a7.25 7.25 0 1 1 0 14.5a7.25 7.25 0 0 1 0-14.5Zm9.03 14.97l-3.16-3.16l1.06-1.06l3.16 3.16l-1.06 1.06Z"
-      fill="currentColor"
-    />
-  </svg>
-);
-
-const MenuIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path
-      d="M5 7.25h14v1.5H5v-1.5Zm0 8h14v1.5H5v-1.5Zm0-4h14v1.5H5v-1.5Z"
-      fill="currentColor"
-    />
-  </svg>
-);
-
-const PhoneIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path
-      d="M6.57 4.85a1.75 1.75 0 0 1 1.88-.42l2.18.87a1.75 1.75 0 0 1 1.02 1.96l-.33 1.66a1.75 1.75 0 0 1-1.24 1.33l-.75.22a13.95 13.95 0 0 0 4.2 4.2l.22-.75a1.75 1.75 0 0 1 1.33-1.24l1.66-.33a1.75 1.75 0 0 1 1.96 1.02l.87 2.18a1.75 1.75 0 0 1-.42 1.88l-1 1a2.75 2.75 0 0 1-2.54.75c-3.82-.89-7.34-4.41-8.23-8.23a2.75 2.75 0 0 1 .75-2.54l1-1Z"
-      fill="currentColor"
-    />
-  </svg>
-);
-
-const VideoIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path
-      d="M4.75 6.75A2.75 2.75 0 0 1 7.5 4h7A2.75 2.75 0 0 1 17.25 6.75v1.7l2.5-1.88c1.1-.82 2.25-.04 2.25 1.33v8.2c0 1.37-1.15 2.15-2.25 1.33l-2.5-1.88v1.7A2.75 2.75 0 0 1 14.5 20h-7a2.75 2.75 0 0 1-2.75-2.75v-10.5Z"
-      fill="currentColor"
-    />
-  </svg>
-);
-
-const BackIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path
-      d="m10.71 6.29-5 5a1 1 0 0 0 0 1.42l5 5 1.41-1.42L8.83 13H19v-2H8.83l3.29-3.29-1.41-1.42Z"
-      fill="currentColor"
-    />
-  </svg>
-);
 
 function ChatWindow({
   callProps,
@@ -72,11 +29,19 @@ function ChatWindow({
   typingText,
 }) {
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const menuRef = useRef(null);
+  
+  // States
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [messageSearch, setMessageSearch] = useState("");
   const [previewMessage, setPreviewMessage] = useState(null);
+  const [selectedMessageIds, setSelectedMessageIds] = useState(new Set());
+  const [showNewPill, setShowNewPill] = useState(false);
+  const isNearBottomRef = useRef(true);
+
+  const hasSelection = selectedMessageIds.size > 0;
 
   const isPreviewVideo = useMemo(
     () =>
@@ -110,203 +75,269 @@ function ChatWindow({
     });
   }, [chat?.messages, messageSearch]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [visibleMessages, typingText, callProps?.callStatus]);
+  // Track whether user is near the bottom
+  const handleScroll = useCallback(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    isNearBottomRef.current = distFromBottom < 120;
+    if (isNearBottomRef.current) setShowNewPill(false);
+  }, []);
 
+  // Smart scroll — only jump to bottom if user is near bottom
   useEffect(() => {
-    if (!previewMessage) {
-      return undefined;
+    if (isNearBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      setShowNewPill(false);
+    } else {
+      setShowNewPill(true);
     }
+  }, [visibleMessages.length, typingText, callProps?.callStatus]);
 
+  // Handle escape keys for modals and menus
+  useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
-        setPreviewMessage(null);
+        if (previewMessage) setPreviewMessage(null);
+        else if (hasSelection) setSelectedMessageIds(new Set());
+        else if (isSearchOpen) {
+          setIsSearchOpen(false);
+          setMessageSearch("");
+        }
+        else if (isMenuOpen) setIsMenuOpen(false);
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [previewMessage]);
+  }, [previewMessage, isSearchOpen, isMenuOpen, hasSelection]);
 
+  // Handle menu click outside
   useEffect(() => {
-    if (!isMenuOpen) {
-      return undefined;
-    }
-
+    if (!isMenuOpen) return undefined;
     const handlePointerDown = (event) => {
-      if (!menuRef.current?.contains(event.target)) {
-        setIsMenuOpen(false);
-      }
+      if (!menuRef.current?.contains(event.target)) setIsMenuOpen(false);
     };
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
-        setIsMenuOpen(false);
-      }
-    };
-
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("touchstart", handlePointerDown);
-    window.addEventListener("keydown", handleKeyDown);
-
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("touchstart", handlePointerDown);
-      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMenuOpen]);
 
-  if (!chat) {
-    return null;
-  }
+  const toggleSelection = useCallback((messageId) => {
+    setSelectedMessageIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(messageId)) next.delete(messageId);
+      else next.add(messageId);
+      return next;
+    });
+  }, []);
+
+  const handleDeleteSelectedForMe = useCallback(() => {
+    selectedMessageIds.forEach(id => onDeleteMessageForMe(id));
+    setSelectedMessageIds(new Set());
+  }, [selectedMessageIds, onDeleteMessageForMe]);
+
+  const handleDeleteSelectedForEveryone = useCallback(() => {
+    selectedMessageIds.forEach(id => onDeleteMessageForEveryone(id));
+    setSelectedMessageIds(new Set());
+  }, [selectedMessageIds, onDeleteMessageForEveryone]);
+
+  const handleForwardSelected = useCallback(() => {
+    if (selectedMessageIds.size !== 1) return;
+    const firstId = Array.from(selectedMessageIds)[0];
+    const msg = chat.messages.find(m => m.id === firstId);
+    if (msg) onForwardMessage(msg);
+    setSelectedMessageIds(new Set());
+  }, [selectedMessageIds, chat?.messages, onForwardMessage]);
+
+
+  if (!chat) return null;
 
   return (
-    <section className="chat-window">
-      <header className="chat-window__header">
-        <div className="chat-window__identity">
-          {isMobileView ? (
-            <button className="chat-window__back" type="button" onClick={onMobileBack}>
-              <BackIcon />
-            </button>
-          ) : null}
-
-          <div
-            className="chat-window__avatar"
-            style={{ "--avatar-accent": chat.accent }}
-            aria-hidden="true"
-          >
-            {chat.avatar}
+    <section className="chat-window" style={{ zIndex: 10, background: "var(--app-background)" }}>
+      
+      {/* 
+        Chat Header Region
+      */}
+      <header className={`chat-window__header ${hasSelection ? "chat-window__header--selection" : ""}`}>
+        
+        {hasSelection ? (
+          <div className="chat-window__action-bar" style={{ display: "flex", alignItems: "center", width: "100%", height: "100%", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <button 
+                type="button" 
+                className="icon-button" 
+                onClick={() => setSelectedMessageIds(new Set())}
+              >
+                <X size={20} />
+              </button>
+              <strong style={{ fontSize: "1.1rem" }}>{selectedMessageIds.size} selected</strong>
+            </div>
+            
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {selectedMessageIds.size === 1 && (
+                <button 
+                  type="button" 
+                  className="icon-button"
+                  title="Forward Message"
+                  onClick={handleForwardSelected}
+                >
+                  <Forward size={20} />
+                </button>
+              )}
+              <button 
+                type="button" 
+                className="icon-button icon-button--danger" 
+                title="Delete for Everyone (if eligible) or Me"
+                style={{ color: "var(--danger)" }}
+                onClick={() => {
+                  // Usually, modern apps prompt here. E.g. a small alert or dropdown.
+                  // For simplicity, we trigger DeleteForMe. You could swap to Everyone.
+                  handleDeleteSelectedForMe();
+                }}
+              >
+                <Trash2 size={20} />
+              </button>
+            </div>
           </div>
-
-          <div>
-            <h2>{chat.name}</h2>
-            <p className={chat.status === "online" || chat.isTyping ? "is-online" : ""}>
-              {chat.isTyping ? `${chat.name.split(" ")[0]} is typing...` : chat.lastSeen}
-            </p>
-          </div>
-        </div>
-
-        <div className="chat-window__actions">
-          <button
-            className="icon-button icon-button--call"
-            type="button"
-            aria-label="Start audio call"
-            disabled={callProps?.callStatus === "calling" || callProps?.callStatus === "in-call"}
-            onClick={onStartAudioCall}
-          >
-            <PhoneIcon />
-          </button>
-          <button
-            className="icon-button icon-button--call"
-            type="button"
-            aria-label="Start video call"
-            disabled={callProps?.callStatus === "calling" || callProps?.callStatus === "in-call"}
-            onClick={onStartVideoCall}
-          >
-            <VideoIcon />
-          </button>
-          <button
-            className="icon-button"
-            type="button"
-            aria-label="Search in conversation"
-            onClick={() => {
-              setIsSearchOpen((currentValue) => !currentValue);
-              setIsMenuOpen(false);
-              if (isSearchOpen) {
-                setMessageSearch("");
-              }
-            }}
-          >
-            <SearchIcon />
-          </button>
-          <div className="chat-window__menu-shell" ref={menuRef}>
-            <button
-              className="icon-button chat-window__menu-trigger"
-              type="button"
-              aria-label="Conversation menu"
-              aria-expanded={isMenuOpen}
-              onClick={() => setIsMenuOpen((currentValue) => !currentValue)}
-            >
-              <MenuIcon />
+        ) : isSearchOpen ? (
+          <div className="chat-window__search-bar" style={{ display: "flex", alignItems: "center", width: "100%", padding: "0 16px", gap: 12 }}>
+            <button type="button" className="icon-button" onClick={() => { setIsSearchOpen(false); setMessageSearch(""); }}>
+              <ChevronLeft size={24} />
             </button>
+            <input
+              type="text"
+              autoFocus
+              placeholder="Search in this chat..."
+              value={messageSearch}
+              onChange={(e) => setMessageSearch(e.target.value)}
+              style={{ flex: 1, border: "none", background: "var(--surface-hover)", padding: "10px 16px", borderRadius: 20, outline: "none" }}
+            />
+            <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
+              {messageSearch.length > 0 ? `${visibleMessages.length} found` : ""}
+            </span>
+          </div>
+        ) : (
+          <>
+            <div className="chat-window__identity">
+              {isMobileView ? (
+                <button 
+                  className="chat-window__back icon-button" 
+                  type="button" 
+                  onClick={onMobileBack}
+                  aria-label="Back to chat list"
+                  style={{ marginRight: "8px" }}
+                >
+                  <ChevronLeft size={28} />
+                </button>
+              ) : null}
 
-            {isMenuOpen ? (
-              <div className="chat-window__menu">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onConfirmClearChat?.();
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  Clear Chat History
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onConfirmDeleteChat?.();
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  Delete Chat
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSearchOpen(false);
-                    setMessageSearch("");
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  Close Menu
-                </button>
+              <div className="chat-window__avatar" style={{ "--avatar-accent": chat.accent }} aria-hidden="true">
+                 {chat.avatar}
               </div>
-            ) : null}
-          </div>
-        </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h2 style={{ fontSize: "1.1rem", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {chat.name}
+                </h2>
+                <p className={chat.status === "online" || chat.isTyping ? "is-online" : ""} style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {chat.isTyping ? `${chat.name.split(" ")[0]} is typing...` : chat.lastSeen}
+                </p>
+              </div>
+            </div>
+
+            <div className="chat-window__actions">
+              <button
+                className="icon-button icon-button--call"
+                type="button"
+                aria-label="Start audio call"
+                disabled={callProps?.callStatus === "calling" || callProps?.callStatus === "in-call"}
+                onClick={onStartAudioCall}
+              >
+                <Phone size={20} />
+              </button>
+              <button
+                className="icon-button icon-button--call"
+                type="button"
+                aria-label="Start video call"
+                disabled={callProps?.callStatus === "calling" || callProps?.callStatus === "in-call"}
+                onClick={onStartVideoCall}
+              >
+                <Video size={20} />
+              </button>
+              <button
+                className="icon-button"
+                type="button"
+                aria-label="Search"
+                onClick={() => setIsSearchOpen(true)}
+              >
+                <Search size={20} />
+              </button>
+
+              <div className="chat-window__menu-shell" ref={menuRef} style={{ position: "relative" }}>
+                <button
+                  className="icon-button chat-window__menu-trigger"
+                  type="button"
+                  onClick={() => setIsMenuOpen((v) => !v)}
+                >
+                  <Menu size={20} />
+                </button>
+
+                <AnimatePresence>
+                  {isMenuOpen && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                      transition={{ duration: 0.15 }}
+                      className="chat-window__menu"
+                      style={{ position: "absolute", top: "100%", right: 0, width: "200px" }}
+                    >
+                      <button type="button" onClick={() => { onConfirmClearChat?.(); setIsMenuOpen(false); }}>
+                        Clear Chat History
+                      </button>
+                      <button type="button" onClick={() => { onConfirmDeleteChat?.(); setIsMenuOpen(false); }} style={{ color: "var(--danger)" }}>
+                        Delete Chat
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </>
+        )}
       </header>
 
       <div className="chat-window__messages">
-        {isSearchOpen ? (
-          <div className="chat-window__search">
-            <SearchIcon />
-            <input
-              type="text"
-              placeholder="Search in this chat"
-              value={messageSearch}
-              onChange={(event) => setMessageSearch(event.target.value)}
-            />
-            <span>{visibleMessages.length}</span>
+        {visibleMessages.length === 0 && isSearchOpen && (
+          <div className="chat-window__empty-search" style={{ textAlign: "center", color: "var(--text-muted)", marginTop: 40 }}>
+            No messages matched your search.
           </div>
-        ) : null}
-
-
+        )}
 
         {visibleMessages.map((message) => (
           <MessageBubble
             key={message.id}
             message={message}
-            onDeleteForEveryone={onDeleteMessageForEveryone}
-            onDeleteForMe={onDeleteMessageForMe}
-            onForward={onForwardMessage}
+            isSelected={selectedMessageIds.has(message.id)}
+            onToggleSelect={() => toggleSelection(message.id)}
             onPreview={setPreviewMessage}
             onReply={onReplyMessage}
+            isSelectionMode={hasSelection}
           />
         ))}
 
         <TypingIndicator text={typingText} />
 
-        {isSearchOpen && !visibleMessages.length ? (
-          <div className="chat-window__empty-search">No messages matched your search.</div>
-        ) : null}
-
-        <div ref={messagesEndRef} />
+        {/* 16px padding hack at bottom to avoid sticking closely */}
+        <div ref={messagesEndRef} style={{ height: 16 }} />
       </div>
 
-      <footer className="chat-window__footer">
+      <footer className="chat-window__footer" style={{ padding: "8px 16px", background: "var(--app-background)" }}>
         <InputBox
-          disabled={callProps?.callStatus === "calling"}
+          disabled={callProps?.callStatus === "calling" || hasSelection}
           isCompact={isCompactInput}
           value={draftMessage}
           onChange={onDraftChange}
@@ -317,43 +348,38 @@ function ChatWindow({
         />
       </footer>
 
-      {previewMessage ? (
-        <div
-          className="media-preview"
-          role="dialog"
-          aria-modal="true"
-          aria-label={previewMessage.fileName || "Media preview"}
-        >
-          <div className="media-preview__header">
-            <button
-              className="media-preview__back"
-              type="button"
-              onClick={() => setPreviewMessage(null)}
-            >
-              Back to chat
-            </button>
-            <span>{previewMessage.fileName || "Shared media"}</span>
-          </div>
+      {/* Media Preview Modal */}
+      <AnimatePresence>
+        {previewMessage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="media-preview"
+            role="dialog"
+            style={{ backdropFilter: "blur(10px)", backgroundColor: "rgba(0,0,0,0.8)" }}
+          >
+            <div className="media-preview__header" style={{ padding: 16 }}>
+              <button
+                className="media-preview__back"
+                type="button"
+                onClick={() => setPreviewMessage(null)}
+              >
+                <ChevronLeft size={24} /> Back
+              </button>
+              <span style={{ color: "#fff" }}>{previewMessage.fileName || "Shared media"}</span>
+            </div>
 
-          <div className="media-preview__body">
-            {isPreviewVideo ? (
-              <video
-                className="media-preview__content"
-                src={previewMessage.file}
-                controls
-                autoPlay
-                playsInline
-              />
-            ) : (
-              <img
-                className="media-preview__content"
-                src={previewMessage.file}
-                alt={previewMessage.fileName || "Shared upload"}
-              />
-            )}
-          </div>
-        </div>
-      ) : null}
+            <div className="media-preview__body" style={{ display: "grid", placeItems: "center", height: "calc(100% - 64px)" }}>
+              {isPreviewVideo ? (
+                <video src={previewMessage.file} controls autoPlay playsInline style={{ maxWidth: "90%", maxHeight: "90%", borderRadius: 16 }} />
+              ) : (
+                <img src={previewMessage.file} alt={previewMessage.fileName} style={{ maxWidth: "90%", maxHeight: "90%", borderRadius: 16, objectFit: "contain" }} />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

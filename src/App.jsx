@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import "./App.css";
+import "./Theme.css";
 
 const authLoadingFallback = (
   <div className="auth-container" role="status" aria-live="polite">

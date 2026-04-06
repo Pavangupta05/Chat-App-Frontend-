@@ -51,7 +51,7 @@
 }
 
 .telegram-layout {
-  width: 100%;
+  width: 100vw;
   height: 100vh;
   display: flex;
   background: transparent;
@@ -68,16 +68,14 @@
   border-right: 1px solid var(--border-color);
   color: var(--text-primary);
   overflow: hidden;
-  transition: transform 0.3s ease, width 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
-@media (max-width: 767px) {
-  .sidebar {
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-    border-right: none;
-  }
+.sidebar.sidebar--closed {
+  width: 0 !important;
+  min-width: 0 !important;
+  border-right: none;
 }
 
 .chat-window {
@@ -88,17 +86,82 @@
   min-width: 0;
   background: transparent;
   color: var(--text-primary);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-@media (max-width: 767px) {
-  .chat-window {
+/* Tablet Layout (35% / 65%) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .telegram-layout {
+    display: grid;
+    grid-template-columns: 35% 1fr;
+  }
+  .sidebar { width: 100%; min-width: 0; max-width: 100%; border-right: 1px solid var(--border-color); }
+  .chat-window { width: 100%; }
+}
+
+/* Desktop Layout */
+@media (min-width: 1025px) {
+  .telegram-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+  }
+  .sidebar { width: 100%; min-width: 0; max-width: 100%; }
+  .chat-window { width: 100%; align-items: center; }
+  .chat-window > * {
+    max-width: 1200px;
     width: 100%;
-    position: absolute;
-    inset: 0;
-    z-index: 10;
+  }
+}
+
+/* Mobile Layout */
+@media (max-width: 767px) {
+  .telegram-layout {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+  }
+  .sidebar,
+  .sidebar.sidebar--closed {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    position: relative;
+    border-right: none;
+    flex: 1;
+    transform: none !important;
+    visibility: visible !important;
+  }
+  .chat-window {
+    width: 100% !important;
+    flex: 1;
+    position: relative;
     background: var(--app-background);
   }
+}
+
+.chat-window__header {
+  flex: 0 0 64px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  backdrop-filter: blur(18px);
+  z-index: 5;
+}
+
+.chat-window__messages {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.chat-window__footer {
+  flex: 0 0 auto;
+  backdrop-filter: blur(18px);
+  width: 100%;
+  z-index: 5;
 }
 
 .sidebar__navbar,
@@ -123,7 +186,6 @@
 
 .sidebar__profile,
 .chat-window__identity,
-.chat-window__actions,
 .message__file-card,
 .message__file-meta,
 .call-panel__footer,
@@ -135,6 +197,19 @@
 .modal-card__header {
   display: flex;
   align-items: center;
+}
+
+.chat-window__identity {
+  flex: 1;
+  min-width: 0;
+  gap: 12px;
+}
+
+.chat-window__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .sidebar__profile {
@@ -473,6 +548,64 @@
 .sidebar__tab.is-active {
   background: rgba(124, 58, 237, 0.14);
   color: var(--accent-strong);
+}
+
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 80px; /* Leave space for FAB */
+}
+
+.chat-list__item {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  background: transparent;
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.chat-list__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.chat-list__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-list__row h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.chat-list__row p {
+  font-size: 0.85rem;
+  margin: 0;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar__composer {

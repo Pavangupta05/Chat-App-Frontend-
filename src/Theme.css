@@ -1,0 +1,119 @@
+/* src/Theme.css - iOS & Telegram Inspired UI Overrides */
+
+:root {
+  /* Ultra-smooth Gradients & iOS Colors */
+  --app-background: #f0f2f5;
+  --surface: rgba(255, 255, 255, 0.85);
+  --surface-alt: rgba(240, 242, 245, 0.6);
+  --surface-hover: rgba(255, 255, 255, 0.95);
+  --sidebar-surface: rgba(255, 255, 255, 0.75);
+  --border-color: rgba(0, 0, 0, 0.08);
+  
+  --text-primary: #000000;
+  --text-secondary: #8e8e93; /* iOS grey */
+  --text-muted: #aeaeb2;
+  
+  --accent: #007aff; /* iOS Blue */
+  --accent-gradient: linear-gradient(135deg, #007aff 0%, #005bb5 100%);
+  --accent-strong: #005bb5;
+  --accent-solid: #007aff;
+  
+  /* Message bubbles */
+  --bubble-sent: #007aff;
+  --bubble-received: #e5e5ea; /* iOS grey bubble */
+  --bubble-text-sent: #ffffff;
+  --bubble-text-received: #000000;
+  
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-menu: 0 10px 40px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="dark"] {
+  --app-background: #000000;
+  --surface: rgba(28, 28, 30, 0.85);
+  --surface-alt: rgba(44, 44, 46, 0.6);
+  --surface-hover: rgba(58, 58, 60, 0.95);
+  --sidebar-surface: rgba(28, 28, 30, 0.75);
+  --border-color: rgba(255, 255, 255, 0.1);
+  
+  --text-primary: #ffffff;
+  --text-secondary: #98989d;
+  --text-muted: #636366;
+  
+  --accent: #0a84ff; /* iOS dark blue */
+  --accent-gradient: linear-gradient(135deg, #0a84ff 0%, #005bb5 100%);
+  --accent-strong: #0a84ff;
+  --accent-solid: #0a84ff;
+  
+  --bubble-sent: #0a84ff;
+  --bubble-received: #2c2c2e;
+  --bubble-text-sent: #ffffff;
+  --bubble-text-received: #ffffff;
+  
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.2);
+  --shadow-menu: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Glassmorphism applied to key elements */
+.sidebar__navbar,
+.chat-window__header,
+.chat-window__footer,
+.message-menu,
+.sidebar__menu {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Custom iOS / Telegram style bubbles */
+.message__bubble {
+  border-radius: 18px !important;
+  color: var(--bubble-text-received) !important;
+  background: var(--bubble-received) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+  border: none !important;
+}
+
+.message.is-sent .message__bubble {
+  color: var(--bubble-text-sent) !important;
+  background: var(--bubble-sent) !important;
+  border-bottom-right-radius: 4px !important;
+  border-bottom-left-radius: 18px !important;
+}
+
+.message:not(.is-sent) .message__bubble {
+  border-bottom-left-radius: 4px !important;
+  border-bottom-right-radius: 18px !important;
+}
+
+/* Telegram minimal Search Bar */
+.searchbar, .sidebar__composer input, .chat-window__search input, .input-box input {
+  border-radius: 20px !important;
+  transition: all 0.3s ease !important;
+}
+
+/* App Background override */
+body, .app, .telegram-layout {
+  background: var(--app-background) !important;
+}
+
+.sidebar {
+  background: var(--sidebar-surface) !important;
+}
+
+.chat-window {
+  background: transparent !important;
+}
+
+/* Layout Font */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Clean up shadows */
+.modal-card {
+  box-shadow: var(--shadow-menu) !important;
+  border-radius: 24px !important;
+  background: var(--surface) !important;
+  backdrop-filter: blur(20px);
+}

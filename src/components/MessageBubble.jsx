@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import MessageMenu from "./MessageMenu";
+import { useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import MessageStatus from "./MessageStatus";
 
 const isImageFileMessage = (message) =>
@@ -15,77 +14,13 @@ const isVideoFileMessage = (message) =>
   (message.mimeType?.startsWith("video/") ||
     /\.(mp4|webm|ogg|mov)$/i.test(message.file));
 
-const MENU_WIDTH  = 210;
-const MENU_GAP    = 6;
-
-function usePortalMenu() {
-  const triggerRef = useRef(null);
-  const menuRef    = useRef(null);
-  const [isOpen, setIsOpen]       = useState(false);
-  const [position, setPosition]   = useState({ top: 0, left: 0 });
-  const longPressRef               = useRef(null);
-
-  // Calculate fixed position from trigger button rect
-  const openMenu = useCallback(() => {
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (!rect) {
-      setIsOpen(true);
-      return;
-    }
-
-    const spaceBelow  = window.innerHeight - rect.bottom;
-    const spaceRight  = window.innerWidth  - rect.left;
-    const menuHeight  = 260; // approximate
-
-    const top  = spaceBelow >= menuHeight
-      ? rect.bottom + MENU_GAP
-      : rect.top - menuHeight - MENU_GAP;
-
-    const left = spaceRight >= MENU_WIDTH
-      ? rect.left
-      : Math.max(8, rect.right - MENU_WIDTH);
-
-    setPosition({ top, left });
-    setIsOpen(true);
-  }, []);
-
-  const closeMenu = useCallback(() => setIsOpen(false), []);
-
-  // Close on outside click or Escape
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const onPointer = (e) => {
-      if (
-        menuRef.current && !menuRef.current.contains(e.target) &&
-        triggerRef.current && !triggerRef.current.contains(e.target)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    const onKey = (e) => { if (e.key === "Escape") setIsOpen(false); };
-
-    document.addEventListener("pointerdown", onPointer);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointer);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [isOpen]);
-
-  // Cleanup long-press timeout on unmount
-  useEffect(() => () => window.clearTimeout(longPressRef.current), []);
-
-  return { triggerRef, menuRef, isOpen, position, openMenu, closeMenu, longPressRef };
-}
-
 function MessageBubble({
   message,
-  onDeleteForEveryone,
-  onDeleteForMe,
-  onForward,
+  isSelected,
+  onToggleSelect,
   onPreview,
   onReply,
+  isSelectionMode,
 }) {
   const isOutgoing   = message.sender === "me";
   const isFileMessage = message.type === "file" && message.file;
@@ -93,46 +28,56 @@ function MessageBubble({
   const isVideoFile   = isVideoFileMessage(message);
   const canPreview    = isImageFile || isVideoFile;
 
-  const { triggerRef, menuRef, isOpen, position, openMenu, closeMenu, longPressRef } =
-    usePortalMenu();
+  const longPressRef = useRef(null);
 
-  const handleCopy = async () => {
-    const valueToCopy = message.type === "file" ? message.file : message.text;
-    if (!valueToCopy) return;
-    await navigator.clipboard.writeText(valueToCopy);
-    closeMenu();
+  const handlePointerDown = () => {
+    // If we're already in selection mode, clicking should immediately toggle
+    if (isSelectionMode) return;
+    longPressRef.current = window.setTimeout(() => {
+      onToggleSelect();
+    }, 500); // 500ms long press to start selection
+  };
+
+  const handlePointerUpOrLeave = () => {
+    window.clearTimeout(longPressRef.current);
+  };
+
+  const handleClick = (e) => {
+    if (isSelectionMode) {
+      e.stopPropagation();
+      e.preventDefault();
+      onToggleSelect();
+    }
+  };
+
+  const handleContextMenu = (e) => {
+    e.preventDefault();
+    onToggleSelect();
   };
 
   return (
     <article
-      className={`message ${isOutgoing ? "message--outgoing" : "message--incoming"}`}
-      onContextMenu={(e) => { e.preventDefault(); openMenu(); }}
-      onPointerDown={() => {
-        longPressRef.current = window.setTimeout(openMenu, 500);
+      className={`message ${isOutgoing ? "message--outgoing" : "message--incoming"} ${isSelected ? "message--selected" : ""}`}
+      style={{
+        padding: isSelected ? "8px 12px" : "4px 0",
+        backgroundColor: isSelected ? (isOutgoing ? "rgba(37, 99, 235, 0.15)" : "rgba(37, 99, 235, 0.08)") : "transparent",
+        borderRadius: "12px",
+        transition: "background-color 0.2s, padding 0.2s",
+        cursor: isSelectionMode ? "pointer" : "default",
+        userSelect: isSelectionMode ? "none" : "auto",
       }}
-      onPointerUp={() => window.clearTimeout(longPressRef.current)}
-      onPointerLeave={() => window.clearTimeout(longPressRef.current)}
+      onContextMenu={handleContextMenu}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUpOrLeave}
+      onPointerLeave={handlePointerUpOrLeave}
+      onClick={handleClick}
     >
       <div
         className={`message__bubble ${
           isOutgoing ? "message__bubble--outgoing" : "message__bubble--incoming"
         }`}
+        style={{ pointerEvents: isSelectionMode ? "none" : "auto" }}
       >
-        {/* Three-dot trigger */}
-        <button
-          ref={triggerRef}
-          className="message__menu-trigger"
-          type="button"
-          aria-label="Open message menu"
-          aria-expanded={isOpen}
-          onClick={(e) => { e.stopPropagation(); openMenu(); }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <circle cx="12" cy="5"  r="1.5"/>
-            <circle cx="12" cy="12" r="1.5"/>
-            <circle cx="12" cy="19" r="1.5"/>
-          </svg>
-        </button>
 
         {!isOutgoing && message.username ? (
           <strong className="message__author">{message.username}</strong>
@@ -157,17 +102,23 @@ function MessageBubble({
               <button
                 className="message__preview"
                 type="button"
-                onClick={() => onPreview?.(message)}
-                aria-label={`Preview ${message.fileName || "shared media"}`}
+                onClick={() => !isSelectionMode && onPreview?.(message)}
               >
                 {isImageFile ? (
                   <img
                     className="message__image"
                     src={message.file}
                     alt={message.fileName || "Shared upload"}
+                    style={{ borderRadius: 12, display: "block" }}
                   />
                 ) : (
-                  <video className="message__video" src={message.file} muted playsInline />
+                  <video 
+                    className="message__video" 
+                    src={message.file} 
+                    muted 
+                    playsInline 
+                    style={{ borderRadius: 12, display: "block" }} 
+                  />
                 )}
               </button>
             ) : null}
@@ -175,37 +126,15 @@ function MessageBubble({
             {!canPreview ? (
               <div className="message__file-card">
                 <div className="message__file-meta">
-                  <span className="message__file-icon" aria-hidden="true">
-                    {message.mimeType?.startsWith("video/")
-                      ? "VID"
-                      : message.mimeType?.startsWith("audio/")
-                        ? "AUD"
-                        : "FILE"}
-                  </span>
+                  <span className="message__file-icon">FILE</span>
                   <div>
                     <strong>{message.fileName || "Shared file"}</strong>
-                    <small>{message.mimeType || "Download attachment"}</small>
+                    <small>{message.mimeType}</small>
                   </div>
                 </div>
-                <a
-                  className="message__file-link"
-                  href={message.file}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Download
-                </a>
+                <a className="message__file-link" href={message.file} download>Download</a>
               </div>
-            ) : (
-              <a
-                className="message__file-link"
-                href={message.file}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {isImageFile ? "Open original file" : "Download media"}
-              </a>
-            )}
+            ) : null}
           </div>
         ) : (
           <p>{message.text}</p>
@@ -216,33 +145,6 @@ function MessageBubble({
           {isOutgoing ? <MessageStatus status={message.status} /> : null}
         </div>
       </div>
-
-      {/* Portal menu — rendered at document.body, escapes all overflow containers */}
-      {isOpen
-        ? createPortal(
-            <div
-              ref={menuRef}
-              className="message-menu-portal"
-              style={{
-                position: "fixed",
-                top:  position.top,
-                left: position.left,
-                width: MENU_WIDTH,
-                zIndex: 9999,
-              }}
-            >
-              <MessageMenu
-                isDeleted={message.deleted}
-                onCopy={handleCopy}
-                onDeleteForEveryone={() => { onDeleteForEveryone?.(message.id); closeMenu(); }}
-                onDeleteForMe={() => { onDeleteForMe?.(message.id); closeMenu(); }}
-                onForward={() => { onForward?.(message); closeMenu(); }}
-                onReply={() => { onReply?.(message); closeMenu(); }}
-              />
-            </div>,
-            document.body,
-          )
-        : null}
     </article>
   );
 }
