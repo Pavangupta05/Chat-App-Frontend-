@@ -27,11 +27,14 @@ function Sidebar({
   searchTerm,
   theme,
   username,
+  viewport,
 }) {
   const searchInputRef = useRef(null);
   const fabRef = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isFabOpen, setIsFabOpen] = useState(false);
+
+  const isMobile = viewport === "mobile";
 
   // Close FAB menu on click outside
   useEffect(() => {
@@ -58,16 +61,18 @@ function Sidebar({
             >
               <Menu size={20} />
             </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="sidebar__action"
-              type="button"
-              aria-label="Toggle sidebar width"
-              onClick={onToggleSidebar}
-            >
-              <PanelLeft size={20} />
-            </motion.button>
+            {!isMobile && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="sidebar__action"
+                type="button"
+                aria-label="Toggle sidebar width"
+                onClick={onToggleSidebar}
+              >
+                <PanelLeft size={20} />
+              </motion.button>
+            )}
 
             <AnimatePresence>
               {isMenuOpen && (

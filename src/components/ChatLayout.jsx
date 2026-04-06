@@ -156,6 +156,7 @@ function ChatLayout() {
             searchTerm={searchTerm}
             theme={theme}
             username={username}
+            viewport={viewport}
           />
         )}
 

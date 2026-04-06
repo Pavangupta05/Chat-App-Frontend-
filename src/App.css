@@ -83,6 +83,28 @@
     bottom: 24px !important;
     right: 20px !important;
   }
+
+  .sidebar__profile-avatar {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .sidebar__title {
+    font-size: 0.95rem !important;
+  }
+
+  .sidebar__status {
+    font-size: 0.75rem !important;
+  }
+
+  /* Hide toggle on mobile */
+  .sidebar__action[aria-label="Toggle sidebar width"] {
+    display: none !important;
+  }
+  
+  .sidebar__controls {
+    gap: 4px !important;
+  }
 }
 
 .sidebar.sidebar--closed {
@@ -230,8 +252,9 @@
 }
 
 .sidebar__profile {
+  flex: 1;
   min-width: 0;
-  gap: 12px;
+  gap: 8px;
 }
 
 .sidebar__profile-avatar,
@@ -549,17 +572,26 @@
 .sidebar__tabs {
   display: flex;
   gap: 8px;
-  padding: 0 12px 8px;
+  padding: 0 12px 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Hide scrollbar Firefox */
+}
+
+.sidebar__tabs::-webkit-scrollbar {
+  display: none; /* Hide scrollbar Chrome/Safari */
 }
 
 .sidebar__tab {
   height: 32px;
-  padding: 0 12px;
+  padding: 0 16px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.42);
   color: var(--text-secondary);
   font-size: 13px;
   font-weight: 500;
+  flex: 0 0 auto; /* Stop tabs from squashing */
 }
 
 .sidebar__tab.is-active {
