@@ -47,34 +47,16 @@ function Sidebar({
     <aside className={`sidebar ${isOpen ? "sidebar--open" : "sidebar--closed"}`}>
       <div className="sidebar__navbar">
         <div className="sidebar__top">
-          <div className="sidebar__profile">
-            <div className="sidebar__profile-avatar" aria-hidden="true">
-              {username.slice(0, 2).toUpperCase()}
-            </div>
-            <div>
-              <p className="sidebar__eyebrow">Signed in as</p>
-              <h1 className="sidebar__title">{username}</h1>
-              <span className="sidebar__status">{connectionLabel}</span>
-            </div>
-          </div>
-
           <div className="sidebar__controls">
             <motion.button
-              whileTap={{ scale: 0.9 }}
-              className="theme-switch"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="sidebar__action"
               type="button"
-              aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-              onClick={onThemeToggle}
+              aria-label="Open sidebar menu"
+              onClick={() => setIsMenuOpen((v) => !v)}
             >
-              <span className={`theme-switch__track ${theme === "dark" ? "is-active" : ""}`}>
-                <motion.span 
-                  className="theme-switch__thumb"
-                  layout
-                  transition={{ type: "spring", stiffness: 700, damping: 30 }}
-                >
-                  {theme === "dark" ? <Moon size={14} /> : <Sun size={14} />}
-                </motion.span>
-              </span>
+              <Menu size={20} />
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -86,16 +68,6 @@ function Sidebar({
             >
               <PanelLeft size={20} />
             </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="sidebar__action"
-              type="button"
-              aria-label="Open sidebar menu"
-              onClick={() => setIsMenuOpen((v) => !v)}
-            >
-              <Menu size={20} />
-            </motion.button>
 
             <AnimatePresence>
               {isMenuOpen && (
@@ -104,6 +76,7 @@ function Sidebar({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   className="sidebar__menu"
+                  style={{ left: 0, right: "auto" }} // Menu opens to the right
                 >
                   <button type="button" onClick={() => { setIsMenuOpen(false); onProfile?.(); }}>Profile</button>
                   <button type="button" onClick={() => { setIsMenuOpen(false); onSettings?.(); }}>Settings</button>
@@ -112,6 +85,34 @@ function Sidebar({
               )}
             </AnimatePresence>
           </div>
+
+          <div className="sidebar__profile">
+            <div className="sidebar__profile-avatar" aria-hidden="true">
+              {username.slice(0, 2).toUpperCase()}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <h1 className="sidebar__title" style={{ fontSize: "1rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{username}</h1>
+              <span className="sidebar__status">{connectionLabel}</span>
+            </div>
+          </div>
+
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            className="theme-switch"
+            type="button"
+            aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+            onClick={onThemeToggle}
+          >
+            <span className={`theme-switch__track ${theme === "dark" ? "is-active" : ""}`}>
+              <motion.span 
+                className="theme-switch__thumb"
+                layout
+                transition={{ type: "spring", stiffness: 700, damping: 30 }}
+              >
+                {theme === "dark" ? <Moon size={14} /> : <Sun size={14} />}
+              </motion.span>
+            </span>
+          </motion.button>
         </div>
 
         <label className="searchbar sidebar__searchbar" htmlFor="chat-search">
