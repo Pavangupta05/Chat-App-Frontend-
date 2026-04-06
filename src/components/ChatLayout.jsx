@@ -4,6 +4,8 @@ import ForwardModal from "./ForwardModal";
 import NewChatModal from "./NewChatModal";
 import Sidebar from "./Sidebar";
 import ChatWindow from "./ChatWindow";
+import Call from "./Call";
+import AudioCallModal from "./AudioCallModal";
 import useChatController from "../hooks/useChatController";
 import { useAuth } from "../context/AuthContext";
 
@@ -135,6 +137,10 @@ function ChatLayout() {
             }
             onSearchChange={setSearchTerm}
             onSelectChat={handleSelectChat}
+            onDeleteChat={(id) => {
+              selectChat(id);
+              setConfirmAction("delete-chat");
+            }}
             onTabChange={setActiveTab}
             onToggleSidebar={() => setIsSidebarOpen((currentValue) => !currentValue)}
             searchTerm={searchTerm}
@@ -206,12 +212,35 @@ function ChatLayout() {
         isOpen={Boolean(chatModalMode)}
         mode={chatModalMode ?? "chat"}
         onClose={() => setChatModalMode(null)}
-        onCreate={({ name, accent, avatar }) => {
-          createChat({ name, accent, avatar });
+        onCreate={({ name, accent, avatar, peerUserId }) => {
+          createChat({ name, accent, avatar, peerUserId });
           setChatModalMode(null);
           // Auto-open chat on mobile
           if (viewport === "mobile") setIsMobileChatOpen(true);
         }}
+      />
+      <Call
+        callMode={call.callMode}
+        callError={call.callError}
+        callStatus={call.callStatus}
+        incomingCall={call.incomingCall}
+        localStream={call.localStream}
+        remoteStream={call.remoteStream}
+        onAcceptCall={() => call.acceptCall()}
+        onEndCall={() => call.endCall()}
+      />
+      <AudioCallModal
+        callMode={call.callMode}
+        audioStatus={call.callMode === "audio" ? call.callStatus : "idle"}
+        callDuration={call.callDuration ?? 0}
+        chatName={call.incomingCall?.username ?? currentChat?.name ?? "Unknown Caller"}
+        incomingCall={call.callMode === "audio" ? call.incomingCall : null}
+        isMuted={call.isMuted}
+        localStream={call.localStream}
+        onAcceptCall={() => call.acceptCall("audio")}
+        onEndCall={() => call.endCall()}
+        onToggleMute={call.toggleMute}
+        remoteStream={call.remoteStream}
       />
     </main>
   );

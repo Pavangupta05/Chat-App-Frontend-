@@ -20,3 +20,19 @@ export async function fetchMessagesBetween(token, withUserId) {
 
   return Array.isArray(data) ? data : [];
 }
+
+export async function fetchUserChats(token) {
+  const response = await fetch(`${API_URL}/api/chat`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to load chats.");
+  }
+
+  return Array.isArray(data) ? data : [];
+}

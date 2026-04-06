@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { fetchMessagesBetween, isPeerMongoId } from "../services/messageService";
+import { fetchMessagesBetween, fetchUserChats, isPeerMongoId } from "../services/messageService";
 import useCall from "./useCall";
 import useMessageStatus from "./useMessageStatus";
 import useReply from "./useReply";
@@ -92,6 +92,45 @@ function useChatController() {
   );
 
 
+
+  // Fetch all chats from the backend when the controller mounts or user changes
+  useEffect(() => {
+    if (!token || !currentUserId) return;
+    
+    fetchUserChats(token)
+      .then((apiChats) => {
+        setChats((existingLocalChats) => {
+          const nextChats = [...existingLocalChats];
+          let updated = false;
+          
+          apiChats.forEach((apiChat) => {
+            // Find the remote peer safely (tolerate nulls if users were deleted)
+            if (!apiChat?.participants || !Array.isArray(apiChat.participants)) return;
+            const peer = apiChat.participants.find(p => p && String(p._id) !== currentUserId);
+            if (!peer) return;
+            
+            const chatIdKey = String(peer._id);
+            const alreadyExists = nextChats.some(c => String(c.id) === chatIdKey);
+            
+            if (!alreadyExists) {
+              updated = true;
+              nextChats.push(createChatRecord({
+                id: chatIdKey,
+                name: peer.username,
+                createdAt: apiChat.updatedAt ? new Date(apiChat.updatedAt).getTime() : Date.now(),
+                messages: [], // Real messages load on selectChat
+              }));
+            }
+          });
+          
+          // Only trigger a re-render if we actually found missing historical chats
+          return updated ? nextChats.sort((a, b) => b.updatedAt - a.updatedAt) : existingLocalChats;
+        });
+      })
+      .catch((err) => {
+        console.error("[chat] Failed to fetch user chats sync on mount:", err);
+      });
+  }, [token, currentUserId, createChatRecord]);
 
   useEffect(() => {
     if (!currentUserId) return;

@@ -35,7 +35,6 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
     setRemoteStream(null);
     setCallStatus("idle");
     setCallMode("video");
-    setCallError("");
     setActiveCallSocketId("");
     stopTimer();
     stopLocalMedia();
@@ -147,6 +146,12 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
         initiator: true,
         trickle: false,
         stream,
+        config: {
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:global.stun.twilio.com:3478" }
+          ]
+        }
       });
 
       bindPeerEvents(peer, "");
@@ -162,8 +167,8 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
         });
       });
     } catch (error) {
-      setCallError(error.message || "Unable to start the call.");
       resetCallState();
+      setCallError(error.message || "Unable to start the call.");
     }
   }, [
     activeChatId,
@@ -191,6 +196,12 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
         initiator: false,
         trickle: false,
         stream,
+        config: {
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:global.stun.twilio.com:3478" }
+          ]
+        }
       });
 
       bindPeerEvents(peer, incomingCall.callerSocketId);
@@ -209,8 +220,8 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
       peer.signal(incomingCall.signal);
       setIncomingCall(null);
     } catch (error) {
-      setCallError(error.message || "Unable to accept the call.");
       resetCallState();
+      setCallError(error.message || "Unable to accept the call.");
     }
   }, [bindPeerEvents, emit, ensureMediaStream, incomingCall, resetCallState, username]);
 

@@ -6,6 +6,10 @@
     <title>Neon Relay Chat</title>
   </head>
   <body>
+    <script>
+      window.global = window;
+      window.process = { env: {} };
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

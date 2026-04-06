@@ -90,6 +90,7 @@ function Sidebar({
   onThemeToggle,
   onSearchChange,
   onSelectChat,
+  onDeleteChat,
   onTabChange,
   onToggleSidebar,
   searchTerm,
@@ -231,7 +232,25 @@ function Sidebar({
               <div className="chat-list__body">
                 <div className="chat-list__row">
                   <h2>{chat.name}</h2>
-                  <span>{formatListTime(chat.updatedAt)}</span>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <span>{formatListTime(chat.updatedAt)}</span>
+                    <button
+                      type="button"
+                      aria-label="Delete chat"
+                      title="Delete chat"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteChat?.(chat.id);
+                      }}
+                      style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        color: "var(--accent-strong)", fontSize: "16px", padding: 0,
+                        opacity: 0.6, display: "flex"
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
 
                 <div className="chat-list__row chat-list__row--secondary">

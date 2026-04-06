@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import AudioCallModal from "./AudioCallModal";
-import Call from "./Call";
+
 import MessageBubble from "./MessageBubble";
 import InputBox from "./InputBox";
 import TypingIndicator from "./TypingIndicator";
@@ -282,20 +281,7 @@ function ChatWindow({
           </div>
         ) : null}
 
-        <Call {...callProps} />
-        <AudioCallModal
-          callMode={callProps?.callMode}
-          audioStatus={callProps?.callMode === "audio" ? callProps.callStatus : "idle"}
-          callDuration={callProps?.callDuration ?? 0}
-          chatName={chat.name}
-          incomingCall={callProps?.callMode === "audio" ? callProps.incomingCall : null}
-          isMuted={callProps?.isMuted}
-          localStream={callProps?.localStream}
-          onAcceptCall={callProps?.acceptCall}
-          onEndCall={callProps?.endCall}
-          onToggleMute={callProps?.toggleMute}
-          remoteStream={callProps?.remoteStream}
-        />
+
 
         {visibleMessages.map((message) => (
           <MessageBubble
