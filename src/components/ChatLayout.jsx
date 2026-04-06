@@ -70,14 +70,16 @@ function ChatLayout() {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) {
+      const width = window.innerWidth;
+      if (width < 768) {
         setViewport("mobile");
-        setIsSidebarOpen(false);
-        setIsMobileChatOpen(false); // always show chat list first on mobile
+        // On mobile, if we transition from desktop, we should default to the chat list
+        // unless a chat was already open.
+        setIsSidebarOpen(true); 
         return;
       }
 
-      if (window.innerWidth < 1024) {
+      if (width < 1024) {
         setViewport("tablet");
         setIsSidebarOpen(false);
         setIsMobileChatOpen(true);
@@ -121,8 +123,8 @@ function ChatLayout() {
     closeConfirmModal();
   };
 
-  const showSidebar = viewport !== "mobile" || !isMobileChatOpen;
-  const showChatWindow = viewport !== "mobile" || (isMobileChatOpen && !!currentChat);
+  const showSidebar = !isMobileView || !isMobileChatOpen;
+  const showChatWindow = !isMobileView || (isMobileChatOpen && !!currentChat);
 
   return (
     <main className="app">
@@ -133,7 +135,7 @@ function ChatLayout() {
             activeTab={activeTab}
             chats={chats}
             connectionLabel={socketState.isConnected ? "Online now" : socketState.connectionError}
-            isOpen={isSidebarOpen}
+            isOpen={isMobileView ? true : isSidebarOpen}
             isUserOnline={isUserOnline}
             onLogout={logout}
             onNewChat={() => setChatModalMode("chat")}

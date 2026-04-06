@@ -68,8 +68,21 @@
   border-right: 1px solid var(--border-color);
   color: var(--text-primary);
   overflow: hidden;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Mobile Overrides for Panels and FAB */
+@media (max-width: 767px) {
+  .side-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-right: none;
+  }
+  
+  .sidebar-fab {
+    bottom: 24px !important;
+    right: 20px !important;
+  }
 }
 
 .sidebar.sidebar--closed {
@@ -118,25 +131,31 @@
 @media (max-width: 767px) {
   .telegram-layout {
     display: flex;
-    flex-direction: column;
+    overflow: hidden;
     width: 100vw;
     height: 100vh;
+    background: var(--surface);
   }
   .sidebar,
   .sidebar.sidebar--closed {
     width: 100% !important;
     min-width: 100% !important;
     max-width: 100% !important;
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 10;
     border-right: none;
-    flex: 1;
-    transform: none !important;
-    visibility: visible !important;
+    transition: transform 0.3s ease;
   }
   .chat-window {
     width: 100% !important;
-    flex: 1;
-    position: relative;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 20;
     background: var(--app-background);
   }
 }
@@ -2012,16 +2031,32 @@
 @media (max-width: 767px) {
   .sidebar__navbar,
   .chat-window__header {
+    height: 56px;
     padding: 0 12px;
   }
   
   .chat-list__item {
-    height: 68px;
+    height: 64px;
     padding: 8px 12px;
   }
   
+  .message {
+    padding: 4px 12px;
+    margin: 4px 0;
+  }
+
   .message__bubble {
-    max-width: 85%;
+    max-width: 90%;
+    padding: 10px 14px;
+  }
+
+  .chat-window__footer {
+    padding: 8px 12px;
+  }
+
+  .input-box {
+    padding: 4px 12px;
+    gap: 8px;
   }
 }
 
@@ -2038,7 +2073,7 @@
   background-image: 
     radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.15) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(37, 99, 235, 0.15) 0px, transparent 50%);
-  padding: 24px;
+  padding: 16px;
 }
 
 .auth-card {
@@ -2046,7 +2081,7 @@
   max-width: 400px;
   background: var(--surface);
   border-radius: 24px;
-  padding: clamp(20px, 8vw, 40px);
+  padding: clamp(24px, 6vw, 40px);
   box-shadow: var(--shadow-modal);
   border: 1px solid var(--border-color);
   backdrop-filter: blur(20px);
