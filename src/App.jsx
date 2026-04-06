@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import ChatLayout from "./components/ChatLayout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import "./App.css";
 
 const authLoadingFallback = (
@@ -16,23 +18,15 @@ const authLoadingFallback = (
 
 const ProtectedRoute = ({ children }) => {
   const { isLoading, user } = useAuth();
-  if (isLoading) {
-    return authLoadingFallback;
-  }
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  if (isLoading) return authLoadingFallback;
+  if (!user) return <Navigate to="/login" replace />;
   return children;
 };
 
 const AuthRoute = ({ children }) => {
   const { isLoading, user } = useAuth();
-  if (isLoading) {
-    return authLoadingFallback;
-  }
-  if (user) {
-    return <Navigate to="/" replace />;
-  }
+  if (isLoading) return authLoadingFallback;
+  if (user) return <Navigate to="/" replace />;
   return children;
 };
 
@@ -41,29 +35,36 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route 
-            path="/login" 
+          {/* ── Auth pages (redirect to chat if already logged in) ─────────── */}
+          <Route
+            path="/login"
             element={
               <AuthRoute>
                 <Login />
               </AuthRoute>
-            } 
+            }
           />
-          <Route 
-            path="/register" 
+          <Route
+            path="/register"
             element={
               <AuthRoute>
                 <Register />
               </AuthRoute>
-            } 
+            }
           />
-          <Route 
-            path="/" 
+
+          {/* ── Password reset (always public — no JWT required) ────────────── */}
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+          {/* ── Protected chat ──────────────────────────────────────────────── */}
+          <Route
+            path="/"
             element={
               <ProtectedRoute>
                 <ChatLayout />
               </ProtectedRoute>
-            } 
+            }
           />
         </Routes>
       </BrowserRouter>
