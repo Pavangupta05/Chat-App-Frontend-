@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { formatListTime, getChatPreview } from "../utils/chat";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Menu, PanelLeft, Sun, Moon, Edit, MessageSquare, Users, Trash2 } from "lucide-react";
+import ModeToggle from "./ModeToggle";
 
 const tabs = ["All Chats", "Groups", "Contacts"];
-const menuItems = ["Profile", "Settings", "Logout"];
 
 function Sidebar({
   activeChatId,
@@ -46,34 +46,72 @@ function Sidebar({
     return () => document.removeEventListener("pointerdown", handler);
   }, [isFabOpen]);
 
+  const currentMode = activeTab === "Contacts" ? "contacts" : "chats";
+
   return (
     <aside className={`sidebar ${isOpen ? "sidebar--open" : "sidebar--closed"}`}>
       <div className="sidebar__navbar">
         <div className="sidebar__top">
-          <div className="sidebar__controls">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="sidebar__action"
-              type="button"
-              aria-label="Open sidebar menu"
-              onClick={() => setIsMenuOpen((v) => !v)}
-            >
-              <Menu size={20} />
-            </motion.button>
+          {/* LEFT: Menu and Profile */}
+          <div className="sidebar__profile" style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
             {!isMobile && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="sidebar__action"
                 type="button"
-                aria-label="Toggle sidebar width"
-                onClick={onToggleSidebar}
+                onClick={() => setIsMenuOpen((v) => !v)}
               >
-                <PanelLeft size={20} />
+                <Menu size={20} />
               </motion.button>
             )}
+            
+            <div className="sidebar__profile-avatar" onClick={onProfile} style={{ cursor: "pointer" }}>
+              {username.slice(0, 2).toUpperCase()}
+            </div>
+            
+            <div className="sidebar__profile-info" style={{ minWidth: 0 }}>
+              <h1 className="sidebar__title" style={{ fontSize: "1rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{username}</h1>
+              <span className="sidebar__status" style={{ fontSize: "0.8rem", opacity: 0.7 }}>{connectionLabel}</span>
+            </div>
+          </div>
 
+          {/* RIGHT: Toggles and Icons */}
+          <div className="sidebar__controls" style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+            {isMobile && (
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  className="sidebar__action"
+                  type="button"
+                  onClick={() => setIsMenuOpen((v) => !v)}
+                >
+                  <Menu size={20} />
+                </motion.button>
+            )}
+
+            <ModeToggle 
+              mode={currentMode} 
+              onToggle={(mode) => onTabChange(mode === "chats" ? "All Chats" : "Contacts")} 
+            />
+
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              className="theme-switch"
+              type="button"
+              onClick={onThemeToggle}
+            >
+              <span className={`theme-switch__track ${theme === "dark" ? "is-active" : ""}`}>
+                <motion.span 
+                  className="theme-switch__thumb"
+                  layout
+                  transition={{ type: "spring", stiffness: 700, damping: 30 }}
+                >
+                  {theme === "dark" ? <Moon size={14} /> : <Sun size={14} />}
+                </motion.span>
+              </span>
+            </motion.button>
+            
+            {/* Context Menu Wrap */}
             <AnimatePresence>
               {isMenuOpen && (
                 <motion.div 
@@ -81,7 +119,7 @@ function Sidebar({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   className="sidebar__menu"
-                  style={{ left: 0, right: "auto" }} // Menu opens to the right
+                  style={{ left: isMobile ? 16 : "auto", right: isMobile ? "auto" : 16 }}
                 >
                   <button type="button" onClick={() => { setIsMenuOpen(false); onProfile?.(); }}>Profile</button>
                   <button type="button" onClick={() => { setIsMenuOpen(false); onSettings?.(); }}>Settings</button>
@@ -90,37 +128,9 @@ function Sidebar({
               )}
             </AnimatePresence>
           </div>
-
-          <div className="sidebar__profile">
-            <div className="sidebar__profile-avatar" aria-hidden="true">
-              {username.slice(0, 2).toUpperCase()}
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <h1 className="sidebar__title" style={{ fontSize: "1rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{username}</h1>
-              <span className="sidebar__status">{connectionLabel}</span>
-            </div>
-          </div>
-
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            className="theme-switch"
-            type="button"
-            aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-            onClick={onThemeToggle}
-          >
-            <span className={`theme-switch__track ${theme === "dark" ? "is-active" : ""}`}>
-              <motion.span 
-                className="theme-switch__thumb"
-                layout
-                transition={{ type: "spring", stiffness: 700, damping: 30 }}
-              >
-                {theme === "dark" ? <Moon size={14} /> : <Sun size={14} />}
-              </motion.span>
-            </span>
-          </motion.button>
         </div>
 
-        <label className="searchbar sidebar__searchbar" htmlFor="chat-search">
+        <label className="searchbar sidebar__searchbar" htmlFor="chat-search" style={{ marginTop: "8px" }}>
           <Search size={16} />
           <input
             ref={searchInputRef}
@@ -133,7 +143,7 @@ function Sidebar({
         </label>
       </div>
 
-      <div className="sidebar__tabs" role="tablist" aria-label="Chat categories">
+      <div className="sidebar__tabs" role="tablist" aria-label="Chat categories" style={{ marginTop: "8px" }}>
         {tabs.map((tab) => (
           <motion.button
             whileTap={{ scale: 0.95 }}
