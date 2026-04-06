@@ -82,43 +82,45 @@ function InputBox({
       </AnimatePresence>
 
       <div className="input-box">
-        <div className="emoji-picker-anchor" ref={emojiPickerRef}>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="icon-button"
-            type="button"
-            aria-label="Insert emoji"
-            style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
-            onClick={() => setIsEmojiPickerOpen((currentValue) => !currentValue)}
-          >
-            <Smile size={20} strokeWidth={2.2} />
-          </motion.button>
+        <div className="input-box__actions-left" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div className="emoji-picker-anchor" ref={emojiPickerRef}>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="icon-button"
+              type="button"
+              aria-label="Insert emoji"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+              onClick={() => setIsEmojiPickerOpen((currentValue) => !currentValue)}
+            >
+              <Smile size={20} strokeWidth={2.2} />
+            </motion.button>
 
-          <AnimatePresence>
-            {isEmojiPickerOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 8 }}
-              >
-                <EmojiPicker onSelect={handleEmojiInsert} />
+            <AnimatePresence>
+              {isEmojiPickerOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 8 }}
+                >
+                  <EmojiPicker onSelect={handleEmojiInsert} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <FileUpload
+            disabled={disabled}
+            icon={(
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Paperclip size={20} strokeWidth={2.2} />
               </motion.div>
             )}
-          </AnimatePresence>
+            onUploadComplete={handleFileChange}
+          />
         </div>
-
-        <FileUpload
-          disabled={disabled}
-          icon={(
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Paperclip size={20} strokeWidth={2.2} />
-            </motion.div>
-          )}
-          onUploadComplete={handleFileChange}
-        />
 
         <input
           type="text"
@@ -126,6 +128,7 @@ function InputBox({
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
+          style={{ flex: 1, minWidth: 0 }}
         />
 
         <motion.button
@@ -136,7 +139,7 @@ function InputBox({
           aria-label="Send message"
           disabled={disabled || !value.trim()}
           onClick={onSend}
-          style={{ width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center" }}
+          style={{ width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center", flexShrink: 0 }}
         >
           <motion.div
              initial={{ x: 0 }}

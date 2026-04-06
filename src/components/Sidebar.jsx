@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { formatListTime, getChatPreview } from "../utils/chat";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Menu, PanelLeft, Sun, Moon, Edit, MessageSquare, Users, Trash2 } from "lucide-react";
+import { Search, Menu, PanelLeft, Sun, Moon, Edit, MessageSquare, Users, Trash2, UserPlus } from "lucide-react";
 import ModeToggle from "./ModeToggle";
 
 const tabs = ["All Chats", "Groups", "Contacts"];
@@ -50,44 +50,43 @@ function Sidebar({
 
   return (
     <aside className={`sidebar ${isOpen ? "sidebar--open" : "sidebar--closed"}`}>
-      <div className="sidebar__navbar">
+      {/* 1. HEADER SECTION */}
+      <header className="sidebar__navbar">
         <div className="sidebar__top">
           {/* LEFT: Menu and Profile */}
-          <div className="sidebar__profile" style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-            {!isMobile && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="sidebar__action"
-                type="button"
-                onClick={() => setIsMenuOpen((v) => !v)}
-              >
-                <Menu size={20} />
-              </motion.button>
-            )}
+          <div className="sidebar__section-left" style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="sidebar__action"
+              type="button"
+              onClick={() => setIsMenuOpen((v) => !v)}
+            >
+              <Menu size={20} />
+            </motion.button>
             
             <div className="sidebar__profile-avatar" onClick={onProfile} style={{ cursor: "pointer" }}>
               {username.slice(0, 2).toUpperCase()}
             </div>
             
             <div className="sidebar__profile-info" style={{ minWidth: 0 }}>
-              <h1 className="sidebar__title" style={{ fontSize: "1rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{username}</h1>
+              <h1 className="sidebar__title" style={{ fontSize: "1rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", margin: 0 }}>{username}</h1>
               <span className="sidebar__status" style={{ fontSize: "0.8rem", opacity: 0.7 }}>{connectionLabel}</span>
             </div>
           </div>
 
-          {/* RIGHT: Toggles and Icons */}
-          <div className="sidebar__controls" style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-            {isMobile && (
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  className="sidebar__action"
-                  type="button"
-                  onClick={() => setIsMenuOpen((v) => !v)}
-                >
-                  <Menu size={20} />
-                </motion.button>
-            )}
+          {/* RIGHT: Add User, Toggle, and Icons */}
+          <div className="sidebar__section-right" style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="sidebar__action sidebar__action--add"
+              type="button"
+              aria-label="Add User/New Chat"
+              onClick={onNewChat}
+              style={{ width: 32, height: 32, borderRadius: "50%", display: "grid", placeItems: "center" }}
+            >
+              <UserPlus size={18} />
+            </motion.button>
 
             <ModeToggle 
               mode={currentMode} 
@@ -111,7 +110,6 @@ function Sidebar({
               </span>
             </motion.button>
             
-            {/* Context Menu Wrap */}
             <AnimatePresence>
               {isMenuOpen && (
                 <motion.div 
@@ -129,8 +127,11 @@ function Sidebar({
             </AnimatePresence>
           </div>
         </div>
+      </header>
 
-        <label className="searchbar sidebar__searchbar" htmlFor="chat-search" style={{ marginTop: "8px" }}>
+      {/* 2. SEARCH BAR SECTION */}
+      <div style={{ padding: "0 12px" }}>
+        <label className="searchbar sidebar__searchbar" htmlFor="chat-search" style={{ marginTop: "10px", display: "flex", width: "100%" }}>
           <Search size={16} />
           <input
             ref={searchInputRef}
@@ -143,7 +144,8 @@ function Sidebar({
         </label>
       </div>
 
-      <div className="sidebar__tabs" role="tablist" aria-label="Chat categories" style={{ marginTop: "8px" }}>
+      {/* 3. TABS SECTION */}
+      <div className="sidebar__tabs" role="tablist" aria-label="Chat categories" style={{ marginTop: "12px" }}>
         {tabs.map((tab) => (
           <motion.button
             whileTap={{ scale: 0.95 }}

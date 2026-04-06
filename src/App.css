@@ -161,7 +161,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: env(safe-area-inset-top) 16px 0; /* Add notch support */
+  padding: env(safe-area-inset-top) 16px 0;
   background: var(--surface);
   backdrop-filter: blur(18px);
   z-index: 10;
@@ -235,9 +235,13 @@
   flex: 0 0 auto;
 }
 
-.sidebar__profile {
-  flex: 1;
-  min-width: 0;
+.sidebar__section-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar__section-right {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -2572,6 +2576,26 @@
 .settings-btn--danger:hover {
   background: transparent;
   opacity: 0.8;
+}
+
+/* Input Bar Senior Refactor */
+.input-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-top: 1px solid var(--border-color);
+  background: var(--surface);
+}
+
+.input-box input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 15px;
+  color: var(--text-primary);
 }
 
 /* Profile specific */
