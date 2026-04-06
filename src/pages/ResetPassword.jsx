@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../App.css";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { API_URL } from "../config/app";
 
 /* Simple password-strength meter helper (0-4) */
 const getStrength = (pwd) => {
@@ -47,7 +47,7 @@ function ResetPassword() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/auth/reset-password/${token}`, {
+      const res = await fetch(`${API_URL}/api/auth/reset-password/${token}`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ password, confirmPassword }),
