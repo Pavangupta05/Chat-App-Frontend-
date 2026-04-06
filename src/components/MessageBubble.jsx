@@ -14,8 +14,23 @@ const isVideoFileMessage = (message) =>
   (message.mimeType?.startsWith("video/") ||
     /\.(mp4|webm|ogg|mov)$/i.test(message.file));
 
+/**
+ * highlightText — wraps matched substrings with <mark> for search results.
+ */
+function highlightText(text, term) {
+  if (!term || !text) return text;
+  const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    regex.test(part)
+      ? <mark key={i} className="search-highlight">{part}</mark>
+      : part
+  );
+}
+
 function MessageBubble({
   message,
+  searchTerm,
   isSelected,
   onToggleSelect,
   onPreview,
@@ -137,7 +152,7 @@ function MessageBubble({
             ) : null}
           </div>
         ) : (
-          <p>{message.text}</p>
+          <p>{highlightText(message.text, searchTerm)}</p>
         )}
 
         <div className="message__meta">

@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, User, Camera, Save } from "lucide-react";
-import { API_BASE_URL } from "../config/app";
+import { API_URL } from "../config/app";
 import { useAuth } from "../context/AuthContext";
 
 function ProfilePanel({ isOpen, onClose }) {
@@ -21,7 +21,7 @@ function ProfilePanel({ isOpen, onClose }) {
     setSaving(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE_URL}/api/users/profile`, {
+      const res = await fetch(`${API_URL}/api/users/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -64,13 +64,13 @@ function ProfilePanel({ isOpen, onClose }) {
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 240 }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
           >
             <div className="side-panel__header">
-              <h2>Profile</h2>
-              <button className="icon-button" type="button" onClick={onClose} aria-label="Close">
-                <X size={20} />
+              <button className="icon-button header-close-btn" type="button" onClick={onClose} aria-label="Close">
+                <X size={24} />
               </button>
+              <h2>Profile</h2>
             </div>
 
             <div className="side-panel__body">
@@ -87,42 +87,45 @@ function ProfilePanel({ isOpen, onClose }) {
                   title="Change avatar (paste URL below)"
                   onClick={() => inputRef.current?.focus()}
                 >
-                  <Camera size={16} />
+                  <Camera size={18} />
                 </button>
               </div>
 
-              <label className="profile-label">
-                <span>Username</span>
-                <input
-                  className="profile-input"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  maxLength={32}
-                />
-              </label>
+              <div className="ios-list-group">
+                <label className="profile-label">
+                  <span>Username</span>
+                  <input
+                    className="profile-input"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    maxLength={32}
+                  />
+                </label>
 
-              <label className="profile-label">
-                <span>Avatar URL</span>
-                <input
-                  ref={inputRef}
-                  className="profile-input"
-                  type="url"
-                  placeholder="https://example.com/avatar.png"
-                  value={profilePic}
-                  onChange={(e) => setProfilePic(e.target.value)}
-                />
-              </label>
+                <label className="profile-label">
+                  <span>Avatar URL</span>
+                  <input
+                    ref={inputRef}
+                    className="profile-input"
+                    type="url"
+                    placeholder="https://www.reddit.com/r/Instagram/comments/vf9w0q/profile_picture_changes_randomly_on_its_own/"
+                    value={profilePic}
+                    onChange={(e) => setProfilePic(e.target.value)}
+                  />
+                </label>
 
-              <label className="profile-label">
-                <span>Email</span>
-                <input
-                  className="profile-input profile-input--readonly"
-                  type="email"
-                  value={user?.email ?? ""}
-                  readOnly
-                />
-              </label>
+                <label className="profile-label" style={{ borderBottom: 'none' }}>
+                  <span>Email</span>
+                  <input
+                    className="profile-input profile-input--readonly"
+                    type="email"
+                    value={user?.email ?? ""}
+                    readOnly
+                    style={{ opacity: 0.6 }}
+                  />
+                </label>
+              </div>
 
               {error && <p className="profile-error">{error}</p>}
 
@@ -133,7 +136,7 @@ function ProfilePanel({ isOpen, onClose }) {
                 disabled={saving}
               >
                 {saving ? "Saving…" : saved ? "✓ Saved!" : (
-                  <><Save size={16} /> Save Profile</>
+                  <><Save size={20} /> Save Profile</>
                 )}
               </button>
             </div>

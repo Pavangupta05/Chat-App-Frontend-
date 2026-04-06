@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import ConfirmModal from "./ConfirmModal";
 import ForwardModal from "./ForwardModal";
 import NewChatModal from "./NewChatModal";
+import ProfilePanel from "./ProfilePanel";
+import SettingsPanel from "./SettingsPanel";
 import Sidebar from "./Sidebar";
 import ChatWindow from "./ChatWindow";
 import Call from "./Call";
@@ -24,7 +26,9 @@ function ChatLayout() {
     deleteMessageForMe,
     draftMessage,
     forwardingMessage,
+    getUserLastSeen,
     handleTypingInputChange,
+    isUserOnline,
     searchTerm,
     sendFileMessage,
     sendMessage,
@@ -60,6 +64,8 @@ function ChatLayout() {
   const [confirmAction, setConfirmAction] = useState(null);
   // null | "chat" | "group"
   const [chatModalMode, setChatModalMode] = useState(null);
+  // null | "profile" | "settings"
+  const [panelMode, setPanelMode] = useState(null);
   const { logout } = useAuth();
 
   useEffect(() => {
@@ -128,9 +134,12 @@ function ChatLayout() {
             chats={chats}
             connectionLabel={socketState.isConnected ? "Online now" : socketState.connectionError}
             isOpen={isSidebarOpen}
+            isUserOnline={isUserOnline}
             onLogout={logout}
             onNewChat={() => setChatModalMode("chat")}
             onNewGroup={() => setChatModalMode("group")}
+            onProfile={() => setPanelMode("profile")}
+            onSettings={() => setPanelMode("settings")}
             onThemeToggle={() =>
               setTheme((currentTheme) => (currentTheme === "light" ? "dark" : "light"))
             }
@@ -240,6 +249,17 @@ function ChatLayout() {
         onEndCall={() => call.endCall()}
         onToggleMute={call.toggleMute}
         remoteStream={call.remoteStream}
+      />
+      <ProfilePanel
+        isOpen={panelMode === "profile"}
+        onClose={() => setPanelMode(null)}
+      />
+      <SettingsPanel
+        isOpen={panelMode === "settings"}
+        onClose={() => setPanelMode(null)}
+        theme={theme}
+        onThemeToggle={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+        onLogout={logout}
       />
     </main>
   );

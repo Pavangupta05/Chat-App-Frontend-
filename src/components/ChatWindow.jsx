@@ -310,7 +310,12 @@ function ChatWindow({
         )}
       </header>
 
-      <div className="chat-window__messages">
+      <div
+        className="chat-window__messages"
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        style={{ position: "relative" }}
+      >
         {visibleMessages.length === 0 && isSearchOpen && (
           <div className="chat-window__empty-search" style={{ textAlign: "center", color: "var(--text-muted)", marginTop: 40 }}>
             No messages matched your search.
@@ -321,6 +326,7 @@ function ChatWindow({
           <MessageBubble
             key={message.id}
             message={message}
+            searchTerm={messageSearch}
             isSelected={selectedMessageIds.has(message.id)}
             onToggleSelect={() => toggleSelection(message.id)}
             onPreview={setPreviewMessage}
@@ -333,6 +339,28 @@ function ChatWindow({
 
         {/* 16px padding hack at bottom to avoid sticking closely */}
         <div ref={messagesEndRef} style={{ height: 16 }} />
+
+        {/* New messages pill */}
+        <AnimatePresence>
+          {showNewPill && (
+            <motion.button
+              key="new-pill"
+              className="new-messages-pill"
+              initial={{ opacity: 0, y: 16, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 300, damping: 24 }}
+              type="button"
+              onClick={() => {
+                isNearBottomRef.current = true;
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+                setShowNewPill(false);
+              }}
+            >
+              ↓ New messages
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
       <footer className="chat-window__footer" style={{ padding: "8px 16px", background: "var(--app-background)" }}>

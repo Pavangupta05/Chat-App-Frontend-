@@ -28,76 +28,80 @@ function SettingsPanel({ isOpen, onClose, theme, onThemeToggle, onLogout }) {
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 240 }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
           >
             <div className="side-panel__header">
-              <h2>Settings</h2>
-              <button className="icon-button" type="button" onClick={onClose} aria-label="Close">
-                <X size={20} />
+              <button className="icon-button header-close-btn" type="button" onClick={onClose} aria-label="Close">
+                <X size={24} />
               </button>
+              <h2>Settings</h2>
             </div>
 
             <div className="side-panel__body">
-              {/* Dark Mode */}
-              <div className="settings-row">
-                <div className="settings-row__info">
-                  {theme === "dark" ? <Moon size={20} /> : <Sun size={20} />}
-                  <div>
-                    <strong>Appearance</strong>
-                    <p>{theme === "dark" ? "Dark mode" : "Light mode"}</p>
+              <div className="ios-list-group">
+                {/* Dark Mode */}
+                <div className="settings-row">
+                  <div className="settings-row__info">
+                    {theme === "dark" ? <Moon size={22} /> : <Sun size={22} />}
+                    <div>
+                      <strong>Appearance</strong>
+                      <p>{theme === "dark" ? "Dark mode" : "Light mode"}</p>
+                    </div>
                   </div>
-                </div>
-                <button
-                  className="settings-toggle"
-                  type="button"
-                  onClick={onThemeToggle}
-                  aria-label="Toggle theme"
-                >
-                  <span className={`settings-toggle__track ${theme === "dark" ? "is-active" : ""}`}>
-                    <span className="settings-toggle__thumb" />
-                  </span>
-                </button>
-              </div>
-
-              {/* Notifications */}
-              <div className="settings-row">
-                <div className="settings-row__info">
-                  {notifStatus === "granted" ? <Bell size={20} /> : <BellOff size={20} />}
-                  <div>
-                    <strong>Notifications</strong>
-                    <p>
-                      {notifStatus === "granted"
-                        ? "Enabled"
-                        : notifStatus === "denied"
-                        ? "Blocked by browser"
-                        : "Not enabled"}
-                    </p>
-                  </div>
-                </div>
-                {notifStatus !== "denied" && (
                   <button
-                    className="settings-btn"
+                    className="settings-toggle"
                     type="button"
-                    onClick={requestNotifPermission}
-                    disabled={notifStatus === "granted"}
+                    onClick={onThemeToggle}
+                    aria-label="Toggle theme"
                   >
-                    {notifStatus === "granted" ? "On" : "Enable"}
+                    <span className={`settings-toggle__track ${theme === "dark" ? "is-active" : ""}`}>
+                      <span className="settings-toggle__thumb" />
+                    </span>
                   </button>
-                )}
+                </div>
+
+                {/* Notifications */}
+                <div className="settings-row">
+                  <div className="settings-row__info">
+                    {notifStatus === "granted" ? <Bell size={22} /> : <BellOff size={22} />}
+                    <div>
+                      <strong>Notifications</strong>
+                      <p>
+                        {notifStatus === "granted"
+                          ? "Enabled"
+                          : notifStatus === "denied"
+                          ? "Blocked by browser"
+                          : "Not enabled"}
+                      </p>
+                    </div>
+                  </div>
+                  {notifStatus !== "denied" && (
+                    <button
+                      className="settings-btn"
+                      type="button"
+                      onClick={requestNotifPermission}
+                      disabled={notifStatus === "granted"}
+                    >
+                      {notifStatus === "granted" ? "On" : "Enable"}
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Logout */}
-              <div className="settings-row settings-row--danger">
-                <div className="settings-row__info">
-                  <LogOut size={20} />
-                  <div>
-                    <strong>Logout</strong>
-                    <p>Sign out of your account</p>
+              <div className="ios-list-group">
+                {/* Logout */}
+                <div className="settings-row settings-row--danger">
+                  <div className="settings-row__info">
+                    <LogOut size={22} />
+                    <div>
+                      <strong>Logout</strong>
+                      <p>Sign out of your account</p>
+                    </div>
                   </div>
+                  <button className="settings-btn settings-btn--danger" type="button" onClick={onLogout}>
+                    Log Out
+                  </button>
                 </div>
-                <button className="settings-btn settings-btn--danger" type="button" onClick={onLogout}>
-                  Sign Out
-                </button>
               </div>
             </div>
           </motion.aside>
