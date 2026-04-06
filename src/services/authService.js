@@ -9,7 +9,7 @@ async function parseJsonResponse(response) {
     return JSON.parse(text);
   } catch {
     return {
-      error: `The API returned non-JSON (HTTP ${response.status}). Start the server from the "server" folder (port 5000) and use "npm run dev" in the Chat folder so /api is proxied.`,
+      error: `The API returned non-JSON (HTTP ${response.status}). Failed to parse response from ${API_URL}.`,
     };
   }
 }
@@ -53,7 +53,7 @@ export const register = async ({ username, email, password }) => {
       body: JSON.stringify(body),
     });
   } catch {
-    throw new Error("Cannot reach the server. Is it running on port 5000?");
+    throw new Error(`Cannot reach the server at ${API_URL}. Please check your connection.`);
   }
 
   if (response.ok) {
@@ -93,7 +93,7 @@ export const login = async ({ email, password }) => {
       body: JSON.stringify(body),
     });
   } catch {
-    throw new Error("Cannot reach the server. Is it running on port 5000?");
+    throw new Error(`Cannot reach the server at ${API_URL}. Please check your connection.`);
   }
 
   if (response.ok) {

@@ -9,7 +9,7 @@ async function parseJsonResponse(response) {
     return JSON.parse(text);
   } catch {
     return {
-      error: `Invalid response (HTTP ${response.status}). Start the API from the server folder (npm run dev) on port 5000.`,
+      error: `Invalid response (HTTP ${response.status}) from ${API_URL}.`,
     };
   }
 }
@@ -30,7 +30,7 @@ export async function fetchUsers(token) {
       },
     });
   } catch {
-    throw new Error("Cannot reach the server. Start the API (cd server && npm run dev) and try again.");
+    throw new Error(`Cannot reach the server at ${API_URL}. Please try again.`);
   }
 
   const data = await parseJsonResponse(response);

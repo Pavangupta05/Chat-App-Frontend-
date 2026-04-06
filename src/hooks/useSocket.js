@@ -16,7 +16,8 @@ function useSocket() {
     }
 
     const nextSocket = io(SOCKET_URL, {
-      transports: ["websocket", "polling"],
+      transports: ["websocket"],
+      withCredentials: true,
       auth: { token },
     });
 
