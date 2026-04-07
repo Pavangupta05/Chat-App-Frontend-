@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Menu, Phone, Video, ChevronLeft, Trash2, Forward, X } from "lucide-react";
+import { Search, MoreVertical, Phone, Video, ChevronLeft, Trash2, Forward, X } from "lucide-react";
 
 import MessageBubble from "./MessageBubble";
 import InputBox from "./InputBox";
@@ -31,8 +31,7 @@ function ChatWindow({
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const menuRef = useRef(null);
-  
-  // States
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [messageSearch, setMessageSearch] = useState("");
@@ -55,27 +54,21 @@ function ChatWindow({
 
   const visibleMessages = useMemo(() => {
     const normalizedTerm = messageSearch.trim().toLowerCase();
-
-    if (!normalizedTerm) {
-      return chat?.messages ?? [];
-    }
-
-    return (chat?.messages ?? []).filter((message) => {
-      const searchableText = [
-        message.text,
-        message.fileName,
-        message.username,
-        message.deleted ? "This message was deleted" : "",
+    if (!normalizedTerm) return chat?.messages ?? [];
+    return (chat?.messages ?? []).filter((msg) => {
+      const text = [
+        msg.text,
+        msg.fileName,
+        msg.username,
+        msg.deleted ? "This message was deleted" : "",
       ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
-
-      return searchableText.includes(normalizedTerm);
+      return text.includes(normalizedTerm);
     });
   }, [chat?.messages, messageSearch]);
 
-  // Track whether user is near the bottom
   const handleScroll = useCallback(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
@@ -84,7 +77,6 @@ function ChatWindow({
     if (isNearBottomRef.current) setShowNewPill(false);
   }, []);
 
-  // Smart scroll — only jump to bottom if user is near bottom
   useEffect(() => {
     if (isNearBottomRef.current) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -94,16 +86,12 @@ function ChatWindow({
     }
   }, [visibleMessages.length, typingText, callProps?.callStatus]);
 
-  // Handle escape keys for modals and menus
   useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
         if (previewMessage) setPreviewMessage(null);
         else if (hasSelection) setSelectedMessageIds(new Set());
-        else if (isSearchOpen) {
-          setIsSearchOpen(false);
-          setMessageSearch("");
-        }
+        else if (isSearchOpen) { setIsSearchOpen(false); setMessageSearch(""); }
         else if (isMenuOpen) setIsMenuOpen(false);
       }
     };
@@ -111,195 +99,204 @@ function ChatWindow({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [previewMessage, isSearchOpen, isMenuOpen, hasSelection]);
 
-  // Handle menu click outside
   useEffect(() => {
-    if (!isMenuOpen) return undefined;
-    const handlePointerDown = (event) => {
-      if (!menuRef.current?.contains(event.target)) setIsMenuOpen(false);
+    if (!isMenuOpen) return;
+    const handler = (e) => {
+      if (!menuRef.current?.contains(e.target)) setIsMenuOpen(false);
     };
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
     };
   }, [isMenuOpen]);
 
-  const toggleSelection = useCallback((messageId) => {
+  const toggleSelection = useCallback((id) => {
     setSelectedMessageIds((prev) => {
       const next = new Set(prev);
-      if (next.has(messageId)) next.delete(messageId);
-      else next.add(messageId);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
   }, []);
 
   const handleDeleteSelectedForMe = useCallback(() => {
-    selectedMessageIds.forEach(id => onDeleteMessageForMe(id));
+    selectedMessageIds.forEach((id) => onDeleteMessageForMe(id));
     setSelectedMessageIds(new Set());
   }, [selectedMessageIds, onDeleteMessageForMe]);
 
-  const handleDeleteSelectedForEveryone = useCallback(() => {
-    selectedMessageIds.forEach(id => onDeleteMessageForEveryone(id));
-    setSelectedMessageIds(new Set());
-  }, [selectedMessageIds, onDeleteMessageForEveryone]);
-
   const handleForwardSelected = useCallback(() => {
     if (selectedMessageIds.size !== 1) return;
-    const firstId = Array.from(selectedMessageIds)[0];
-    const msg = chat.messages.find(m => m.id === firstId);
+    const msg = chat.messages.find((m) => m.id === Array.from(selectedMessageIds)[0]);
     if (msg) onForwardMessage(msg);
     setSelectedMessageIds(new Set());
   }, [selectedMessageIds, chat?.messages, onForwardMessage]);
 
-
-  if (!chat) return null;
+  // Render empty state on mobile if no chat
+  if (!chat) {
+    return (
+      <div className="chat-window">
+        <div className="chat-window__empty">
+          <div className="chat-window__empty-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
+          <p style={{ fontWeight: 600, fontSize: 15, color: "var(--text-primary)" }}>Select a chat</p>
+          <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>Start a conversation</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <section className="chat-window" style={{ zIndex: 10, background: "var(--app-background)" }}>
-      
-      {/* 
-        Chat Header Region
-      */}
-      <header className={`chat-window__header ${hasSelection ? "chat-window__header--selection" : ""}`}>
-        
+    <section className="chat-window">
+
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <header className={`chat-window__header${hasSelection ? " chat-window__header--selection" : ""}`}>
+
         {hasSelection ? (
-          <div className="chat-window__action-bar" style={{ display: "flex", alignItems: "center", width: "100%", height: "100%", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <button 
-                type="button" 
-                className="icon-button" 
+          /* Bulk-selection action bar */
+          <div className="chat-window__action-bar">
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <button
+                type="button"
+                className="icon-button"
                 onClick={() => setSelectedMessageIds(new Set())}
               >
                 <X size={20} />
               </button>
-              <strong style={{ fontSize: "1.1rem" }}>{selectedMessageIds.size} selected</strong>
+              <strong style={{ fontSize: 15 }}>{selectedMessageIds.size} selected</strong>
             </div>
-            
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               {selectedMessageIds.size === 1 && (
-                <button 
-                  type="button" 
-                  className="icon-button"
-                  title="Forward Message"
-                  onClick={handleForwardSelected}
-                >
+                <button type="button" className="icon-button" title="Forward" onClick={handleForwardSelected}>
                   <Forward size={20} />
                 </button>
               )}
-              <button 
-                type="button" 
-                className="icon-button icon-button--danger" 
-                title="Delete for Everyone (if eligible) or Me"
-                style={{ color: "var(--danger)" }}
-                onClick={() => {
-                  // Usually, modern apps prompt here. E.g. a small alert or dropdown.
-                  // For simplicity, we trigger DeleteForMe. You could swap to Everyone.
-                  handleDeleteSelectedForMe();
-                }}
+              <button
+                type="button"
+                className="icon-button icon-button--danger"
+                title="Delete"
+                onClick={handleDeleteSelectedForMe}
               >
                 <Trash2 size={20} />
               </button>
             </div>
           </div>
+
         ) : isSearchOpen ? (
-          <div className="chat-window__search-bar" style={{ display: "flex", alignItems: "center", width: "100%", padding: "0 16px", gap: 12 }}>
+          /* In-chat search bar */
+          <div className="chat-window__search-bar" style={{ padding: "0 4px" }}>
             <button type="button" className="icon-button" onClick={() => { setIsSearchOpen(false); setMessageSearch(""); }}>
               <ChevronLeft size={24} />
             </button>
             <input
-              type="text"
               autoFocus
-              placeholder="Search in this chat..."
+              type="text"
+              placeholder="Search messages…"
               value={messageSearch}
               onChange={(e) => setMessageSearch(e.target.value)}
-              style={{ flex: 1, border: "none", background: "var(--surface-hover)", padding: "10px 16px", borderRadius: 20, outline: "none" }}
             />
-            <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
-              {messageSearch.length > 0 ? `${visibleMessages.length} found` : ""}
-            </span>
+            {messageSearch.length > 0 && (
+              <span style={{ fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                {visibleMessages.length} found
+              </span>
+            )}
           </div>
+
         ) : (
+          /* Normal header */
           <>
             <div className="chat-window__identity">
-              {isMobileView ? (
-                <button 
-                  className="chat-window__back icon-button" 
-                  type="button" 
+              {isMobileView && (
+                <button
+                  type="button"
+                  className="chat-window__back icon-button"
                   onClick={onMobileBack}
-                  aria-label="Back to chat list"
-                  style={{ marginRight: "8px" }}
+                  aria-label="Back"
                 >
-                  <ChevronLeft size={28} />
+                  <ChevronLeft size={26} />
                 </button>
-              ) : null}
+              )}
 
-              <div className="chat-window__avatar" style={{ "--avatar-accent": chat.accent }} aria-hidden="true">
-                 {chat.avatar}
+              <div
+                className="chat-window__avatar"
+                style={{ "--avatar-accent": chat.accent }}
+                aria-hidden="true"
+              >
+                {chat.avatar}
               </div>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h2 style={{ fontSize: "1.1rem", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {chat.name}
-                </h2>
-                <p className={chat.status === "online" || chat.isTyping ? "is-online" : ""} style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {chat.isTyping ? `${chat.name.split(" ")[0]} is typing...` : chat.lastSeen}
+              <div style={{ minWidth: 0 }}>
+                <h2>{chat.name}</h2>
+                <p className={chat.status === "online" || chat.isTyping ? "is-online" : ""}>
+                  {chat.isTyping
+                    ? `${chat.name.split(" ")[0]} is typing…`
+                    : chat.lastSeen ?? ""}
                 </p>
               </div>
             </div>
 
             <div className="chat-window__actions">
               <button
-                className="icon-button icon-button--call"
                 type="button"
-                aria-label="Start audio call"
+                className="icon-button icon-button--call"
+                aria-label="Audio call"
                 disabled={callProps?.callStatus === "calling" || callProps?.callStatus === "in-call"}
                 onClick={onStartAudioCall}
               >
-                <Phone size={20} />
+                <Phone size={19} />
               </button>
               <button
-                className="icon-button icon-button--call"
                 type="button"
-                aria-label="Start video call"
+                className="icon-button icon-button--call"
+                aria-label="Video call"
                 disabled={callProps?.callStatus === "calling" || callProps?.callStatus === "in-call"}
                 onClick={onStartVideoCall}
               >
-                <Video size={20} />
+                <Video size={19} />
               </button>
               <button
-                className="icon-button"
                 type="button"
+                className="icon-button"
                 aria-label="Search"
                 onClick={() => setIsSearchOpen(true)}
               >
-                <Search size={20} />
+                <Search size={19} />
               </button>
 
-              <div className="chat-window__menu-shell" ref={menuRef} style={{ position: "relative" }}>
+              {/* Three-dot menu */}
+              <div className="chat-window__menu-shell" ref={menuRef}>
                 <button
-                  className="icon-button chat-window__menu-trigger"
                   type="button"
+                  className="icon-button chat-window__menu-trigger"
+                  aria-label="More options"
                   onClick={() => setIsMenuOpen((v) => !v)}
                 >
-                  <Menu size={20} />
+                  <MoreVertical size={20} />
                 </button>
-
                 <AnimatePresence>
                   {isMenuOpen && (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                      transition={{ duration: 0.15 }}
+                    <motion.div
                       className="chat-window__menu"
-                      style={{ position: "absolute", top: "100%", right: 0, width: "200px" }}
+                      initial={{ opacity: 0, scale: 0.92, y: 8 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.92, y: 8 }}
+                      transition={{ duration: 0.14 }}
                     >
-                      <button type="button" onClick={() => { onConfirmClearChat?.(); setIsMenuOpen(false); }}>
-                        Clear Chat History
+                      <button
+                        type="button"
+                        onClick={() => { onConfirmClearChat?.(); setIsMenuOpen(false); }}
+                      >
+                        Clear chat history
                       </button>
-                      <button type="button" onClick={() => { onConfirmDeleteChat?.(); setIsMenuOpen(false); }} style={{ color: "var(--danger)" }}>
-                        Delete Chat
+                      <button
+                        type="button"
+                        style={{ color: "var(--danger)" }}
+                        onClick={() => { onConfirmDeleteChat?.(); setIsMenuOpen(false); }}
+                      >
+                        Delete chat
                       </button>
                     </motion.div>
                   )}
@@ -310,16 +307,14 @@ function ChatWindow({
         )}
       </header>
 
+      {/* ── Messages ────────────────────────────────────────────────────── */}
       <div
         className="chat-window__messages"
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        style={{ position: "relative" }}
       >
         {visibleMessages.length === 0 && isSearchOpen && (
-          <div className="chat-window__empty-search" style={{ textAlign: "center", color: "var(--text-muted)", marginTop: 40 }}>
-            No messages matched your search.
-          </div>
+          <div className="chat-window__empty-search">No messages matched your search.</div>
         )}
 
         {visibleMessages.map((message) => (
@@ -336,20 +331,16 @@ function ChatWindow({
         ))}
 
         <TypingIndicator text={typingText} />
+        <div ref={messagesEndRef} style={{ height: 4 }} />
 
-        {/* 16px padding hack at bottom to avoid sticking closely */}
-        <div ref={messagesEndRef} style={{ height: 16 }} />
-
-        {/* New messages pill */}
         <AnimatePresence>
           {showNewPill && (
             <motion.button
               key="new-pill"
               className="new-messages-pill"
-              initial={{ opacity: 0, y: 16, scale: 0.9 }}
+              initial={{ opacity: 0, y: 12, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16, scale: 0.9 }}
-              transition={{ type: "spring", stiffness: 300, damping: 24 }}
+              exit={{ opacity: 0, y: 12, scale: 0.9 }}
               type="button"
               onClick={() => {
                 isNearBottomRef.current = true;
@@ -363,7 +354,8 @@ function ChatWindow({
         </AnimatePresence>
       </div>
 
-      <footer className="chat-window__footer" style={{ padding: "8px 16px", background: "var(--app-background)" }}>
+      {/* ── Footer / input bar ──────────────────────────────────────────── */}
+      <footer className="chat-window__footer">
         <InputBox
           disabled={callProps?.callStatus === "calling" || hasSelection}
           isCompact={isCompactInput}
@@ -376,33 +368,43 @@ function ChatWindow({
         />
       </footer>
 
-      {/* Media Preview Modal */}
+      {/* ── Media preview modal ─────────────────────────────────────────── */}
       <AnimatePresence>
         {previewMessage && (
           <motion.div
+            className="media-preview"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="media-preview"
             role="dialog"
-            style={{ backdropFilter: "blur(10px)", backgroundColor: "rgba(0,0,0,0.8)" }}
           >
-            <div className="media-preview__header" style={{ padding: 16 }}>
+            <div className="media-preview__header">
               <button
-                className="media-preview__back"
                 type="button"
+                className="media-preview__back"
                 onClick={() => setPreviewMessage(null)}
               >
-                <ChevronLeft size={24} /> Back
+                <ChevronLeft size={20} /> Back
               </button>
-              <span style={{ color: "#fff" }}>{previewMessage.fileName || "Shared media"}</span>
+              <span style={{ color: "#fff", fontSize: 14 }}>
+                {previewMessage.fileName || "Shared media"}
+              </span>
             </div>
-
-            <div className="media-preview__body" style={{ display: "grid", placeItems: "center", height: "calc(100% - 64px)" }}>
+            <div className="media-preview__body">
               {isPreviewVideo ? (
-                <video src={previewMessage.file} controls autoPlay playsInline style={{ maxWidth: "90%", maxHeight: "90%", borderRadius: 16 }} />
+                <video
+                  src={previewMessage.file}
+                  controls
+                  autoPlay
+                  playsInline
+                  style={{ maxWidth: "90%", maxHeight: "85vh", borderRadius: 14 }}
+                />
               ) : (
-                <img src={previewMessage.file} alt={previewMessage.fileName} style={{ maxWidth: "90%", maxHeight: "90%", borderRadius: 16, objectFit: "contain" }} />
+                <img
+                  src={previewMessage.file}
+                  alt={previewMessage.fileName}
+                  style={{ maxWidth: "90%", maxHeight: "85vh", borderRadius: 14, objectFit: "contain" }}
+                />
               )}
             </div>
           </motion.div>

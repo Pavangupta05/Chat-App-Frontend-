@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { MessageSquare } from "lucide-react";
 import ConfirmModal from "./ConfirmModal";
 import ForwardModal from "./ForwardModal";
 import NewChatModal from "./NewChatModal";
@@ -10,7 +11,6 @@ import Call from "./Call";
 import AudioCallModal from "./AudioCallModal";
 import useChatController from "../hooks/useChatController";
 import { useAuth } from "../context/AuthContext";
-import { AnimatePresence } from "framer-motion";
 
 function ChatLayout() {
   const {
@@ -45,59 +45,56 @@ function ChatLayout() {
     typing,
     username,
   } = useChatController();
+
   const [viewport, setViewport] = useState(() => {
-    if (window.innerWidth < 768) {
-      return "mobile";
-    }
-
-    if (window.innerWidth < 1024) {
-      return "tablet";
-    }
-
+    if (window.innerWidth < 768) return "mobile";
+    if (window.innerWidth < 1024) return "tablet";
     return "desktop";
   });
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 1024);
-  const [isMobileChatOpen, setIsMobileChatOpen] = useState(() => window.innerWidth >= 768);
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
+
+  // Dark is default for Telegram style; stored preference overrides
   const [theme, setTheme] = useState(
-    () => window.sessionStorage.getItem("chat-theme") || "light",
+    () => window.sessionStorage.getItem("chat-theme") || "dark",
   );
+
   const [confirmAction, setConfirmAction] = useState(null);
-  // null | "chat" | "group"
-  const [chatModalMode, setChatModalMode] = useState(null);
-  // null | "profile" | "settings"
-  const [panelMode, setPanelMode] = useState(null);
+  const [chatModalMode, setChatModalMode] = useState(null); // null | "chat" | "group"
+  const [panelMode, setPanelMode] = useState(null);        // null | "profile" | "settings"
   const { logout } = useAuth();
 
   useEffect(() => {
     const handleResize = () => {
-      const width = window.innerWidth;
-      if (width < 768) {
+      const w = window.innerWidth;
+      if (w < 768) {
         setViewport("mobile");
-        // On mobile, if we transition from desktop, we should default to the chat list
-        // unless a chat was already open.
-        setIsSidebarOpen(true); 
+        setIsSidebarOpen(true);
         return;
       }
-
-      if (width < 1024) {
+      if (w < 1024) {
         setViewport("tablet");
         setIsSidebarOpen(false);
         setIsMobileChatOpen(true);
         return;
       }
-
       setViewport("desktop");
       setIsSidebarOpen(true);
       setIsMobileChatOpen(true);
     };
-
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Apply theme to <html data-theme="...">  (dark = no attribute, light = "light")
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
+    if (theme === "dark") {
+      document.documentElement.removeAttribute("data-theme");
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
     window.sessionStorage.setItem("chat-theme", theme);
   }, [theme]);
 
@@ -105,62 +102,76 @@ function ChatLayout() {
 
   const handleSelectChat = (id) => {
     selectChat(id);
-    if (viewport === "mobile") {
-      setIsMobileChatOpen(true);
-    }
+    if (isMobileView) setIsMobileChatOpen(true);
   };
+
   const closeConfirmModal = () => setConfirmAction(null);
 
   const handleConfirmAction = () => {
-    if (confirmAction === "clear-chat") {
-      clearActiveChatMessages();
-    }
-
-    if (confirmAction === "delete-chat") {
-      deleteActiveChat();
-    }
-
+    if (confirmAction === "clear-chat") clearActiveChatMessages();
+    if (confirmAction === "delete-chat") deleteActiveChat();
     closeConfirmModal();
   };
 
-  const showSidebar = !isMobileView || !isMobileChatOpen;
-  const showChatWindow = !isMobileView || (isMobileChatOpen && !!currentChat);
+  // CSS slide classes for mobile
+  const isChatVisible = !!currentChat;
+  const layoutClass = isMobileView
+    ? isMobileChatOpen && isChatVisible
+      ? "is-mobile-chat"
+      : "is-mobile-sidebar"
+    : "";
+
+  // Desktop empty state when no chat is selected
+  const showEmptyState = !isMobileView && !currentChat;
 
   return (
     <main className="app">
-      <section className={`telegram-layout telegram-layout--${viewport}`}>
-        {showSidebar && (
-          <Sidebar
-            activeChatId={currentChat?.id}
-            activeTab={activeTab}
-            chats={chats}
-            connectionLabel={socketState.isConnected ? "Online now" : socketState.connectionError}
-            isOpen={isMobileView ? true : isSidebarOpen}
-            isUserOnline={isUserOnline}
-            onLogout={logout}
-            onNewChat={() => setChatModalMode("chat")}
-            onNewGroup={() => setChatModalMode("group")}
-            onProfile={() => setPanelMode("profile")}
-            onSettings={() => setPanelMode("settings")}
-            onThemeToggle={() =>
-              setTheme((currentTheme) => (currentTheme === "light" ? "dark" : "light"))
-            }
-            onSearchChange={setSearchTerm}
-            onSelectChat={handleSelectChat}
-            onDeleteChat={(id) => {
-              selectChat(id);
-              setConfirmAction("delete-chat");
-            }}
-            onTabChange={setActiveTab}
-            onToggleSidebar={() => setIsSidebarOpen((currentValue) => !currentValue)}
-            searchTerm={searchTerm}
-            theme={theme}
-            username={username}
-            viewport={viewport}
-          />
-        )}
+      <section className={`telegram-layout telegram-layout--${viewport} ${layoutClass}`}>
+        <Sidebar
+          activeChatId={currentChat?.id}
+          activeTab={activeTab}
+          chats={chats}
+          connectionLabel={socketState.isConnected ? "Online" : (socketState.connectionError ?? "Connecting…")}
+          isOpen={isMobileView ? true : isSidebarOpen}
+          isUserOnline={isUserOnline}
+          onLogout={logout}
+          onNewChat={() => setChatModalMode("chat")}
+          onNewGroup={() => setChatModalMode("group")}
+          onProfile={() => setPanelMode("profile")}
+          onSettings={() => setPanelMode("settings")}
+          onThemeToggle={() =>
+            setTheme((t) => (t === "dark" ? "light" : "dark"))
+          }
+          onSearchChange={setSearchTerm}
+          onSelectChat={handleSelectChat}
+          onDeleteChat={(id) => {
+            selectChat(id);
+            setConfirmAction("delete-chat");
+          }}
+          onTabChange={setActiveTab}
+          onToggleSidebar={() => setIsSidebarOpen((v) => !v)}
+          searchTerm={searchTerm}
+          theme={theme}
+          username={username}
+          viewport={viewport}
+        />
 
-        {showChatWindow && (
+        {showEmptyState ? (
+          /* Desktop empty-state panel */
+          <div className="chat-window">
+            <div className="chat-window__empty">
+              <div className="chat-window__empty-icon">
+                <MessageSquare size={36} />
+              </div>
+              <p style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
+                Select a chat
+              </p>
+              <p style={{ color: "var(--text-secondary)", maxWidth: 260 }}>
+                Choose a conversation from the list to start messaging
+              </p>
+            </div>
+          </div>
+        ) : (
           <ChatWindow
             callProps={{
               acceptCall: call.acceptCall,
@@ -178,7 +189,7 @@ function ChatLayout() {
             chat={currentChat}
             draftMessage={draftMessage}
             isCompactInput={viewport !== "desktop"}
-            isMobileView={viewport === "mobile"}
+            isMobileView={isMobileView}
             onClearReply={clearReply}
             onConfirmClearChat={() => setConfirmAction("clear-chat")}
             onConfirmDeleteChat={() => setConfirmAction("delete-chat")}
@@ -226,8 +237,7 @@ function ChatLayout() {
         onCreate={({ name, accent, avatar, peerUserId }) => {
           createChat({ name, accent, avatar, peerUserId });
           setChatModalMode(null);
-          // Auto-open chat on mobile
-          if (viewport === "mobile") setIsMobileChatOpen(true);
+          if (isMobileView) setIsMobileChatOpen(true);
         }}
       />
       <Call
@@ -261,7 +271,7 @@ function ChatLayout() {
         isOpen={panelMode === "settings"}
         onClose={() => setPanelMode(null)}
         theme={theme}
-        onThemeToggle={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+        onThemeToggle={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
         onLogout={logout}
       />
     </main>

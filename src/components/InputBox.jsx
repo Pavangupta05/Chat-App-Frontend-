@@ -16,36 +16,36 @@ function InputBox({
   value,
 }) {
   const emojiPickerRef = useRef(null);
+  const inputRef = useRef(null);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-  const [imagePreview, setImagePreview] = useState(null); // { url, name }
+  const [imagePreview, setImagePreview] = useState(null);
 
   const handleEmojiInsert = (emoji) => {
     onChange(`${value}${emoji}`);
     setIsEmojiPickerOpen(false);
+    inputRef.current?.focus();
   };
 
+  // Close emoji picker on outside click
   useEffect(() => {
-    const handlePointerDown = (event) => {
-      if (!emojiPickerRef.current?.contains(event.target)) {
+    const handler = (e) => {
+      if (!emojiPickerRef.current?.contains(e.target)) {
         setIsEmojiPickerOpen(false);
       }
     };
-    window.addEventListener("pointerdown", handlePointerDown);
-    return () => window.removeEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("pointerdown", handler);
+    return () => window.removeEventListener("pointerdown", handler);
   }, []);
 
-  const handleChange = (event) => {
-    onChange(event.target.value);
-  };
+  const handleChange = (e) => onChange(e.target.value);
 
-  const handleKeyDown = (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      onSend();
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (value.trim()) onSend();
     }
   };
 
-  // Handle file selection preview (images only) before upload
   const handleFileChange = (filePayload) => {
     if (filePayload?.mimeType?.startsWith("image/") && filePayload?.fileUrl) {
       setImagePreview({ url: filePayload.fileUrl, name: filePayload.fileName });
@@ -55,8 +55,11 @@ function InputBox({
     onFileUpload?.(filePayload);
   };
 
+  const isSendable = Boolean(value?.trim());
+
   return (
     <div className="input-box-shell">
+      {/* Reply preview */}
       <ReplyPreview message={replyMessage} onClose={onClearReply} />
 
       {/* Image preview strip */}
@@ -64,9 +67,9 @@ function InputBox({
         {imagePreview && (
           <motion.div
             className="input-image-preview"
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
+            exit={{ opacity: 0, y: 6 }}
           >
             <img src={imagePreview.url} alt={imagePreview.name} />
             <button
@@ -75,35 +78,38 @@ function InputBox({
               aria-label="Remove preview"
               onClick={() => setImagePreview(null)}
             >
-              <X size={14} />
+              <X size={12} />
             </button>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Main input row */}
       <div className="input-box">
-        <div className="input-box__actions-left" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        {/* Left actions: emoji + attach */}
+        <div className="input-box__actions-left">
+          {/* Emoji picker */}
           <div className="emoji-picker-anchor" ref={emojiPickerRef}>
             <motion.button
               whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.88 }}
               className="icon-button"
               type="button"
-              aria-label="Insert emoji"
-              style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
-              onClick={() => setIsEmojiPickerOpen((currentValue) => !currentValue)}
+              aria-label="Emoji"
+              disabled={disabled}
+              onClick={() => setIsEmojiPickerOpen((v) => !v)}
             >
-              <Smile size={20} strokeWidth={2.2} />
+              <Smile size={20} strokeWidth={2} />
             </motion.button>
 
             <AnimatePresence>
               {isEmojiPickerOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 8 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 340, damping: 26 }}
+                  style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 8, zIndex: 30 }}
                 >
                   <EmojiPicker onSelect={handleEmojiInsert} />
                 </motion.div>
@@ -111,42 +117,45 @@ function InputBox({
             </AnimatePresence>
           </div>
 
+          {/* File attach */}
           <FileUpload
             disabled={disabled}
-            icon={(
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Paperclip size={20} strokeWidth={2.2} />
+            icon={
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.88 }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+              >
+                <Paperclip size={20} strokeWidth={2} />
               </motion.div>
-            )}
+            }
             onUploadComplete={handleFileChange}
           />
         </div>
 
+        {/* Text input — grows to fill */}
         <input
+          ref={inputRef}
           type="text"
-          placeholder={isCompact ? "Message" : "Write a message"}
+          placeholder={isCompact ? "Message" : "Write a message…"}
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
+          disabled={disabled}
           style={{ flex: 1, minWidth: 0 }}
         />
 
+        {/* Send button */}
         <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.85 }}
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.88 }}
           className="send-button"
           type="button"
           aria-label="Send message"
-          disabled={disabled || !value.trim()}
+          disabled={disabled || !isSendable}
           onClick={onSend}
-          style={{ width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center", flexShrink: 0 }}
         >
-          <motion.div
-             initial={{ x: 0 }}
-             whileTap={{ x: 4, scale: 0.9, opacity: 0.8 }}
-          >
-            <Send size={18} strokeWidth={2.5} />
-          </motion.div>
+          <Send size={17} strokeWidth={2.5} />
         </motion.button>
       </div>
     </div>

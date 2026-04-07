@@ -1,30 +1,30 @@
-import { useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { useRef } from "react";
 import MessageStatus from "./MessageStatus";
 
-const isImageFileMessage = (message) =>
-  message.type === "file" &&
-  message.file &&
-  (message.mimeType?.startsWith("image/") ||
-    /\.(png|jpe?g|gif|webp|svg)$/i.test(message.file));
+const isImageFile = (msg) =>
+  msg.type === "file" &&
+  msg.file &&
+  (msg.mimeType?.startsWith("image/") || /\.(png|jpe?g|gif|webp|svg)$/i.test(msg.file));
 
-const isVideoFileMessage = (message) =>
-  message.type === "file" &&
-  message.file &&
-  (message.mimeType?.startsWith("video/") ||
-    /\.(mp4|webm|ogg|mov)$/i.test(message.file));
+const isVideoFile = (msg) =>
+  msg.type === "file" &&
+  msg.file &&
+  (msg.mimeType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)$/i.test(msg.file));
 
-/**
- * highlightText — wraps matched substrings with <mark> for search results.
- */
 function highlightText(text, term) {
   if (!term || !text) return text;
-  const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
-  const parts = text.split(regex);
-  return parts.map((part, i) =>
-    regex.test(part)
-      ? <mark key={i} className="search-highlight">{part}</mark>
-      : part
+  const regex = new RegExp(
+    `(${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+    "gi"
+  );
+  return text.split(regex).map((part, i) =>
+    regex.test(part) ? (
+      <mark key={i} className="search-highlight">
+        {part}
+      </mark>
+    ) : (
+      part
+    )
   );
 }
 
@@ -37,20 +37,17 @@ function MessageBubble({
   onReply,
   isSelectionMode,
 }) {
-  const isOutgoing   = message.sender === "me";
-  const isFileMessage = message.type === "file" && message.file;
-  const isImageFile   = isImageFileMessage(message);
-  const isVideoFile   = isVideoFileMessage(message);
-  const canPreview    = isImageFile || isVideoFile;
+  const isOutgoing = message.sender === "me";
+  const isFile     = message.type === "file" && message.file;
+  const isImg      = isImageFile(message);
+  const isVid      = isVideoFile(message);
+  const canPreview = isImg || isVid;
 
   const longPressRef = useRef(null);
 
   const handlePointerDown = () => {
-    // If we're already in selection mode, clicking should immediately toggle
     if (isSelectionMode) return;
-    longPressRef.current = window.setTimeout(() => {
-      onToggleSelect();
-    }, 500); // 500ms long press to start selection
+    longPressRef.current = window.setTimeout(() => onToggleSelect(), 500);
   };
 
   const handlePointerUpOrLeave = () => {
@@ -72,12 +69,18 @@ function MessageBubble({
 
   return (
     <article
-      className={`message ${isOutgoing ? "message--outgoing" : "message--incoming"} ${isSelected ? "message--selected" : ""}`}
+      className={[
+        "message",
+        isOutgoing ? "message--outgoing" : "message--incoming",
+        isSelected ? "message--selected" : "",
+      ].join(" ").trim()}
       style={{
-        padding: isSelected ? "8px 12px" : "4px 0",
-        backgroundColor: isSelected ? (isOutgoing ? "rgba(37, 99, 235, 0.15)" : "rgba(37, 99, 235, 0.08)") : "transparent",
-        borderRadius: "12px",
-        transition: "background-color 0.2s, padding 0.2s",
+        padding: isSelected ? "6px 10px" : "2px 0",
+        backgroundColor: isSelected
+          ? "rgba(51, 144, 236, 0.12)"
+          : "transparent",
+        borderRadius: 10,
+        transition: "background-color 0.18s, padding 0.18s",
         cursor: isSelectionMode ? "pointer" : "default",
         userSelect: isSelectionMode ? "none" : "auto",
       }}
@@ -88,30 +91,33 @@ function MessageBubble({
       onClick={handleClick}
     >
       <div
-        className={`message__bubble ${
-          isOutgoing ? "message__bubble--outgoing" : "message__bubble--incoming"
+        className={`message__bubble${
+          isOutgoing ? " message__bubble--outgoing" : " message__bubble--incoming"
         }`}
         style={{ pointerEvents: isSelectionMode ? "none" : "auto" }}
       >
-
-        {!isOutgoing && message.username ? (
+        {/* Sender name (group / incoming) */}
+        {!isOutgoing && message.username && (
           <strong className="message__author">{message.username}</strong>
-        ) : null}
+        )}
 
-        {message.replyTo ? (
+        {/* Forwarded label */}
+        {message.forwarded && (
+          <span className="message__forwarded">↪ Forwarded</span>
+        )}
+
+        {/* Reply preview */}
+        {message.replyTo && (
           <div className="message__reply">
             <strong>{message.replyTo.username}</strong>
             <p>{message.replyTo.message}</p>
           </div>
-        ) : null}
+        )}
 
-        {message.forwarded ? (
-          <span className="message__forwarded">↪ Forwarded</span>
-        ) : null}
-
+        {/* Content */}
         {message.deleted ? (
           <p className="message__deleted">🚫 This message was deleted</p>
-        ) : isFileMessage ? (
+        ) : isFile ? (
           <div className="message__file">
             {canPreview ? (
               <button
@@ -119,26 +125,22 @@ function MessageBubble({
                 type="button"
                 onClick={() => !isSelectionMode && onPreview?.(message)}
               >
-                {isImageFile ? (
+                {isImg ? (
                   <img
                     className="message__image"
                     src={message.file}
-                    alt={message.fileName || "Shared upload"}
-                    style={{ borderRadius: 12, display: "block" }}
+                    alt={message.fileName || "Image"}
                   />
                 ) : (
-                  <video 
-                    className="message__video" 
-                    src={message.file} 
-                    muted 
-                    playsInline 
-                    style={{ borderRadius: 12, display: "block" }} 
+                  <video
+                    className="message__video"
+                    src={message.file}
+                    muted
+                    playsInline
                   />
                 )}
               </button>
-            ) : null}
-
-            {!canPreview ? (
+            ) : (
               <div className="message__file-card">
                 <div className="message__file-meta">
                   <span className="message__file-icon">FILE</span>
@@ -147,17 +149,20 @@ function MessageBubble({
                     <small>{message.mimeType}</small>
                   </div>
                 </div>
-                <a className="message__file-link" href={message.file} download>Download</a>
+                <a className="message__file-link" href={message.file} download>
+                  Download
+                </a>
               </div>
-            ) : null}
+            )}
           </div>
         ) : (
           <p>{highlightText(message.text, searchTerm)}</p>
         )}
 
+        {/* Timestamp + read status */}
         <div className="message__meta">
           <span>{message.time}</span>
-          {isOutgoing ? <MessageStatus status={message.status} /> : null}
+          {isOutgoing && <MessageStatus status={message.status} />}
         </div>
       </div>
     </article>
