@@ -139,16 +139,20 @@ function useChatController() {
   useEffect(() => {
     if (!currentUserId) return;
 
-    window.sessionStorage.setItem(
-      getChatStorageKey(currentUserId),
-      JSON.stringify({
-        activeChatId,
-        activeTab,
-        chats,
-        searchTerm,
-        version: CHAT_STATE_VERSION,
-      }),
-    );
+    // Debounce sessionStorage update to avoid infinite update loop
+    const handler = setTimeout(() => {
+      window.sessionStorage.setItem(
+        getChatStorageKey(currentUserId),
+        JSON.stringify({
+          activeChatId,
+          activeTab,
+          chats,
+          searchTerm,
+          version: CHAT_STATE_VERSION,
+        }),
+      );
+    }, 100);
+    return () => clearTimeout(handler);
   }, [activeChatId, activeTab, chats, currentUserId, searchTerm]);
 
   const filteredChats = useMemo(() => {
