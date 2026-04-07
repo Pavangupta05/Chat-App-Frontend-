@@ -35,6 +35,7 @@
 .app {
   width: 100%;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -42,6 +43,7 @@
 .telegram-layout {
   width: 100%;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   background: var(--app-background);
   overflow: hidden;
@@ -79,6 +81,7 @@
     flex-direction: row;
     width: 200vw;
     height: 100vh;
+    height: 100dvh;
     transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: transform;
   }
@@ -89,6 +92,7 @@
     width: 100vw;
     flex: 0 0 100vw;
     height: 100vh;
+    height: 100dvh;
     border-right: none;
     overflow: hidden;
   }
@@ -98,6 +102,7 @@
     width: 100vw;
     flex: 0 0 100vw;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -119,12 +124,30 @@
     left: auto !important;
     background: var(--sidebar-surface) !important;
     border-top: 1px solid var(--border-color);
-    padding: 10px 12px 12px !important;
+    padding: 10px 12px calc(24px + env(safe-area-inset-bottom, 0px)) !important;
     min-height: 60px !important;
   }
 
   .chat-window__header {
     flex-shrink: 0;
+  }
+}
+
+/* ── Mobile Global Overrides ───────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Ensure the footer is always visible and pushed above bottom safe areas */
+  .chat-window__footer {
+    position: relative !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    flex-shrink: 0 !important;
+    background: var(--sidebar-surface) !important;
+    border-top: 1px solid var(--border-color) !important;
+    /* Extra padding to ensure it's "above" anything at the bottom */
+    padding: 10px 12px calc(28px + env(safe-area-inset-bottom, 16px)) !important;
+    min-height: 64px !important;
+    z-index: 100 !important;
   }
 }
 
@@ -718,7 +741,10 @@
 /* Footer / input bar */
 .chat-window__footer {
   flex: 0 0 auto;
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  min-height: 56px;
   background: var(--sidebar-surface);
   border-top: 1px solid var(--border-color);
   z-index: 10;
@@ -1008,16 +1034,18 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
 }
 
 .input-box {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: var(--input-bg);
-  border-radius: 22px;
-  padding: 4px 4px 4px 8px;
-  min-height: 44px;
+  border-radius: 24px;
+  padding: 6px 12px 6px 16px;
+  min-height: 52px;
+  width: 100%;
 }
 
 .input-box input {
@@ -2270,21 +2298,9 @@
 /* Message gap: 2px between consecutive messages */
 .message { margin: 1px 0; }
 
-/* Footer / input bar */
-.chat-window__footer {
-  padding: 8px 16px;
-  min-height: 56px;
-  display: flex;
-  align-items: center;
-}
 
-/* Input pill: Telegram-style */
-.input-box {
-  border-radius: 24px;
-  min-height: 52px;
-  padding: 6px 12px 6px 16px;
-  gap: 8px;
-}
+
+
 
 .input-box input {
   font-size: 15px;
