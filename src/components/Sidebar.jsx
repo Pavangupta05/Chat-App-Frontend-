@@ -80,7 +80,7 @@ function Sidebar({
               <Menu size={20} />
             </motion.button>
 
-            {/* Dropdown menu anchored to section-left */}
+            {/* Dropdown menu anchored to hamburger (must use div, not inside button, to avoid nested button error) */}
             <AnimatePresence>
               {isMenuOpen && (
                 <motion.div
