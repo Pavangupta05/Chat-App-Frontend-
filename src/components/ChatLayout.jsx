@@ -128,14 +128,17 @@ function ChatLayout() {
       } else if (pathSegments[0] === "chat" && pathSegments[1]) {
         // Chat screen: /chat/:id
         const chatId = pathSegments[1];
-        const chat = chats.find((c) => c.id === chatId);
-        if (chat) {
-          selectChat(chatId);
-          if (isMobileView) setIsMobileChatOpen(true);
+        if (currentChat?.id !== chatId) {
+          const chat = chats.find((c) => c.id === chatId);
+          if (chat) {
+            selectChat(chatId);
+            if (isMobileView) setIsMobileChatOpen(true);
+          }
         }
       }
     });
-  }, [location.pathname, isMobileView, chats, selectChat]);
+
+  }, [location.pathname, isMobileView, chats, selectChat, currentChat?.id]);
 
   // SMOOTH BACK BUTTON: On mobile, back navigates within app
   useEffect(() => {

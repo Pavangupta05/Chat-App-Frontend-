@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { fetchMessagesBetween, fetchUserChats, isPeerMongoId } from "../services/messageService";
+import { fetchMessagesBetween, fetchUserChats, isPeerMongoId, clearChatHistory, deleteChat } from "../services/messageService";
 import useCall from "./useCall";
 import useMessageStatus from "./useMessageStatus";
 import useNotifications from "./useNotifications";
@@ -368,12 +368,25 @@ function useChatController() {
   const selectChat = useCallback(
     (chatId) => {
       const idKey = String(chatId);
+      
+      // If already active, just clear typing/replies but don't re-trigger state if possible
+      // Actually leave state updates as they are but remove the updatedAt-bomb.
+      
       setActiveChatId(chatId);
-      setChats((currentChats) =>
-        currentChats.map((chat) =>
-          String(chat.id) === idKey ? { ...chat, unreadCount: 0, isTyping: false } : chat,
-        ),
-      );
+      setChats((currentChats) => {
+        const index = currentChats.findIndex((c) => String(c.id) === idKey);
+        if (index === -1) return currentChats;
+
+        const chat = currentChats[index];
+        // Only update if unreadCount > 0 or user is typing
+        if (chat.unreadCount === 0 && !chat.isTyping) {
+          return currentChats;
+        }
+
+        const nextChats = [...currentChats];
+        nextChats[index] = { ...chat, unreadCount: 0, isTyping: false };
+        return nextChats;
+      });
       clearTypingForChat(chatId);
       clearReply();
 
@@ -386,7 +399,10 @@ function useChatController() {
                   ? {
                       ...chat,
                       messages: rows,
-                      updatedAt: rows.length ? Date.now() : chat.updatedAt,
+                      // ONLY update updatedAt if the chat has NO messages yet,
+                      // otherwise keep the existing one to avoid infinite loops
+                      // and list jumping.
+                      updatedAt: chat.messages.length === 0 && rows.length > 0 ? Date.now() : chat.updatedAt,
                     }
                   : chat,
               ),
@@ -478,10 +494,12 @@ function useChatController() {
 
 
   const clearActiveChatMessages = useCallback(() => {
-    if (!activeChat) {
+    if (!activeChat || !token) {
+      console.warn("❌ Cannot clear chat: missing activeChat or token");
       return;
     }
 
+    // Optimistic UI update
     setChats((currentChats) =>
       currentChats.map((chat) =>
         String(chat.id) === String(activeChat.id)
@@ -494,25 +512,77 @@ function useChatController() {
           : chat,
       ),
     );
-  }, [activeChat]);
+
+    // Call API to persist the change
+    clearChatHistory(token, activeChat.id)
+      .then(() => {
+        console.log("✅ Chat history cleared:", activeChat.id);
+      })
+      .catch((error) => {
+        console.error("❌ Failed to clear chat history:", error.message);
+        // Revert optimistic update on error
+        setChats((currentChats) =>
+          currentChats.map((chat) =>
+            String(chat.id) === String(activeChat.id)
+              ? { ...chat, messages: chat.messages }
+              : chat,
+          ),
+        );
+        // Optionally show error to user
+        alert(`Failed to clear chat history: ${error.message}`);
+      });
+  }, [activeChat, token]);
 
   const deleteActiveChat = useCallback(() => {
-    if (!activeChat) {
+    if (!activeChat || !token) {
+      console.warn("❌ Cannot delete chat: missing activeChat or token");
       return;
     }
 
+    // Optimistic UI update
     setChats((currentChats) =>
       currentChats.filter((chat) => String(chat.id) !== String(activeChat.id)),
     );
+    
     setActiveChatId((currentId) => {
       if (String(currentId) !== String(activeChat.id)) {
         return currentId;
       }
 
+      // Find next chat to switch to
       const remainingChat = chats.find((chat) => String(chat.id) !== String(activeChat.id));
       return remainingChat?.id ?? null;
     });
-  }, [activeChat, chats]);
+
+    // Call API to persist the change
+    deleteChat(token, activeChat.id)
+      .then(() => {
+        console.log("✅ Chat deleted:", activeChat.id);
+      })
+      .catch((error) => {
+        console.error("❌ Failed to delete chat:", error.message);
+        // Revert optimistic update on error by reloading chats
+        fetchUserChats(token)
+          .then((reloadedChats) => {
+            setChats(
+              reloadedChats.map((chat) =>
+                createChatRecord({
+                  id: chat._id,
+                  name: chat.participants?.find((p) => String(p._id) !== String(currentUserId))?.username || "Unknown",
+                  avatar: chat.participants?.find((p) => String(p._id) !== String(currentUserId))?.profilePic || "",
+                  accent: `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`,
+                  createdAt: new Date(chat.createdAt).getTime(),
+                })
+              )
+            );
+          })
+          .catch((reloadError) => {
+            console.error("❌ Failed to reload chats after delete error:", reloadError.message);
+          });
+        // Show error to user
+        alert(`Failed to delete chat: ${error.message}`);
+      });
+  }, [activeChat, token, chats, currentUserId, createChatRecord]); // Added createChatRecord
 
   const sendMessage = useCallback(() => {
     const text = draftMessage.trim();

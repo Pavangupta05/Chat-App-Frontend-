@@ -73,11 +73,18 @@ async function cacheFirst(request) {
 
   try {
     const response = await fetch(request);
-    if (response.ok) {
-      cache.put(request, response.clone());
+    
+    // Only cache successful responses
+    if (response && response.status === 200) {
+      try {
+        cache.put(request, response.clone());
+      } catch (cacheErr) {
+        console.warn('Failed to cache response:', cacheErr);
+      }
     }
     return response;
-  } catch {
+  } catch (err) {
+    console.warn('Fetch failed in cacheFirst:', err);
     return new Response('Offline - Asset not cached', { status: 503 });
   }
 }
@@ -88,11 +95,18 @@ async function networkFirst(request) {
 
   try {
     const response = await fetch(request);
-    if (response.ok) {
-      cache.put(request, response.clone());
+    
+    // Only cache successful responses with status 200
+    if (response && response.status === 200) {
+      try {
+        cache.put(request, response.clone());
+      } catch (cacheErr) {
+        console.warn('Failed to cache response:', cacheErr);
+      }
     }
     return response;
-  } catch {
+  } catch (err) {
+    console.warn('Network request failed, falling back to cache:', err);
     const cached = await cache.match(request);
     if (cached) {
       return cached;

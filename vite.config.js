@@ -6,6 +6,15 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 const apiProxy = {
   target: "http://127.0.0.1:5000",
   changeOrigin: true,
+  ws: true, // Enable WebSocket proxying
+  timeout: 60000, // 60 second timeout
+  proxyTimeout: 60000,
+  // Add error handling for proxy
+  onError: (err, req, res) => {
+    console.error('[Proxy Error]', err.code, err.message);
+    res.writeHead(503, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Service temporarily unavailable' }));
+  },
 };
 
 export default defineConfig({
@@ -21,7 +30,21 @@ export default defineConfig({
       "/upload": apiProxy,
       "/uploads": apiProxy,
       "/health": apiProxy,
+      "/socket.io": { // Add explicit Socket.io proxy
+        target: "http://127.0.0.1:5000",
+        ws: true,
+        changeOrigin: true,
+      },
     },
+    // HMR configuration for development
+    hmr: {
+      protocol: "ws",
+      host: "localhost",
+      port: 5173,
+    },
+    // Add middleware to handle WebSocket errors
+    middlewareMode: false,
+    cors: true,
   },
   preview: {
     proxy: {

@@ -1,4 +1,5 @@
 import { API_URL } from "../config/app";
+import { retryFetch } from "../utils/retry";
 
 // Maximum file size after compression (2MB)
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
@@ -149,11 +150,14 @@ export async function uploadChatFile(file, { signal, onProgress } = {}) {
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
-      const response = await fetch(`${API_URL}/upload`, {
-        method: "POST",
-        body: formData,
-        signal: signal || controller.signal,
-      });
+      const response = await retryFetch(
+        () => fetch(`${API_URL}/upload`, {
+          method: "POST",
+          body: formData,
+          signal: signal || controller.signal,
+        }),
+        2 // maxRetries for uploads
+      );
 
       if (!response.ok) {
         let errorMessage = "Upload failed. Please try again.";

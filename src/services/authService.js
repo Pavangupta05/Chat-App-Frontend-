@@ -1,4 +1,5 @@
 import { API_URL } from "../config/app";
+import { retryFetch } from "../utils/retry";
 
 async function parseJsonResponse(response) {
   const text = await response.text();
@@ -45,15 +46,18 @@ export const register = async ({ username, email, password }) => {
 
   let response;
   try {
-    response = await fetch(`${API_URL}/api/auth/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
+    response = await retryFetch(
+      () => fetch(`${API_URL}/api/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }),
+      3 // maxRetries
+    );
   } catch {
-    throw new Error(`Cannot reach the server at ${API_URL}. Please check your connection.`);
+    throw new Error(`Cannot reach the server at ${API_URL}. Please check your connection and ensure the backend is running.`);
   }
 
   if (response.ok) {
@@ -85,15 +89,18 @@ export const login = async ({ email, password }) => {
 
   let response;
   try {
-    response = await fetch(`${API_URL}/api/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
+    response = await retryFetch(
+      () => fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }),
+      3 // maxRetries
+    );
   } catch {
-    throw new Error(`Cannot reach the server at ${API_URL}. Please check your connection.`);
+    throw new Error(`Cannot reach the server at ${API_URL}. Please check your connection and ensure the backend is running.`);
   }
 
   if (response.ok) {

@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import ErrorBoundary from "./components/ErrorBoundary";
+import NetworkStatus from "./components/NetworkStatus";
 import ChatLayout from "./components/ChatLayout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -33,43 +35,46 @@ const AuthRoute = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* ── Auth pages (redirect to chat if already logged in) ─────────── */}
-          <Route
-            path="/login"
-            element={
-              <AuthRoute>
-                <Login />
-              </AuthRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <AuthRoute>
-                <Register />
-              </AuthRoute>
-            }
-          />
+    <ErrorBoundary>
+      <AuthProvider>
+        <NetworkStatus />
+        <BrowserRouter>
+          <Routes>
+            {/* ── Auth pages (redirect to chat if already logged in) ─────────── */}
+            <Route
+              path="/login"
+              element={
+                <AuthRoute>
+                  <Login />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <AuthRoute>
+                  <Register />
+                </AuthRoute>
+              }
+            />
 
-          {/* ── Password reset (always public — no JWT required) ────────────── */}
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
+            {/* ── Password reset (always public — no JWT required) ────────────── */}
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-          {/* ── Protected chat ──────────────────────────────────────────────── */}
-          <Route
-            path="/*"
-            element={
-              <ProtectedRoute>
-                <ChatLayout />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            {/* ── Protected chat ──────────────────────────────────────────────── */}
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <ChatLayout />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

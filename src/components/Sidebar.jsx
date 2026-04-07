@@ -224,12 +224,19 @@ function Sidebar({
           chats.map((chat) => {
             const preview = getChatPreview(chat);
             return (
-              <motion.button
+              <motion.div
                 whileTap={{ scale: 0.99 }}
                 key={chat.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 className={`chat-list__item${String(chat.id) === String(activeChatId) ? " is-active" : ""}`}
                 onClick={() => onSelectChat(chat.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelectChat(chat.id);
+                  }
+                }}
               >
                 {/* Avatar with online dot */}
                 <div
@@ -279,7 +286,7 @@ function Sidebar({
                     )}
                   </div>
                 </div>
-              </motion.button>
+              </motion.div>
             );
           })
         )}
