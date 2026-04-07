@@ -60,7 +60,7 @@ function App() {
 
           {/* ── Protected chat ──────────────────────────────────────────────── */}
           <Route
-            path="/"
+            path="/*"
             element={
               <ProtectedRoute>
                 <ChatLayout />

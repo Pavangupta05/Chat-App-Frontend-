@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { MessageSquare } from "lucide-react";
 import ConfirmModal from "./ConfirmModal";
 import ForwardModal from "./ForwardModal";
@@ -13,6 +14,9 @@ import useChatController from "../hooks/useChatController";
 import { useAuth } from "../context/AuthContext";
 
 function ChatLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   const {
     activeTab,
     call,
@@ -88,32 +92,62 @@ function ChatLayout() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Mobile back button handling - manage browser history
+  // ROUTE-BASED NAVIGATION: Sync URL with UI state
+  // When chat, settings, or profile is selected, update the URL
   useEffect(() => {
-    if (viewport !== "mobile") return;
+    if (panelMode === "settings") {
+      navigate("/settings", { replace: false });
+    } else if (panelMode === "profile") {
+      navigate("/profile", { replace: false });
+    } else if (currentChat && isMobileView && isMobileChatOpen) {
+      navigate(`/chat/${currentChat.id}`, { replace: false });
+    } else if (!currentChat && isMobileView) {
+      navigate("/", { replace: false });
+    }
+  }, [panelMode, currentChat, isMobileView, isMobileChatOpen, navigate]);
 
-    const handlePopState = (event) => {
-      // When user presses back button on mobile, close the chat view
-      if (isMobileChatOpen && currentChat) {
-        event.preventDefault();
-        setIsMobileChatOpen(false);
-        // Allow next back press to navigate away
-        window.history.forward();
+  // BACK BUTTON HANDLING: Listen for URL changes and sync UI state
+  useEffect(() => {
+    const pathSegments = location.pathname.split("/").filter(Boolean);
+    
+    // Parse current route
+    if (location.pathname === "/" || pathSegments.length === 0) {
+      // Root: show chat list, close panels
+      setPanelMode(null);
+      if (isMobileView) setIsMobileChatOpen(false);
+    } else if (location.pathname === "/settings") {
+      // Settings panel
+      setPanelMode("settings");
+    } else if (location.pathname === "/profile") {
+      // Profile panel
+      setPanelMode("profile");
+    } else if (pathSegments[0] === "chat" && pathSegments[1]) {
+      // Chat screen: /chat/:id
+      const chatId = pathSegments[1];
+      const chat = chats.find((c) => c.id === chatId);
+      if (chat) {
+        selectChat(chatId);
+        if (isMobileView) setIsMobileChatOpen(true);
       }
+    }
+  }, [location.pathname, isMobileView, chats, selectChat]);
+
+  // SMOOTH BACK BUTTON: On mobile, back navigates within app
+  useEffect(() => {
+    if (!isMobileView) return;
+
+    const handleBackButton = (e) => {
+      // Browser back button was pressed (via popstate)
+      // React Router handles this automatically, so we just ensure UI stays in sync
+      // by the location effect above
     };
 
-    // Push history state when opening a chat on mobile
-    if (isMobileChatOpen && currentChat) {
-      window.history.pushState(
-        { screen: "chat", chatId: currentChat.id },
-        `Chat - ${currentChat.name}`,
-        window.location.href
-      );
-    }
+    window.addEventListener("popstate", handleBackButton);
+    return () => window.removeEventListener("popstate", handleBackButton);
+  }, [isMobileView]);
 
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [isMobileChatOpen, currentChat, viewport]);
+  // Old mobile back button handling - manage browser history
+  // (Keeping for backward compatibility, but new navigation uses routes)
 
   // Apply theme to <html data-theme="...">  (dark = no attribute, light = "light")
   useEffect(() => {
@@ -167,7 +201,25 @@ function ChatLayout() {
 
   const handleSelectChat = (id) => {
     selectChat(id);
-    if (isMobileView) setIsMobileChatOpen(true);
+    if (isMobileView) {
+      setIsMobileChatOpen(true);
+      navigate(`/chat/${id}`);
+    }
+  };
+
+  const handleOpenSettings = () => {
+    setPanelMode("settings");
+    navigate("/settings");
+  };
+
+  const handleOpenProfile = () => {
+    setPanelMode("profile");
+    navigate("/profile");
+  };
+
+  const handleClosePanel = () => {
+    setPanelMode(null);
+    navigate("/");
   };
 
   const closeConfirmModal = () => setConfirmAction(null);
@@ -202,8 +254,8 @@ function ChatLayout() {
           onLogout={logout}
           onNewChat={() => setChatModalMode("chat")}
           onNewGroup={() => setChatModalMode("group")}
-          onProfile={() => setPanelMode("profile")}
-          onSettings={() => setPanelMode("settings")}
+          onProfile={handleOpenProfile}
+          onSettings={handleOpenSettings}
           onThemeToggle={() =>
             setTheme((t) => (t === "dark" ? "light" : "dark"))
           }
@@ -266,7 +318,10 @@ function ChatLayout() {
             }}
             onFileUpload={sendFileMessage}
             onForwardMessage={startForwardMessage}
-            onMobileBack={() => setIsMobileChatOpen(false)}
+            onMobileBack={() => {
+              setIsMobileChatOpen(false);
+              navigate("/");
+            }}
             onReplyMessage={setReplyMessage}
             onSendMessage={sendMessage}
             onStartAudioCall={() => call.startCall("audio")}
@@ -335,11 +390,11 @@ function ChatLayout() {
       />
       <ProfilePanel
         isOpen={panelMode === "profile"}
-        onClose={() => setPanelMode(null)}
+        onClose={handleClosePanel}
       />
       <SettingsPanel
         isOpen={panelMode === "settings"}
-        onClose={() => setPanelMode(null)}
+        onClose={handleClosePanel}
         theme={theme}
         onThemeToggle={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
         onLogout={logout}
