@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Peer from "simple-peer/simplepeer.min.js";
+import { requestMediaStream, getPermissionErrorMessage } from "../utils/mediaPermissions";
 
 function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, username }) {
   const [incomingCall, setIncomingCall] = useState(null);
@@ -11,6 +12,7 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
   const [activeCallSocketId, setActiveCallSocketId] = useState("");
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const [permissionRetryable, setPermissionRetryable] = useState(false);
   const peerRef = useRef(null);
   const callDurationIntervalRef = useRef(null);
 
@@ -36,6 +38,7 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
     setCallStatus("idle");
     setCallMode("video");
     setActiveCallSocketId("");
+    setPermissionRetryable(false);
     stopTimer();
     stopLocalMedia();
   }, [stopLocalMedia, stopTimer]);
@@ -52,13 +55,25 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
       return localStream;
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: mode === "video",
-      audio: true,
-    });
+    try {
+      const stream = await requestMediaStream({
+        video: mode === "video",
+        audio: true,
+      });
 
-    setLocalStream(stream);
-    return stream;
+      setLocalStream(stream);
+      setPermissionRetryable(false);
+      return stream;
+    } catch (error) {
+      // Check if this is a permission error that can be retried
+      const message = error.message || "";
+      const isPermissionError = message.includes("Permission denied") || 
+                               message.includes("NotAllowedError") ||
+                               message.includes("PermissionDeniedError");
+      
+      setPermissionRetryable(isPermissionError);
+      throw error;
+    }
   }, [localStream]);
 
   const bindPeerEvents = useCallback(
@@ -167,8 +182,10 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
         });
       });
     } catch (error) {
+      console.error("❌ Call start error:", error);
       resetCallState();
-      setCallError(error.message || "Unable to start the call.");
+      const userMessage = getPermissionErrorMessage(error);
+      setCallError(userMessage);
     }
   }, [
     activeChatId,
@@ -220,8 +237,10 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
       peer.signal(incomingCall.signal);
       setIncomingCall(null);
     } catch (error) {
+      console.error("❌ Call accept error:", error);
       resetCallState();
-      setCallError(error.message || "Unable to accept the call.");
+      const userMessage = getPermissionErrorMessage(error);
+      setCallError(userMessage);
     }
   }, [bindPeerEvents, emit, ensureMediaStream, incomingCall, resetCallState, username]);
 
@@ -261,6 +280,7 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
     incomingCall,
     isMuted,
     localStream,
+    permissionRetryable,
     remoteStream,
     startCall,
     toggleMute,

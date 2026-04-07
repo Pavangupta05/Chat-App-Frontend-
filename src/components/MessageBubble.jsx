@@ -1,5 +1,6 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import MessageStatus from "./MessageStatus";
+import { getImageUrl, handleImageError } from "../utils/imageHelper";
 
 const isImageFile = (msg) =>
   msg.type === "file" &&
@@ -42,6 +43,7 @@ function MessageBubble({
   const isImg      = isImageFile(message);
   const isVid      = isVideoFile(message);
   const canPreview = isImg || isVid;
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   const longPressRef = useRef(null);
 
@@ -126,17 +128,29 @@ function MessageBubble({
                 onClick={() => !isSelectionMode && onPreview?.(message)}
               >
                 {isImg ? (
-                  <img
-                    className="message__image"
-                    src={message.file}
-                    alt={message.fileName || "Image"}
-                  />
+                  imageLoadError ? (
+                    <div className="message__image-error">
+                      <span>🖼️ Image unavailable</span>
+                    </div>
+                  ) : (
+                    <img
+                      className="message__image"
+                      src={getImageUrl(message.file)}
+                      alt={message.fileName || "Image"}
+                      onError={(e) => {
+                        setImageLoadError(true);
+                        handleImageError(e);
+                      }}
+                      loading="lazy"
+                    />
+                  )
                 ) : (
                   <video
                     className="message__video"
-                    src={message.file}
+                    src={getImageUrl(message.file)}
                     muted
                     playsInline
+                    onError={() => console.warn("❌ Video failed to load:", message.file)}
                   />
                 )}
               </button>
@@ -149,7 +163,7 @@ function MessageBubble({
                     <small>{message.mimeType}</small>
                   </div>
                 </div>
-                <a className="message__file-link" href={message.file} download>
+                <a className="message__file-link" href={getImageUrl(message.file)} download>
                   Download
                 </a>
               </div>

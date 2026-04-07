@@ -8,6 +8,8 @@ function Call({
   localStream,
   onAcceptCall,
   onEndCall,
+  onRetryPermission,
+  permissionRetryable,
   remoteStream,
 }) {
   const localVideoRef = useRef(null);
@@ -55,7 +57,10 @@ function Call({
           {remoteStream ? (
             <video ref={remoteVideoRef} autoPlay playsInline />
           ) : (
-            <div className="call-panel__placeholder">{statusLabel}</div>
+            <div className="call-panel__placeholder">
+              <span>{statusLabel}</span>
+              {incomingCall && <div className="call-panel__pulse" />}
+            </div>
           )}
         </div>
 
@@ -67,18 +72,34 @@ function Call({
       </div>
 
       <div className="call-panel__footer">
-        <p>{callError || statusLabel}</p>
+        {callError && <p className="call-panel__error">{callError}</p>}
 
         <div className="call-panel__controls">
-          {incomingCall ? (
-            <button className="call-button call-button--accept" type="button" onClick={onAcceptCall}>
-              Accept Call
-            </button>
-          ) : null}
-
-          {(incomingCall || callStatus === "calling" || callStatus === "in-call") ? (
+          {incomingCall && callStatus !== "calling" ? (
+            <>
+              <button className="call-button call-button--accept" type="button" onClick={onAcceptCall}>
+                ✓ Accept
+              </button>
+              <button className="call-button call-button--end" type="button" onClick={onEndCall}>
+                ✕ Reject
+              </button>
+            </>
+          ) : permissionRetryable && callError && !localStream ? (
+            <>
+              <button
+                className="call-button call-button--secondary"
+                type="button"
+                onClick={onRetryPermission}
+              >
+                🔄 Retry Permission
+              </button>
+              <button className="call-button call-button--end" type="button" onClick={onEndCall}>
+                Cancel
+              </button>
+            </>
+          ) : (incomingCall || callStatus === "calling" || callStatus === "in-call") ? (
             <button className="call-button call-button--end" type="button" onClick={onEndCall}>
-              End Call
+              ✕ {callStatus === "calling" ? "Cancel" : "End Call"}
             </button>
           ) : null}
         </div>

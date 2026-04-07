@@ -1,6 +1,27 @@
 /* ══════════════════════════════════════════════════════════════════════════
    Theme.css — Telegram Design System Tokens
+   Supports dynamic theme customization with CSS variables
    ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Default Color Palette (Changeable) ────────────────────────────── */
+/* These CSS custom properties can be overridden at runtime */
+:root {
+  /* Primary accent colors for customization (HSL format for easy manipulation) */
+  --primary-hue: 214;      /* 0-360: Change the hue (Blue = 214) */
+  --primary-sat: 100%;     /* Saturation: 0-100% */
+  --primary-light: 56%;    /* Lightness: 0-100% */
+  
+  /* Derived primary colors from HSL */
+  --primary-color: hsl(var(--primary-hue), var(--primary-sat), var(--primary-light));
+  --primary-dark: hsl(var(--primary-hue), var(--primary-sat), calc(var(--primary-light) - 8%));
+  --primary-light-bg: hsl(var(--primary-hue), var(--primary-sat), calc(var(--primary-light) + 20%));
+  --primary-very-light-bg: hsl(var(--primary-hue), var(--primary-sat), calc(var(--primary-light) + 40%));
+  
+  /* Transition speeds */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-smooth: 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
 
 /* ── Dark Mode (default / primary) ────────────────────────────────────── */
 :root {
@@ -22,16 +43,16 @@
   --text-secondary: #8696A0;
   --text-muted:     #617380;
 
-  /* Accent (Telegram Blue) */
-  --accent:          #3390EC;
-  --accent-strong:   #3390EC;
-  --accent-solid:    #3390EC;
-  --accent-gradient: #3390EC;
-  --badge-bg:        #3390EC;
+  /* Accent (Dynamic primary color) */
+  --accent:          var(--primary-color);
+  --accent-strong:   var(--primary-dark);
+  --accent-solid:    var(--primary-color);
+  --accent-gradient: var(--primary-color);
+  --badge-bg:        var(--primary-color);
   --danger:          #E53935;
 
   /* Message bubbles */
-  --bubble-sent:              #3390EC;
+  --bubble-sent:              var(--primary-color);
   --bubble-received:          #1E2C39;
   --bubble-text-sent:         #ffffff;
   --bubble-text-received:     #E9EDF0;
@@ -61,14 +82,14 @@
   --text-secondary: #6b7c87;
   --text-muted:     #a0adb5;
 
-  --accent:          #3390EC;
-  --accent-strong:   #2179d8;
-  --accent-solid:    #3390EC;
-  --accent-gradient: #3390EC;
-  --badge-bg:        #3390EC;
+  --accent:          var(--primary-color);
+  --accent-strong:   var(--primary-dark);
+  --accent-solid:    var(--primary-color);
+  --accent-gradient: var(--primary-color);
+  --badge-bg:        var(--primary-color);
   --danger:          #D32F2F;
 
-  --bubble-sent:          #3390EC;
+  --bubble-sent:          var(--primary-color);
   --bubble-received:      #ffffff;
   --bubble-text-sent:     #ffffff;
   --bubble-text-received: #1c2b36;
@@ -77,4 +98,47 @@
 
   --shadow-soft: 0 1px 4px rgba(0,0,0,0.12);
   --shadow-menu: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+/* ── Preset Theme Colors ──────────────────────────────────────────────── */
+/* Telegram Blue (default) */
+:root.theme-blue {
+  --primary-hue: 214;
+  --primary-sat: 100%;
+  --primary-light: 56%;
+}
+
+/* Telegram Purple */
+:root.theme-purple {
+  --primary-hue: 290;
+  --primary-sat: 100%;
+  --primary-light: 55%;
+}
+
+/* Telegram Green */
+:root.theme-green {
+  --primary-hue: 152;
+  --primary-sat: 100%;
+  --primary-light: 42%;
+}
+
+/* Telegram Red */
+:root.theme-red {
+  --primary-hue: 0;
+  --primary-sat: 100%;
+  --primary-light: 50%;
+}
+
+/* Telegram Orange */
+:root.theme-orange {
+  --primary-hue: 33;
+  --primary-sat: 100%;
+  --primary-light: 50%;
+}
+
+/* Telegram Pink */
+:root.theme-pink {
+  --primary-hue: 338;
+  --primary-sat: 100%;
+  --primary-light: 60%;
 }

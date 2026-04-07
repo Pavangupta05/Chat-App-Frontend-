@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, User, Camera, Save } from "lucide-react";
 import { API_URL } from "../config/app";
 import { useAuth } from "../context/AuthContext";
+import { getImageUrl, handleImageError } from "../utils/imageHelper";
 
 function ProfilePanel({ isOpen, onClose }) {
   const { user, token } = useAuth();
@@ -11,6 +12,7 @@ function ProfilePanel({ isOpen, onClose }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [imageLoadError, setImageLoadError] = useState(false);
   const inputRef = useRef(null);
 
   const handleSave = async () => {
@@ -42,7 +44,14 @@ function ProfilePanel({ isOpen, onClose }) {
     }
   };
 
-  const initials = (username || "?").slice(0, 2).toUpperCase();
+  const initials = (username || "?")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("") || "?";
+
+  const displayImage = getImageUrl(profilePic);
 
   return (
     <AnimatePresence>
@@ -76,8 +85,17 @@ function ProfilePanel({ isOpen, onClose }) {
             <div className="side-panel__body">
               {/* Avatar preview */}
               <div className="profile-avatar-wrap">
-                {profilePic ? (
-                  <img src={profilePic} alt="Avatar" className="profile-avatar-img" />
+                {displayImage && !imageLoadError ? (
+                  <img
+                    src={displayImage}
+                    alt="Avatar"
+                    className="profile-avatar-img"
+                    onError={(e) => {
+                      console.warn("❌ Avatar image failed to load:", displayImage);
+                      setImageLoadError(true);
+                      handleImageError(e);
+                    }}
+                  />
                 ) : (
                   <div className="profile-avatar-fallback">{initials}</div>
                 )}

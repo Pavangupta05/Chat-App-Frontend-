@@ -98,6 +98,44 @@ function ChatLayout() {
     window.sessionStorage.setItem("chat-theme", theme);
   }, [theme]);
 
+  // Apply color theme from sessionStorage on mount
+  useEffect(() => {
+    const savedColorTheme = window.sessionStorage.getItem("chat-color-theme") || "blue";
+    const root = document.documentElement;
+    root.classList.remove("theme-blue", "theme-purple", "theme-green", "theme-red", "theme-orange", "theme-pink");
+    root.classList.add(`theme-${savedColorTheme}`);
+  }, []);
+
+  // Background doodle customization
+  const [backgroundDoodle, setBackgroundDoodle] = useState(() => {
+    try {
+      return JSON.parse(window.localStorage.getItem("chat-bg-doodle")) || { type: "light", opacity: 0.3 };
+    } catch {
+      return { type: "light", opacity: 0.3 };
+    }
+  });
+
+  const handleBackgroundChange = (type, opacity) => {
+    const newBg = { type, opacity };
+    setBackgroundDoodle(newBg);
+    window.localStorage.setItem("chat-bg-doodle", JSON.stringify(newBg));
+  };
+
+  // Apply background doodle styles
+  useEffect(() => {
+    const messagesEl = document.querySelector(".chat-window__messages");
+    if (messagesEl) {
+      // Remove all doodle classes
+      messagesEl.classList.remove("chat-bg-doodle-light", "chat-bg-doodle-dark", "chat-bg-doodle-minimal", "chat-bg-doodle-wave");
+      // Add current doodle class
+      if (backgroundDoodle.type) {
+        messagesEl.classList.add(`chat-bg-doodle-${backgroundDoodle.type}`);
+      }
+      // Set opacity variable
+      messagesEl.style.setProperty("--bg-overlay-opacity", backgroundDoodle.opacity || 0.3);
+    }
+  }, [backgroundDoodle]);
+
   const isMobileView = viewport === "mobile";
 
   const handleSelectChat = (id) => {
@@ -246,11 +284,14 @@ function ChatLayout() {
         callStatus={call.callStatus}
         incomingCall={call.incomingCall}
         localStream={call.localStream}
+        permissionRetryable={call.permissionRetryable}
         remoteStream={call.remoteStream}
         onAcceptCall={() => call.acceptCall()}
         onEndCall={() => call.endCall()}
+        onRetryPermission={() => call.startCall(call.callMode || "video")}
       />
       <AudioCallModal
+        callError={call.callError}
         callMode={call.callMode}
         audioStatus={call.callMode === "audio" ? call.callStatus : "idle"}
         callDuration={call.callDuration ?? 0}
@@ -258,8 +299,10 @@ function ChatLayout() {
         incomingCall={call.callMode === "audio" ? call.incomingCall : null}
         isMuted={call.isMuted}
         localStream={call.localStream}
-        onAcceptCall={() => call.acceptCall("audio")}
+        permissionRetryable={call.permissionRetryable}
+        onAcceptCall={() => call.acceptCall()}
         onEndCall={() => call.endCall()}
+        onRetryPermission={() => call.startCall("audio")}
         onToggleMute={call.toggleMute}
         remoteStream={call.remoteStream}
       />
@@ -273,6 +316,8 @@ function ChatLayout() {
         theme={theme}
         onThemeToggle={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
         onLogout={logout}
+        backgroundDoodle={backgroundDoodle}
+        onBackgroundChange={handleBackgroundChange}
       />
     </main>
   );
