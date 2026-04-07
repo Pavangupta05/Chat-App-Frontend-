@@ -88,6 +88,33 @@ function ChatLayout() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Mobile back button handling - manage browser history
+  useEffect(() => {
+    if (viewport !== "mobile") return;
+
+    const handlePopState = (event) => {
+      // When user presses back button on mobile, close the chat view
+      if (isMobileChatOpen && currentChat) {
+        event.preventDefault();
+        setIsMobileChatOpen(false);
+        // Allow next back press to navigate away
+        window.history.forward();
+      }
+    };
+
+    // Push history state when opening a chat on mobile
+    if (isMobileChatOpen && currentChat) {
+      window.history.pushState(
+        { screen: "chat", chatId: currentChat.id },
+        `Chat - ${currentChat.name}`,
+        window.location.href
+      );
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isMobileChatOpen, currentChat, viewport]);
+
   // Apply theme to <html data-theme="...">  (dark = no attribute, light = "light")
   useEffect(() => {
     if (theme === "dark") {

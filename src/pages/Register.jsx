@@ -3,6 +3,33 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "../App.css";
 
+// Password validation helper
+function validatePassword(pwd) {
+  const requirements = {
+    minLength: pwd.length >= 8,
+    hasUppercase: /[A-Z]/.test(pwd),
+    hasLowercase: /[a-z]/.test(pwd),
+    hasNumber: /\d/.test(pwd),
+    hasSymbol: /[!@#$%^&*()_+=[\]{};':"\\|,.<>/?-]/.test(pwd),
+  };
+  
+  const score = Object.values(requirements).filter(Boolean).length;
+  
+  return {
+    score,
+    requirements,
+    isValid: pwd.length >= 8 && Object.values(requirements).filter(Boolean).length >= 3,
+  };
+}
+
+function getPasswordStrength(score) {
+  if (score <= 1) return { label: "Weak", color: "#ef4444" };
+  if (score === 2) return { label: "Fair", color: "#f97316" };
+  if (score === 3) return { label: "Good", color: "#eab308" };
+  if (score === 4) return { label: "Strong", color: "#84cc16" };
+  return { label: "Very Strong", color: "#22c55e" };
+}
+
 function Register() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -16,6 +43,10 @@ function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  const passwordValidation = validatePassword(password);
+  const passwordStrength = getPasswordStrength(passwordValidation.score);
+  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -24,8 +55,8 @@ function Register() {
       return setError("Please enter a username.");
     }
 
-    if (password.length < 6) {
-      return setError("Password must be at least 6 characters.");
+    if (!passwordValidation.isValid) {
+      return setError("Password must be at least 8 characters with uppercase, number, and symbol.");
     }
 
     if (password !== confirmPassword) {
@@ -98,7 +129,7 @@ function Register() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                minLength={6}
+                minLength={8}
               />
               <button 
                 type="button" 
@@ -116,6 +147,44 @@ function Register() {
             </div>
           </div>
 
+          {password && (
+            <div className="password-strength-container">
+              <div className="password-strength-meter">
+                <div 
+                  className="password-strength-bar" 
+                  style={{
+                    width: `${(passwordValidation.score / 5) * 100}%`,
+                    backgroundColor: passwordStrength.color,
+                  }}
+                />
+              </div>
+              <span 
+                className="password-strength-label"
+                style={{ color: passwordStrength.color }}
+              >
+                Strength: {passwordStrength.label}
+              </span>
+              
+              <div className="password-requirements">
+                <div className={`requirement ${passwordValidation.requirements.minLength ? 'met' : ''}`}>
+                  {passwordValidation.requirements.minLength ? '✓' : '○'} At least 8 characters
+                </div>
+                <div className={`requirement ${passwordValidation.requirements.hasUppercase ? 'met' : ''}`}>
+                  {passwordValidation.requirements.hasUppercase ? '✓' : '○'} Uppercase letter (A-Z)
+                </div>
+                <div className={`requirement ${passwordValidation.requirements.hasLowercase ? 'met' : ''}`}>
+                  {passwordValidation.requirements.hasLowercase ? '✓' : '○'} Lowercase letter (a-z)
+                </div>
+                <div className={`requirement ${passwordValidation.requirements.hasNumber ? 'met' : ''}`}>
+                  {passwordValidation.requirements.hasNumber ? '✓' : '○'} Number (0-9)
+                </div>
+                <div className={`requirement ${passwordValidation.requirements.hasSymbol ? 'met' : ''}`}>
+                  {passwordValidation.requirements.hasSymbol ? '✓' : '○'} Symbol (!@#$%^&*)
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="form-group">
             <label htmlFor="confirmPassword">Confirm Password</label>
             <div className="password-input-wrapper">
@@ -126,7 +195,7 @@ function Register() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                minLength={6}
+                minLength={8}
               />
               <button 
                 type="button" 
@@ -144,7 +213,30 @@ function Register() {
             </div>
           </div>
 
-          <button type="submit" className="auth-button" disabled={loading}>
+          {confirmPassword && (
+            <div 
+              className="password-match-status"
+              style={{
+                padding: "8px 12px",
+                borderRadius: "6px",
+                fontSize: "14px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                backgroundColor: passwordsMatch ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)",
+                color: passwordsMatch ? "#22c55e" : "#ef4444",
+              }}
+            >
+              <span>{passwordsMatch ? '✓' : '✕'}</span>
+              <span>{passwordsMatch ? 'Passwords match' : 'Passwords do not match'}</span>
+            </div>
+          )}
+
+          <button 
+            type="submit" 
+            className="auth-button" 
+            disabled={loading || !passwordValidation.isValid || !passwordsMatch}
+          >
             {loading ? <span className="auth-spinner"></span> : "Create account"}
           </button>
         </form>

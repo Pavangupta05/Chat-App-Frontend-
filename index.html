@@ -2,7 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#3390ec" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="description" content="A modern Telegram-style chat application with real-time messaging, audio calls, and advanced features" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ChatApp" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" href="/icon-192x192.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/icon-192x192.png" />
     <title>Neon Relay Chat</title>
   </head>
   <body>
@@ -12,5 +21,25 @@
     </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Register service worker for PWA
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js').catch(err => {
+            console.warn('Service worker registration failed:', err);
+          });
+        });
+      }
+      
+      // PWA install prompt
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredPrompt = e;
+        const installBtn = document.getElementById('install-app-btn');
+        if (installBtn) {
+          installBtn.style.display = 'block';
+        }
+      });
+    </script>
   </body>
 </html>

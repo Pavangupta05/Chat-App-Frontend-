@@ -25,12 +25,69 @@ function AudioCallModal({
 }) {
   const remoteAudioRef = useRef(null);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const modalRef = useRef(null);
+  const headerRef = useRef(null);
 
   useEffect(() => {
     if (remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = remoteStream ?? null;
     }
   }, [remoteStream]);
+
+  // Handle drag start
+  const handleDragStart = (e) => {
+    if (e.target.closest(".audio-call-modal__window-controls")) return;
+    
+    setIsDragging(true);
+    const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
+    const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
+    
+    setDragOffset({
+      x: clientX - position.x,
+      y: clientY - position.y,
+    });
+  };
+
+  // Handle drag move
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMove = (e) => {
+      const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
+      const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
+
+      let newX = clientX - dragOffset.x;
+      let newY = clientY - dragOffset.y;
+
+      // Keep modal within viewport bounds
+      const maxX = window.innerWidth - 320; // Modal width ~320px
+      const maxY = window.innerHeight - 100;
+
+      newX = Math.max(0, Math.min(newX, maxX));
+      newY = Math.max(0, Math.min(newY, maxY));
+
+      setPosition({ x: newX, y: newY });
+    };
+
+    const handleEnd = () => {
+      setIsDragging(false);
+    };
+
+    document.addEventListener("mousemove", handleMove);
+    document.addEventListener("mouseup", handleEnd);
+    document.addEventListener("touchmove", handleMove);
+    document.addEventListener("touchend", handleEnd);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseup", handleEnd);
+      document.removeEventListener("touchmove", handleMove);
+      document.removeEventListener("touchend", handleEnd);
+    };
+  }, [isDragging, dragOffset]);
 
   if (callMode !== "audio") {
     return null;
@@ -59,6 +116,16 @@ function AudioCallModal({
         role="dialog" 
         aria-modal="true" 
         aria-label="Audio call minimized"
+        style={{
+          position: "fixed",
+          top: `${position.y}px`,
+          left: `${position.x}px`,
+          zIndex: 5000,
+          cursor: isDragging ? "grabbing" : "grab",
+        }}
+        ref={modalRef}
+        onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
       >
         <div className="audio-call-modal__minimized-bar">
           <div className="audio-call-modal__minimized-info">
@@ -92,10 +159,38 @@ function AudioCallModal({
   }
 
   return (
-    <div className="audio-call-modal" role="dialog" aria-modal="true" aria-label="Audio call">
-      <div className="audio-call-modal__card">
+    <div 
+      className="audio-call-modal" 
+      role="dialog" 
+      aria-modal="true" 
+      aria-label="Audio call"
+      style={{
+        position: "fixed",
+        top: `${position.y}px`,
+        left: `${position.x}px`,
+        zIndex: 5000,
+        cursor: isDragging ? "grabbing" : "default",
+        userSelect: isDragging ? "none" : "auto",
+      }}
+      ref={modalRef}
+    >
+      <div 
+        className="audio-call-modal__card"
+        style={{
+          transition: isDragging ? "none" : "box-shadow 0.2s ease",
+        }}
+      >
         {/* Header with window controls */}
-        <div className="audio-call-modal__header">
+        <div 
+          className="audio-call-modal__header"
+          ref={headerRef}
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          style={{
+            cursor: isDragging ? "grabbing" : "grab",
+            userSelect: "none",
+          }}
+        >
           <div></div> {/* Spacer for alignment */}
           <div className="audio-call-modal__window-controls">
             {audioStatus === "in-call" && (

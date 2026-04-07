@@ -17,6 +17,18 @@ const CopyIcon = () => (
   </svg>
 );
 
+const PinIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" width="15" height="15" aria-hidden="true">
+    <path d="M12 2L9 8H3V10H9L12 17L15 10H21V8H15L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const UnpinIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" width="15" height="15" aria-hidden="true">
+    <path d="M12 2L9 8H3V10H9L12 17L15 10H21V8H15L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5"/>
+  </svg>
+);
+
 const DeleteMeIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" width="15" height="15" aria-hidden="true">
     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -31,10 +43,12 @@ const DeleteAllIcon = () => (
 
 function MessageMenu({
   isDeleted,
+  isPinned,
   onCopy,
   onDeleteForEveryone,
   onDeleteForMe,
   onForward,
+  onPin,
   onReply,
   style,
 }) {
@@ -56,6 +70,12 @@ function MessageMenu({
         <button type="button" className="message-menu__item" role="menuitem" onClick={onCopy}>
           <span className="message-menu__icon message-menu__icon--copy"><CopyIcon /></span>
           Copy
+        </button>
+      ) : null}
+      {!isDeleted && onPin ? (
+        <button type="button" className="message-menu__item" role="menuitem" onClick={onPin}>
+          <span className="message-menu__icon">{isPinned ? <UnpinIcon /> : <PinIcon />}</span>
+          {isPinned ? "Unpin" : "Pin"}
         </button>
       ) : null}
       <div className="message-menu__divider" />
