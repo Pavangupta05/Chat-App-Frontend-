@@ -30,7 +30,6 @@ function ChatLayout() {
     deleteMessageForMe,
     draftMessage,
     forwardingMessage,
-    getUserLastSeen,
     handleTypingInputChange,
     isUserOnline,
     searchTerm,
@@ -58,6 +57,8 @@ function ChatLayout() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
+  // Define isMobileView early (before useEffects that depend on it)
+  const isMobileView = viewport === "mobile";
 
   // Dark is default for Telegram style; stored preference overrides
   const [theme, setTheme] = useState(
@@ -92,6 +93,8 @@ function ChatLayout() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // (removed duplicate isMobileView declaration)
+
   // ROUTE-BASED NAVIGATION: Sync URL with UI state
   // When chat, settings, or profile is selected, update the URL
   useEffect(() => {
@@ -108,35 +111,37 @@ function ChatLayout() {
 
   // BACK BUTTON HANDLING: Listen for URL changes and sync UI state
   useEffect(() => {
-    const pathSegments = location.pathname.split("/").filter(Boolean);
-    
-    // Parse current route
-    if (location.pathname === "/" || pathSegments.length === 0) {
-      // Root: show chat list, close panels
-      setPanelMode(null);
-      if (isMobileView) setIsMobileChatOpen(false);
-    } else if (location.pathname === "/settings") {
-      // Settings panel
-      setPanelMode("settings");
-    } else if (location.pathname === "/profile") {
-      // Profile panel
-      setPanelMode("profile");
-    } else if (pathSegments[0] === "chat" && pathSegments[1]) {
-      // Chat screen: /chat/:id
-      const chatId = pathSegments[1];
-      const chat = chats.find((c) => c.id === chatId);
-      if (chat) {
-        selectChat(chatId);
-        if (isMobileView) setIsMobileChatOpen(true);
+    // Avoid direct setState in effect body: use a microtask
+    Promise.resolve().then(() => {
+      const pathSegments = location.pathname.split("/").filter(Boolean);
+      // Parse current route
+      if (location.pathname === "/" || pathSegments.length === 0) {
+        // Root: show chat list, close panels
+        setPanelMode(null);
+        if (isMobileView) setIsMobileChatOpen(false);
+      } else if (location.pathname === "/settings") {
+        // Settings panel
+        setPanelMode("settings");
+      } else if (location.pathname === "/profile") {
+        // Profile panel
+        setPanelMode("profile");
+      } else if (pathSegments[0] === "chat" && pathSegments[1]) {
+        // Chat screen: /chat/:id
+        const chatId = pathSegments[1];
+        const chat = chats.find((c) => c.id === chatId);
+        if (chat) {
+          selectChat(chatId);
+          if (isMobileView) setIsMobileChatOpen(true);
+        }
       }
-    }
+    });
   }, [location.pathname, isMobileView, chats, selectChat]);
 
   // SMOOTH BACK BUTTON: On mobile, back navigates within app
   useEffect(() => {
     if (!isMobileView) return;
 
-    const handleBackButton = (e) => {
+    const handleBackButton = () => {
       // Browser back button was pressed (via popstate)
       // React Router handles this automatically, so we just ensure UI stays in sync
       // by the location effect above
@@ -197,7 +202,7 @@ function ChatLayout() {
     }
   }, [backgroundDoodle]);
 
-  const isMobileView = viewport === "mobile";
+
 
   const handleSelectChat = (id) => {
     selectChat(id);
