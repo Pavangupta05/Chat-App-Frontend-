@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -34,6 +35,15 @@ const AuthRoute = ({ children }) => {
 };
 
 function App() {
+  useEffect(() => {
+    // Hide the native bootstrap loader once React is ready
+    if (typeof window.hideAppLoader === "function") {
+      // Delay slightly for smooth transition
+      const timer = setTimeout(() => window.hideAppLoader(), 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   return (
     <ErrorBoundary>
       <AuthProvider>

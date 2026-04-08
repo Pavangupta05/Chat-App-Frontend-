@@ -12,8 +12,8 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-const CACHE_NAME = 'chat-app-v3.0.0';
-const RUNTIME_CACHE = 'chat-app-runtime-v3.0.0';
+const CACHE_NAME = 'chat-app-v4.0.0';
+const RUNTIME_CACHE = 'chat-app-runtime-v4.0.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

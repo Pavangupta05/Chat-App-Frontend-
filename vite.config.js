@@ -39,7 +39,6 @@ export default defineConfig({
     // HMR configuration for development
     hmr: {
       protocol: "ws",
-      host: "localhost",
       port: 5173,
     },
     // Add middleware to handle WebSocket errors

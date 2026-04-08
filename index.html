@@ -14,78 +14,124 @@
     <link rel="apple-touch-icon" href="/icon-192x192.png" />
     <title>Neon Relay Chat</title>
   </head>
+    <style>
+      #app-loader {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: #000; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; z-index: 9999;
+        color: white; font-family: -apple-system, system-ui, sans-serif;
+      }
+      .loader-spinner {
+        width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
+        border-top: 3px solid #3390ec; border-radius: 50%;
+        animation: spin 1s linear infinite; margin-bottom: 20px;
+      }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      #failsafe-btn {
+        margin-top: 30px; padding: 12px 24px; background: #3390ec;
+        color: white; border: none; border-radius: 8px; font-weight: 600;
+        display: none; cursor: pointer;
+      }
+    </style>
   <body>
+    <div id="app-loader">
+      <div class="loader-spinner"></div>
+      <div id="loader-status">Initializing Neon Relay...</div>
+      <button id="failsafe-btn" onclick="clearAllData()">Failsafe App Reset</button>
+    </div>
+
     <script>
       window.global = window;
       window.process = { env: {} };
     </script>
     <div id="root"></div>
+
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      // 🚀 BOOTSTRAP VERSION (Update this significantly to force-clear ALL browser state)
-      const APP_VERSION = '3.0.0'; 
+      // 🚀 BOOTSTRAP VERSION (Deep Purge for v4.0.0)
+      const APP_VERSION = '4.0.0'; 
       
       async function clearAllData() {
-        console.warn('🗑️ Critical version change! Performing full storage and cache reset...');
+        if (document.getElementById('loader-status')) {
+          document.getElementById('loader-status').innerText = 'Wiping everything...';
+        }
         
-        // 1. Clear Storage
-        sessionStorage.clear();
-        localStorage.clear();
+        // 1. Storage
+        try { sessionStorage.clear(); localStorage.clear(); } catch(e){}
         
-        // 2. Clear Caches API (extremely important for service workers)
+        // 2. Cache API
         if ('caches' in window) {
           try {
             const cacheNames = await caches.keys();
             await Promise.all(cacheNames.map(name => caches.delete(name)));
-            console.log('✅ Browser caches cleared');
-          } catch (e) { console.error('Error clearing caches:', e); }
+          } catch (e) {}
         }
 
-        // 3. Unregister all service workers
+        // 3. Service Workers
         if ('serviceWorker' in navigator) {
           try {
             const registrations = await navigator.serviceWorker.getRegistrations();
             await Promise.all(registrations.map(reg => reg.unregister()));
-            console.log('✅ Service workers unregistered');
-          } catch (e) { console.error('Error unregistering workers:', e); }
+          } catch (e) {}
+        }
+
+        // 4. IndexedDB (The "Deep" part)
+        if (window.indexedDB) {
+          try {
+            const dbs = await indexedDB.databases?.();
+            if (dbs) {
+              dbs.forEach(db => indexedDB.deleteDatabase(db.name));
+            }
+          } catch (e) {}
         }
         
         localStorage.setItem('chat_app_version', APP_VERSION);
-        console.log('✨ Reset complete. Reloading...');
-        
-        // Hard reload
-        window.location.reload(true);
+        window.location.replace(window.location.origin + window.location.pathname + '?reset=' + Date.now());
       }
 
-      // Initialize Cleanup/Registration
+      // Initialize
       (async () => {
         const lastVersion = localStorage.getItem('chat_app_version');
         
+        // Show failsafe button after 10 seconds if app hasn't loaded
+        setTimeout(() => {
+          const btn = document.getElementById('failsafe-btn');
+          if (btn) btn.style.display = 'block';
+        }, 10000);
+
         if (lastVersion !== APP_VERSION) {
           await clearAllData();
-          return; // Stop execution, reload will handle it
+          return;
         }
 
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
             navigator.serviceWorker.register('/sw-v4.js').then(reg => {
-              console.log('📡 ServiceWorker active:', reg.scope);
-            }).catch(err => {
-              console.warn('❌ ServiceWorker registration failed:', err);
-            });
+              console.log('📡 SW Active');
+            }).catch(() => {});
           });
         }
       })();
-      
-      // PWA install prompt
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        window.deferredPrompt = e;
-        const installBtn = document.getElementById('install-app-btn');
-        if (installBtn) {
-          installBtn.style.display = 'block';
+
+      // Global error tracker
+      window.onerror = function(msg, url, line) {
+        const status = document.getElementById('loader-status');
+        if (status) {
+          status.innerHTML = `<span style="color:#ff4d4d">Fatal Error: ${msg}</span><br/><small style="color:#888">${url}:${line}</small>`;
+          const btn = document.getElementById('failsafe-btn');
+          if (btn) btn.style.display = 'block';
         }
-      });
+        return false;
+      };
+
+      // Function to hide loader (called from React)
+      window.hideAppLoader = function() {
+        const loader = document.getElementById('app-loader');
+        if (loader) {
+          loader.style.opacity = '0';
+          setTimeout(() => loader.remove(), 500);
+        }
+      };
     </script>
   </body>
 </html>
