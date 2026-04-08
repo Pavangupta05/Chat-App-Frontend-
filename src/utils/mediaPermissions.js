@@ -8,7 +8,16 @@ export function supportsPermissionsAPI() {
 /**
  * Check if connection is HTTPS (required for media access)
  */
+/**
+ * Check if connection is a Secure Context (required for media access)
+ * window.isSecureContext is the most reliable way to check.
+ * It will be false if accessing via non-localhost IP over HTTP.
+ */
 export function isSecureContext() {
+  if (typeof window.isSecureContext !== "undefined") {
+    return window.isSecureContext;
+  }
+  // Fallback
   return window.location.protocol === "https:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 }
 
@@ -18,7 +27,8 @@ export function isSecureContext() {
  */
 export async function checkMediaPermission() {
   if (!isSecureContext()) {
-    return "unknown";
+    console.warn("⚠️ Non-secure context detected. Media permissions will be blocked by the browser.");
+    return "denied";
   }
   
   if (!supportsPermissionsAPI()) {
@@ -30,7 +40,7 @@ export async function checkMediaPermission() {
       name: "camera",
     });
 
-    return result.state; // 'prompt' | 'granted' | 'denied'
+    return result.state;
   } catch (error) {
     console.warn("Could not check permission state:", error);
     return "unknown";
@@ -47,12 +57,13 @@ export async function requestMediaStream(constraints = { video: true, audio: tru
     // Check HTTPS requirement
     if (!isSecureContext()) {
       throw new Error(
-        "Security Error: Video/audio calls require a secure connection (HTTPS). Please ensure your site uses HTTPS."
+        "Secure Context Required: Modern browsers block camera/mic access over insecure HTTP connections. " +
+        "On mobile, you MUST use HTTPS (e.g., via ngrok) or access via 'localhost' using USB port forwarding."
       );
     }
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      throw new Error("Your browser does not support media access. Please use Chrome, Firefox, Edge, or Safari.");
+      throw new Error("Your browser does not support media access. Please use a modern browser like Chrome, Firefox, or Safari.");
     }
 
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -76,29 +87,18 @@ export async function requestMediaStream(constraints = { video: true, audio: tru
   } catch (error) {
     const errorName = error.name || "";
     
-    if (errorName === "NotAllowedError" || errorName === "PermissionDeniedError") {
+    if (errorName === "NotAllowedError" || errorName === "PermissionDeniedError" || error.message?.includes("Secure Context")) {
       throw new Error(
-        "Permission denied for camera/microphone. Please enable camera and microphone in your browser settings, then try again." +
-        (error.message?.includes("Permission") ? ` (${error.message})` : "")
+        error.message?.includes("Secure Context") ? error.message :
+        "Permission denied. Please enable camera/mic in browser settings. " +
+        "If you are on mobile using an IP address (http://192.168.x.x), permissions are blocked by the browser by default."
       );
     } else if (errorName === "NotFoundError" || errorName === "DevicesNotFoundError") {
-      throw new Error(
-        "No microphone or camera found. Please connect a device and ensure it's not being used by another application, then try again."
-      );
+      throw new Error("No media devices found. Connect a camera or microphone.");
     } else if (errorName === "NotReadableError" || errorName === "TrackStartError") {
-      throw new Error(
-        "Your camera/microphone is in use by another application or is not available. Please close other apps using them and try again."
-      );
-    } else if (errorName === "TypeError") {
-      throw new Error(
-        "Invalid permission request. Please ensure you're using HTTPS (required for secure connections) or localhost for testing."
-      );
-    } else if (error.message?.includes("HTTPS")) {
-      throw new Error(
-        "Security Error: Video/audio calls require HTTPS. Please access the app using HTTPS connection."
-      );
+      throw new Error("Hardware error: Camera or mic is already in use by another app.");
     } else {
-      throw new Error(error.message || "Unable to access media devices. Please check your settings.");
+      throw new Error(error.message || "Unable to access media devices.");
     }
   }
 }
@@ -110,23 +110,16 @@ export async function requestMediaStream(constraints = { video: true, audio: tru
  */
 export function getPermissionErrorMessage(error) {
   if (!error) return "Unknown error occurred";
-
   const message = error.message || "";
 
+  if (message.includes("Secure Context") || message.includes("HTTPS")) {
+    return "❌ Security Block: Calls require HTTPS or Localhost. Mobile IP access (http://192...) is blocked by browsers.";
+  }
   if (message.includes("Permission denied")) {
-    return "Permission denied. Please enable microphone/camera in your browser settings and try again.";
+    return "Permission denied. Check your browser/site settings.";
   }
-  if (message.includes("not supported")) {
-    return "Your browser does not support video calls. Please use Chrome, Firefox, Edge, or Safari.";
-  }
-  if (message.includes("HTTPS")) {
-    return "Video calls require a secure connection (HTTPS). Your site must use HTTPS.";
-  }
-  if (message.includes("No microphone") || message.includes("No camera")) {
-    return "No camera or microphone found. Please connect a device and try again.";
-  }
-  if (message.includes("in use")) {
-    return "Your camera/microphone is already in use. Please close other applications and try again.";
+  if (message.includes("already in use")) {
+    return "Device already in use. Close other apps.";
   }
 
   return message || "Unable to access camera/microphone";

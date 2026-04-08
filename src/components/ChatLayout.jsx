@@ -505,6 +505,7 @@ function ChatLayout() {
         localStream={call.localStream}
         permissionRetryable={call.permissionRetryable}
         remoteStream={call.remoteStream}
+        secureContext={call.secureContext}
         onAcceptCall={() => call.acceptCall()}
         onEndCall={() => call.endCall()}
         onRetryPermission={() => call.startCall(call.callMode || "video")}
@@ -524,6 +525,7 @@ function ChatLayout() {
         onRetryPermission={() => call.startCall("audio")}
         onToggleMute={call.toggleMute}
         remoteStream={call.remoteStream}
+        secureContext={call.secureContext}
       />
       <ProfilePanel
         isOpen={panelMode === "profile"}

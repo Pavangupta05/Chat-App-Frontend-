@@ -11,6 +11,7 @@ function Call({
   onRetryPermission,
   permissionRetryable,
   remoteStream,
+  secureContext,
 }) {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -72,6 +73,12 @@ function Call({
       </div>
 
       <div className="call-panel__footer">
+        {!secureContext && (
+          <div className="call-panel__error" style={{ background: "rgba(255, 107, 107, 0.15)", padding: "12px", border: "1px solid #ff6b6b" }}>
+            ⚠️ <strong>Insecure Context:</strong> Your browser blocks camera/mic on non-HTTPS origins (like your phone via IP). 
+            Please use HTTPS or Localhost USB forwarding.
+          </div>
+        )}
         {callError && <p className="call-panel__error">{callError}</p>}
 
         <div className="call-panel__controls">

@@ -22,6 +22,7 @@ function AudioCallModal({
   onToggleMute,
   permissionRetryable,
   remoteStream,
+  secureContext,
 }) {
   const remoteAudioRef = useRef(null);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -228,6 +229,13 @@ function AudioCallModal({
         {/* Call duration */}
         {audioStatus === "in-call" && (
           <span className="audio-call-modal__duration">{formatDuration(callDuration)}</span>
+        )}
+
+        {/* Security Warning */}
+        {!secureContext && (
+          <div style={{ color: "#ff6b6b", fontSize: "12px", marginBottom: "12px", background: "rgba(229, 57, 53, 0.1)", padding: "10px", borderRadius: "8px", textAlign: "center", border: "1px solid rgba(229, 57, 53, 0.3)" }}>
+            ❌ Security Block: Phone browsers require HTTPS or Localhost for mic access.
+          </div>
         )}
 
         {/* Control buttons */}

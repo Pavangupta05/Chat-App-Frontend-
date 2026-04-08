@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Peer from "simple-peer/simplepeer.min.js";
-import { requestMediaStream, getPermissionErrorMessage } from "../utils/mediaPermissions";
+import { requestMediaStream, getPermissionErrorMessage, isSecureContext } from "../utils/mediaPermissions";
 
 function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, username }) {
   const [incomingCall, setIncomingCall] = useState(null);
@@ -12,6 +12,7 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
   const [activeCallSocketId, setActiveCallSocketId] = useState("");
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const [secureContext, setSecureContext] = useState(isSecureContext());
   const [permissionRetryable, setPermissionRetryable] = useState(false);
   const peerRef = useRef(null);
   const callDurationIntervalRef = useRef(null);
@@ -282,6 +283,7 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
     localStream,
     permissionRetryable,
     remoteStream,
+    secureContext,
     startCall,
     toggleMute,
   };
