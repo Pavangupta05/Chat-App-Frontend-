@@ -93,11 +93,15 @@
       (async () => {
         const lastVersion = localStorage.getItem('chat_app_version');
         
-        // Show failsafe button after 10 seconds if app hasn't loaded
+        // Watchdog: If app hasn't cleared loader after 15s, show warning
         setTimeout(() => {
           const btn = document.getElementById('failsafe-btn');
-          if (btn) btn.style.display = 'block';
-        }, 10000);
+          const status = document.getElementById('loader-status');
+          if (btn && btn.style.display !== 'none' || document.getElementById('app-loader')) {
+            if (btn) btn.style.display = 'block';
+            if (status) status.innerHTML = '<span style="color:#ffb300">⚠️ App is taking too long to mount. Check your internet or refresh.</span>';
+          }
+        }, 15000);
 
         if (lastVersion !== APP_VERSION) {
           await clearAllData();
@@ -128,8 +132,11 @@
       window.hideAppLoader = function() {
         const loader = document.getElementById('app-loader');
         if (loader) {
+          console.log("✅ Hiding app loader");
           loader.style.opacity = '0';
-          setTimeout(() => loader.remove(), 500);
+          setTimeout(() => {
+            if (loader.parentNode) loader.remove();
+          }, 500);
         }
       };
     </script>

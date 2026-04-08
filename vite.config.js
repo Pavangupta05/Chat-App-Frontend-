@@ -25,12 +25,13 @@ export default defineConfig({
     }),
   ],
   server: {
+    host: true, // 🌐 Allow access from network (phone, tablet, etc.)
     proxy: {
       "/api": apiProxy,
       "/upload": apiProxy,
       "/uploads": apiProxy,
       "/health": apiProxy,
-      "/socket.io": { // Add explicit Socket.io proxy
+      "/socket.io": {
         target: "http://127.0.0.1:5000",
         ws: true,
         changeOrigin: true,
@@ -40,8 +41,8 @@ export default defineConfig({
     hmr: {
       protocol: "ws",
       port: 5173,
+      // If host is needed, let it default to the connection host
     },
-    // Add middleware to handle WebSocket errors
     middlewareMode: false,
     cors: true,
   },

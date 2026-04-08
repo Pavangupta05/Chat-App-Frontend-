@@ -25,18 +25,24 @@ export const AuthProvider = ({ children }) => {
 
   // 🔄 Load user from sessionStorage on refresh
   useEffect(() => {
+    // Failsafe: Ensure loading stops after 5s no matter what
+    const failsafe = setTimeout(() => {
+      if (isLoading) {
+        console.warn("⚠️ Auth loading failsafe triggered");
+        setIsLoading(false);
+      }
+    }, 5000);
+
     try {
       const storedUser = sessionStorage.getItem("chat-user");
       const storedToken = sessionStorage.getItem("chat-token");
 
       if (storedUser && storedToken) {
         const parsedUser = JSON.parse(storedUser);
-
         setUser({
           ...parsedUser,
           id: parsedUser?.id ? String(parsedUser.id) : "",
         });
-
         setToken(storedToken);
       }
     } catch (error) {
@@ -47,6 +53,7 @@ export const AuthProvider = ({ children }) => {
       setToken(null);
     } finally {
       setIsLoading(false);
+      clearTimeout(failsafe);
     }
   }, []);
 

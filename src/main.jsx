@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
+console.log("🚀 Neon Relay: Frontend JS Execution Started");
+
 // Global error handlers
 window.addEventListener('error', (event) => {
   console.error('🔴 Uncaught error:', event.error);
