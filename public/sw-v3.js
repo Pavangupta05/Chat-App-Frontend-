@@ -12,8 +12,8 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-const CACHE_NAME = 'chat-app-v1';
-const RUNTIME_CACHE = 'chat-app-runtime-v1';
+const CACHE_NAME = 'chat-app-v2';
+const RUNTIME_CACHE = 'chat-app-runtime-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -64,11 +64,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache first for static assets
+  // 1. Handle Navigation and Core Assets with Network First
+  // This ensures the user gets the latest index.html (and latest JS/CSS hashes) if online.
+  if (url.pathname === '/' || url.pathname === '/index.html' || url.pathname === '/manifest.json') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  // 2. Cache first for versioned static assets (JS, CSS, Images)
   if (isStaticAsset(url.pathname)) {
     event.respondWith(cacheFirst(request));
   } else {
-    // Network first for dynamic content
+    // 3. Network first for everything else
     event.respondWith(networkFirst(request));
   }
 });

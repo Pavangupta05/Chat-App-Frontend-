@@ -7,6 +7,7 @@ import InputBox from "./InputBox";
 import TypingIndicator from "./TypingIndicator";
 
 function ChatWindow({
+  backgroundDoodle,
   callProps,
   chat,
   onConfirmClearChat,
@@ -138,9 +139,7 @@ function ChatWindow({
       <div className="chat-window">
         <div className="chat-window__empty">
           <div className="chat-window__empty-icon">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
+            <MessageSquare size={36} />
           </div>
           <p style={{ fontWeight: 600, fontSize: 15, color: "var(--text-primary)" }}>Select a chat</p>
           <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>Start a conversation</p>
@@ -150,7 +149,7 @@ function ChatWindow({
   }
 
   return (
-    <section className="chat-window">
+    <section className="chat-window" style={{ background: "transparent" }}>
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <header className={`chat-window__header${hasSelection ? " chat-window__header--selection" : ""}`}>

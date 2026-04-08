@@ -367,6 +367,12 @@ function useChatController() {
 
   const selectChat = useCallback(
     (chatId) => {
+      if (chatId === null) {
+        setActiveChatId(null);
+        clearReply();
+        return;
+      }
+
       const idKey = String(chatId);
       
       // Reset state when switching chats

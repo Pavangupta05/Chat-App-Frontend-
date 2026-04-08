@@ -22,11 +22,27 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      // Register service worker for PWA
+      // REGISTER NEW SERVICE WORKER (sw-v3.js) AND CLEANUP OLD ONES
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js').catch(err => {
-            console.warn('Service worker registration failed:', err);
+          // Unregister and clear all legacy workers first
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            const hasOldWorkers = registrations.some(reg => !reg.active || !reg.active.scriptURL.includes('sw-v3.js'));
+            for (let registration of registrations) {
+              if (!registration.active || !registration.active.scriptURL.includes('sw-v3.js')) {
+                registration.unregister();
+              }
+            }
+            if (hasOldWorkers) {
+              // Register the new version
+              navigator.serviceWorker.register('/sw-v3.js').then(() => {
+                console.log('sw-v3.js registered successfully');
+                window.location.reload(); // Force refresh to activate v3
+              });
+            } else {
+              // Just register
+              navigator.serviceWorker.register('/sw-v3.js');
+            }
           });
         });
       }

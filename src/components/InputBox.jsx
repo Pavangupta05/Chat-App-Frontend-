@@ -20,13 +20,21 @@ function InputBox({
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
 
+  // Auto-resize textarea logic
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = "20px"; // Reset height to get scrollHeight
+      const scrollHeight = inputRef.current.scrollHeight;
+      inputRef.current.style.height = `${Math.min(scrollHeight, 180)}px`;
+    }
+  }, [value]);
+
   const handleEmojiInsert = (emoji) => {
     onChange(`${value}${emoji}`);
     setIsEmojiPickerOpen(false);
     inputRef.current?.focus();
   };
 
-  // Close emoji picker on outside click
   useEffect(() => {
     const handler = (e) => {
       if (!emojiPickerRef.current?.contains(e.target)) {
@@ -59,10 +67,8 @@ function InputBox({
 
   return (
     <div className="input-box-shell">
-      {/* Reply preview */}
       <ReplyPreview message={replyMessage} onClose={onClearReply} />
 
-      {/* Image preview strip */}
       <AnimatePresence>
         {imagePreview && (
           <motion.div
@@ -84,22 +90,18 @@ function InputBox({
         )}
       </AnimatePresence>
 
-      {/* Main input row */}
-      <div className="input-box">
-        {/* Left actions: emoji + attach */}
-        <div className="input-box__actions-left">
-          {/* Emoji picker */}
+      <div className="input-box-container">
+        <div className="input-box__actions-left" style={{ display: "flex", alignItems: "center", gap: "2px", marginBottom: "2px" }}>
           <div className="emoji-picker-anchor" ref={emojiPickerRef}>
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.88 }}
+              whileTap={{ scale: 0.9 }}
               className="icon-button"
               type="button"
-              aria-label="Emoji"
               disabled={disabled}
               onClick={() => setIsEmojiPickerOpen((v) => !v)}
+              style={{ color: "var(--text-secondary)" }}
             >
-              <Smile size={20} strokeWidth={2} />
+              <Smile size={24} />
             </motion.button>
 
             <AnimatePresence>
@@ -108,8 +110,7 @@ function InputBox({
                   initial={{ opacity: 0, y: 8, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 340, damping: 26 }}
-                  style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 8, zIndex: 30 }}
+                  style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 12, zIndex: 30 }}
                 >
                   <EmojiPicker onSelect={handleEmojiInsert} />
                 </motion.div>
@@ -117,45 +118,41 @@ function InputBox({
             </AnimatePresence>
           </div>
 
-          {/* File attach */}
           <FileUpload
             disabled={disabled}
             icon={
               <motion.div
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.88 }}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+                whileTap={{ scale: 0.9 }}
+                className="icon-button"
+                style={{ color: "var(--text-secondary)" }}
               >
-                <Paperclip size={20} strokeWidth={2} />
+                <Paperclip size={24} />
               </motion.div>
             }
             onUploadComplete={handleFileChange}
           />
         </div>
 
-        {/* Text input — grows to fill */}
-        <input
+        <textarea
           ref={inputRef}
-          type="text"
-          placeholder={isCompact ? "Message" : "Write a message…"}
+          rows="1"
+          placeholder={isCompact ? "Message" : "Type a message..."}
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          style={{ flex: 1, minWidth: 0 }}
+          className="chat-input-area"
         />
 
-        {/* Send button */}
         <motion.button
-          whileHover={{ scale: 1.06 }}
-          whileTap={{ scale: 0.88 }}
-          className="send-button"
+          whileTap={isSendable ? { scale: 0.9 } : {}}
+          className={`send-button-ios ${isSendable ? 'is-active' : ''}`}
           type="button"
-          aria-label="Send message"
           disabled={disabled || !isSendable}
           onClick={onSend}
+          aria-label="Send message"
         >
-          <Send size={17} strokeWidth={2.5} />
+          <Send size={20} style={{ transform: isSendable ? "translateX(2px)" : "none" }} />
         </motion.button>
       </div>
     </div>
