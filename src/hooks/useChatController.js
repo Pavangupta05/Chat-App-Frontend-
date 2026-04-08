@@ -658,7 +658,22 @@ function useChatController() {
       ),
     );
 
-    emit("send_message", payload);
+    emit("send_message", payload, (response) => {
+      if (response?.status === "ok" && response.id) {
+        setChats((prev) =>
+          prev.map((c) =>
+            String(c.id) === String(activeChat.id)
+              ? {
+                  ...c,
+                  messages: c.messages.map((m) =>
+                    m.id === payload.id ? { ...m, id: response.id } : m
+                  ),
+                }
+              : c
+          )
+        );
+      }
+    });
     stopTyping();
     clearReply();
     setDraftMessage("");
@@ -712,7 +727,22 @@ function useChatController() {
       ),
     );
 
-    emit("send_message", payload);
+    emit("send_message", payload, (response) => {
+      if (response?.status === "ok" && response.id) {
+        setChats((prev) =>
+          prev.map((c) =>
+            String(c.id) === String(activeChat.id)
+              ? {
+                  ...c,
+                  messages: c.messages.map((m) =>
+                    m.id === payload.id ? { ...m, id: response.id } : m
+                  ),
+                }
+              : c
+          )
+        );
+      }
+    });
   }, [activeChat, currentUserId, emit]);
 
   const deleteMessageForMe = useCallback(

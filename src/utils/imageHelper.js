@@ -12,17 +12,27 @@ export function getImageUrl(url, defaultValue = null) {
     return defaultValue;
   }
 
-  // Already an absolute URL (http/https)
+  // If it's a relative path starting with uploads/ or /uploads/
+  if (url.startsWith("/uploads/") || url.startsWith("uploads/")) {
+    const cleanPath = url.startsWith("/") ? url : `/${url}`;
+    return `${API_URL}${cleanPath}`;
+  }
+
+  // If it's an absolute URL but points to an upload, try to normalize it to current API_URL
+  // This helps if the DB has old "localhost" URLs but we are on mobile
+  if ((url.startsWith("http://") || url.startsWith("https://")) && url.includes("/uploads/")) {
+    const parts = url.split("/uploads/");
+    if (parts.length > 1) {
+      return `${API_URL}/uploads/${parts[1]}`;
+    }
+  }
+
+  // Already an absolute URL (http/https) and not a local upload
   if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
 
-  // Relative path - prepend the API URL
-  if (url.startsWith("/uploads/")) {
-    return `${API_URL}${url}`;
-  }
-
-  // Invalid or empty
+  // Fallback
   return defaultValue;
 }
 
