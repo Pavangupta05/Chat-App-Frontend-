@@ -208,10 +208,16 @@ function ChatLayout() {
 
 
   const handleSelectChat = (id) => {
-    selectChat(id);
+    // Reset any active menus/selections when switching chats on mobile
     if (isMobileView) {
-      setIsMobileChatOpen(true);
-      navigate(`/chat/${id}`);
+      // Ensure clean state transition when switching chats
+      Promise.resolve().then(() => {
+        selectChat(id);
+        setIsMobileChatOpen(true);
+        navigate(`/chat/${id}`);
+      });
+    } else {
+      selectChat(id);
     }
   };
 
@@ -328,6 +334,8 @@ function ChatLayout() {
             onForwardMessage={startForwardMessage}
             onMobileBack={() => {
               setIsMobileChatOpen(false);
+              // Reset any active selections or modals
+              setPanelMode(null);
               navigate("/");
             }}
             onReplyMessage={setReplyMessage}

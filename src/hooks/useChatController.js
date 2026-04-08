@@ -369,27 +369,27 @@ function useChatController() {
     (chatId) => {
       const idKey = String(chatId);
       
-      // If already active, just clear typing/replies but don't re-trigger state if possible
-      // Actually leave state updates as they are but remove the updatedAt-bomb.
-      
+      // Reset state when switching chats
       setActiveChatId(chatId);
+      clearReply();
+      clearTypingForChat(chatId);
+      
       setChats((currentChats) => {
         const index = currentChats.findIndex((c) => String(c.id) === idKey);
         if (index === -1) return currentChats;
 
         const chat = currentChats[index];
-        // Only update if unreadCount > 0 or user is typing
-        if (chat.unreadCount === 0 && !chat.isTyping) {
-          return currentChats;
-        }
-
+        // Reset unread count and typing indicator when switching to this chat
         const nextChats = [...currentChats];
-        nextChats[index] = { ...chat, unreadCount: 0, isTyping: false };
+        nextChats[index] = { 
+          ...chat, 
+          unreadCount: 0, 
+          isTyping: false 
+        };
         return nextChats;
       });
-      clearTypingForChat(chatId);
-      clearReply();
 
+      // Load messages for the selected chat
       if (token && isPeerMongoId(idKey)) {
         fetchMessagesBetween(token, idKey)
           .then((rows) => {
@@ -399,9 +399,7 @@ function useChatController() {
                   ? {
                       ...chat,
                       messages: rows,
-                      // ONLY update updatedAt if the chat has NO messages yet,
-                      // otherwise keep the existing one to avoid infinite loops
-                      // and list jumping.
+                      // Update timestamp only if messages were fetched for the first time
                       updatedAt: chat.messages.length === 0 && rows.length > 0 ? Date.now() : chat.updatedAt,
                     }
                   : chat,
@@ -409,7 +407,7 @@ function useChatController() {
             );
           })
           .catch((err) => {
-            console.error("[chat] Failed to load messages:", err);
+            console.error("[chat] Failed to load messages for chat:", idKey, err);
           });
       }
     },
@@ -494,10 +492,19 @@ function useChatController() {
 
 
   const clearActiveChatMessages = useCallback(() => {
-    if (!activeChat || !token) {
-      console.warn("❌ Cannot clear chat: missing activeChat or token");
+    if (!activeChat) {
+      console.warn("❌ Cannot clear chat: activeChat is null");
+      alert("No chat selected to clear");
       return;
     }
+    
+    if (!token) {
+      console.warn("❌ Cannot clear chat: token is missing");
+      alert("Not authenticated");
+      return;
+    }
+
+    console.log("🔄 Clearing chat history for:", activeChat.id);
 
     // Optimistic UI update
     setChats((currentChats) =>
@@ -515,11 +522,11 @@ function useChatController() {
 
     // Call API to persist the change
     clearChatHistory(token, activeChat.id)
-      .then(() => {
-        console.log("✅ Chat history cleared:", activeChat.id);
+      .then((response) => {
+        console.log("✅ Chat history cleared successfully:", response);
       })
       .catch((error) => {
-        console.error("❌ Failed to clear chat history:", error.message);
+        console.error("❌ Failed to clear chat history:", error);
         // Revert optimistic update on error
         setChats((currentChats) =>
           currentChats.map((chat) =>
@@ -528,16 +535,25 @@ function useChatController() {
               : chat,
           ),
         );
-        // Optionally show error to user
+        // Show error to user
         alert(`Failed to clear chat history: ${error.message}`);
       });
   }, [activeChat, token]);
 
   const deleteActiveChat = useCallback(() => {
-    if (!activeChat || !token) {
-      console.warn("❌ Cannot delete chat: missing activeChat or token");
+    if (!activeChat) {
+      console.warn("❌ Cannot delete chat: activeChat is null");
+      alert("No chat selected to delete");
       return;
     }
+    
+    if (!token) {
+      console.warn("❌ Cannot delete chat: token is missing");
+      alert("Not authenticated");
+      return;
+    }
+
+    console.log("🔄 Deleting chat:", activeChat.id);
 
     // Optimistic UI update
     setChats((currentChats) =>
@@ -556,11 +572,11 @@ function useChatController() {
 
     // Call API to persist the change
     deleteChat(token, activeChat.id)
-      .then(() => {
-        console.log("✅ Chat deleted:", activeChat.id);
+      .then((response) => {
+        console.log("✅ Chat deleted successfully:", response);
       })
       .catch((error) => {
-        console.error("❌ Failed to delete chat:", error.message);
+        console.error("❌ Failed to delete chat:", error);
         // Revert optimistic update on error by reloading chats
         fetchUserChats(token)
           .then((reloadedChats) => {
@@ -577,12 +593,12 @@ function useChatController() {
             );
           })
           .catch((reloadError) => {
-            console.error("❌ Failed to reload chats after delete error:", reloadError.message);
+            console.error("❌ Failed to reload chats after delete error:", reloadError);
           });
         // Show error to user
         alert(`Failed to delete chat: ${error.message}`);
       });
-  }, [activeChat, token, chats, currentUserId, createChatRecord]); // Added createChatRecord
+  }, [activeChat, token, chats, currentUserId, createChatRecord, fetchUserChats]);
 
   const sendMessage = useCallback(() => {
     const text = draftMessage.trim();

@@ -1,5 +1,16 @@
+/* eslint-disable no-unused-vars */
 // Service Worker for Chat Application
 // Handles caching, offline support, and background sync
+
+self.addEventListener('install', (event) => {
+  console.log('Service Worker installing...');
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker activating...');
+  event.waitUntil(self.clients.claim());
+});
 
 const CACHE_NAME = 'chat-app-v1';
 const RUNTIME_CACHE = 'chat-app-runtime-v1';
@@ -9,7 +20,7 @@ const STATIC_ASSETS = [
   '/manifest.json',
 ];
 
-// Install event - cache static assets
+// Cache static assets during install
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -21,7 +32,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Clean up old caches during activation
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {

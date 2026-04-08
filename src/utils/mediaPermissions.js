@@ -6,10 +6,21 @@ export function supportsPermissionsAPI() {
 }
 
 /**
+ * Check if connection is HTTPS (required for media access)
+ */
+export function isSecureContext() {
+  return window.location.protocol === "https:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+}
+
+/**
  * Check permission state for userMedia (microphone/camera)
  * @returns {Promise<'prompt' | 'granted' | 'denied' | 'unknown'>}
  */
 export async function checkMediaPermission() {
+  if (!isSecureContext()) {
+    return "unknown";
+  }
+  
   if (!supportsPermissionsAPI()) {
     return "unknown";
   }
@@ -33,6 +44,13 @@ export async function checkMediaPermission() {
  */
 export async function requestMediaStream(constraints = { video: true, audio: true }) {
   try {
+    // Check HTTPS requirement
+    if (!isSecureContext()) {
+      throw new Error(
+        "Security Error: Video/audio calls require a secure connection (HTTPS). Please ensure your site uses HTTPS."
+      );
+    }
+
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error("Your browser does not support media access. Please use Chrome, Firefox, Edge, or Safari.");
     }
@@ -56,24 +74,31 @@ export async function requestMediaStream(constraints = { video: true, audio: tru
 
     return stream;
   } catch (error) {
-    if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+    const errorName = error.name || "";
+    
+    if (errorName === "NotAllowedError" || errorName === "PermissionDeniedError") {
       throw new Error(
-        "Permission denied. Please enable microphone/camera in your browser settings and try again."
+        "Permission denied for camera/microphone. Please enable camera and microphone in your browser settings, then try again." +
+        (error.message?.includes("Permission") ? ` (${error.message})` : "")
       );
-    } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
+    } else if (errorName === "NotFoundError" || errorName === "DevicesNotFoundError") {
       throw new Error(
-        "No microphone or camera found. Please connect a device and try again."
+        "No microphone or camera found. Please connect a device and ensure it's not being used by another application, then try again."
       );
-    } else if (error.name === "NotReadableError" || error.name === "TrackStartError") {
+    } else if (errorName === "NotReadableError" || errorName === "TrackStartError") {
       throw new Error(
-        "Your camera/microphone is in use by another application. Please close it and try again."
+        "Your camera/microphone is in use by another application or is not available. Please close other apps using them and try again."
       );
-    } else if (error.name === "TypeError") {
+    } else if (errorName === "TypeError") {
       throw new Error(
-        "Invalid permission request. Please ensure you're using HTTPS (required for secure connections)."
+        "Invalid permission request. Please ensure you're using HTTPS (required for secure connections) or localhost for testing."
+      );
+    } else if (error.message?.includes("HTTPS")) {
+      throw new Error(
+        "Security Error: Video/audio calls require HTTPS. Please access the app using HTTPS connection."
       );
     } else {
-      throw new Error(error.message || "Unable to access media devices.");
+      throw new Error(error.message || "Unable to access media devices. Please check your settings.");
     }
   }
 }

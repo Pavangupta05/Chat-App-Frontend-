@@ -1,6 +1,11 @@
+/* eslint-disable no-unused-vars */
 import { motion, AnimatePresence } from "framer-motion";
+/* eslint-enable no-unused-vars */
 import { useEffect, useState } from "react";
-import { X, Moon, Sun, Bell, BellOff, LogOut, Palette, Image } from "lucide-react";
+import { X, Moon, Sun, Bell, BellOff, LogOut, Palette, Image, Trash2 } from "lucide-react";
+import { deleteCurrentUser } from "../services/userService";
+import ConfirmModal from "./ConfirmModal";
+import { useAuth } from "../context/AuthContext";
 
 const THEME_COLORS = [
   { name: "Blue", value: "blue", hue: 214, label: "Telegram Blue" },
@@ -27,19 +32,47 @@ function SettingsPanel({
   backgroundDoodle = { type: "light", opacity: 0.3 },
   onBackgroundChange = () => {}
 }) {
+  const { token } = useAuth();
   const notifStatus =
     typeof Notification !== "undefined" ? Notification.permission : "denied";
-
+  
   const [selectedColor, setSelectedColor] = useState(() => {
     const stored = typeof window !== "undefined" 
       ? window.sessionStorage.getItem("chat-color-theme") 
       : null;
     return stored || "blue";
   });
+  
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const requestNotifPermission = () => {
     if (typeof Notification === "undefined") return;
     Notification.requestPermission();
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!token) {
+      console.error("❌ Delete account: No token available");
+      alert("You are not signed in.");
+      return;
+    }
+    
+    setIsDeleting(true);
+    console.log("🔄 Attempting to delete account...");
+    
+    try {
+      const response = await deleteCurrentUser(token);
+      console.log("✅ Account deleted successfully:", response);
+      alert("Your account has been deleted. You will be logged out.");
+      setShowDeleteConfirm(false);
+      onLogout();
+    } catch (error) {
+      console.error("❌ Failed to delete account:", error);
+      alert(`Failed to delete account: ${error.message}`);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleColorChange = (color) => {
@@ -77,33 +110,34 @@ function SettingsPanel({
   }, [isOpen]);
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            key="settings-backdrop"
-            className="side-panel-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
-          <motion.aside
-            key="settings-panel"
-            className="side-panel"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-          >
-            <div className="side-panel__header">
-              <button className="icon-button header-close-btn" type="button" onClick={onClose} aria-label="Close">
-                <X size={24} />
-              </button>
-              <h2>Settings</h2>
-            </div>
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              key="settings-backdrop"
+              className="side-panel-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onClose}
+            />
+            <motion.aside
+              key="settings-panel"
+              className="side-panel"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            >
+              <div className="side-panel__header">
+                <button className="icon-button header-close-btn" type="button" onClick={onClose} aria-label="Close">
+                  <X size={24} />
+                </button>
+                <h2>Settings</h2>
+              </div>
 
-            <div className="side-panel__body">
+              <div className="side-panel__body">
               {/* Appearance Theme */}
               <div className="ios-list-group">
                 <div className="settings-row">
@@ -258,11 +292,42 @@ function SettingsPanel({
                   </button>
                 </div>
               </div>
+
+              {/* Delete Account */}
+              <div className="ios-list-group">
+                <div className="settings-row settings-row--danger">
+                  <div className="settings-row__info">
+                    <Trash2 size={22} />
+                    <div>
+                      <strong>Delete Account</strong>
+                      <p>Permanently delete your account</p>
+                    </div>
+                  </div>
+                  <button 
+                    className="settings-btn settings-btn--danger" 
+                    type="button" 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={isDeleting}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
           </motion.aside>
         </>
       )}
     </AnimatePresence>
+    
+    <ConfirmModal
+      isOpen={showDeleteConfirm}
+      title="Delete Account"
+      description="Are you sure you want to permanently delete your account? This action cannot be undone. All your chats and messages will be deleted."
+      actionLabel="Delete Account"
+      onConfirm={handleDeleteAccount}
+      onCancel={() => setShowDeleteConfirm(false)}
+    />
+    </>
   );
 }
 
