@@ -24,11 +24,14 @@ export async function fetchUsers(token) {
   let response;
   try {
     response = await retryFetch(
-      () => fetch(`${API_URL}/api/users`, {
+      () => fetch(`${API_URL}/api/users?t=${Date.now()}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${authToken}`,
           Accept: "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0"
         },
       }),
       2 // maxRetries for GET requests
@@ -68,11 +71,14 @@ export async function deleteCurrentUser(token) {
   let response;
   try {
     response = await retryFetch(
-      () => fetch(`${API_URL}/api/users`, {
+      () => fetch(`${API_URL}/api/users?t=${Date.now()}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0"
         },
       }),
       1 // minimal retries for DELETE

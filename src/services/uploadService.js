@@ -151,10 +151,15 @@ export async function uploadChatFile(file, { signal, onProgress } = {}) {
 
     try {
       const response = await retryFetch(
-        () => fetch(`${API_URL}/upload`, {
+        () => fetch(`${API_URL}/upload?t=${Date.now()}`, {
           method: "POST",
           body: formData,
           signal: signal || controller.signal,
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+          },
         }),
         2 // maxRetries for uploads
       );

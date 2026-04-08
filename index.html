@@ -22,30 +22,60 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      // REGISTER NEW SERVICE WORKER (sw-v3.js) AND CLEANUP OLD ONES
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          // Unregister and clear all legacy workers first
-          navigator.serviceWorker.getRegistrations().then(registrations => {
-            const hasOldWorkers = registrations.some(reg => !reg.active || !reg.active.scriptURL.includes('sw-v3.js'));
-            for (let registration of registrations) {
-              if (!registration.active || !registration.active.scriptURL.includes('sw-v3.js')) {
-                registration.unregister();
-              }
-            }
-            if (hasOldWorkers) {
-              // Register the new version
-              navigator.serviceWorker.register('/sw-v3.js').then(() => {
-                console.log('sw-v3.js registered successfully');
-                window.location.reload(); // Force refresh to activate v3
-              });
-            } else {
-              // Just register
-              navigator.serviceWorker.register('/sw-v3.js');
-            }
-          });
-        });
+      // 🚀 BOOTSTRAP VERSION (Update this significantly to force-clear ALL browser state)
+      const APP_VERSION = '3.0.0'; 
+      
+      async function clearAllData() {
+        console.warn('🗑️ Critical version change! Performing full storage and cache reset...');
+        
+        // 1. Clear Storage
+        sessionStorage.clear();
+        localStorage.clear();
+        
+        // 2. Clear Caches API (extremely important for service workers)
+        if ('caches' in window) {
+          try {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+            console.log('✅ Browser caches cleared');
+          } catch (e) { console.error('Error clearing caches:', e); }
+        }
+
+        // 3. Unregister all service workers
+        if ('serviceWorker' in navigator) {
+          try {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map(reg => reg.unregister()));
+            console.log('✅ Service workers unregistered');
+          } catch (e) { console.error('Error unregistering workers:', e); }
+        }
+        
+        localStorage.setItem('chat_app_version', APP_VERSION);
+        console.log('✨ Reset complete. Reloading...');
+        
+        // Hard reload
+        window.location.reload(true);
       }
+
+      // Initialize Cleanup/Registration
+      (async () => {
+        const lastVersion = localStorage.getItem('chat_app_version');
+        
+        if (lastVersion !== APP_VERSION) {
+          await clearAllData();
+          return; // Stop execution, reload will handle it
+        }
+
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw-v4.js').then(reg => {
+              console.log('📡 ServiceWorker active:', reg.scope);
+            }).catch(err => {
+              console.warn('❌ ServiceWorker registration failed:', err);
+            });
+          });
+        }
+      })();
       
       // PWA install prompt
       window.addEventListener('beforeinstallprompt', (e) => {

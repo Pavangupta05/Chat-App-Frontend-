@@ -8,9 +8,12 @@ export function isPeerMongoId(value) {
 export async function fetchMessagesBetween(token, withUserId) {
   const params = new URLSearchParams({ withUserId });
   const response = await retryFetch(
-    () => fetch(`${API_URL}/api/messages?${params}`, {
+    () => fetch(`${API_URL}/api/messages?${params}&t=${Date.now()}`, {
       headers: {
         Authorization: `Bearer ${token}`,
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
       },
     }),
     2 // maxRetries for GET requests
@@ -27,9 +30,12 @@ export async function fetchMessagesBetween(token, withUserId) {
 
 export async function fetchUserChats(token) {
   const response = await retryFetch(
-    () => fetch(`${API_URL}/api/chat`, {
+    () => fetch(`${API_URL}/api/chat?t=${Date.now()}`, {
       headers: {
         Authorization: `Bearer ${token}`,
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
       },
     }),
     2 // maxRetries for GET requests
@@ -55,11 +61,14 @@ export async function clearChatHistory(token, chatId) {
   }
 
   const response = await retryFetch(
-    () => fetch(`${API_URL}/api/messages/${chatId}`, {
+    () => fetch(`${API_URL}/api/messages/${chatId}?t=${Date.now()}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
       },
     }),
     1 // minimal retries for DELETE
@@ -85,11 +94,14 @@ export async function deleteChat(token, chatId) {
   }
 
   const response = await retryFetch(
-    () => fetch(`${API_URL}/api/chat/${chatId}`, {
+    () => fetch(`${API_URL}/api/chat/${chatId}?t=${Date.now()}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
       },
     }),
     1 // minimal retries for DELETE

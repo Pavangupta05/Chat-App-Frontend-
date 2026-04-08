@@ -29,9 +29,19 @@ export async function retryFetch(
     try {
       const response = await fetchFn();
       
-      // Success - return immediately
-      if (response.ok || response.status < 500) {
+      // Success or Client Errors (except 401) - return immediately
+      if (response.ok || (response.status < 500 && response.status !== 401)) {
         return response;
+      }
+
+      // Handle Authentication Failure (401)
+      if (response.status === 401) {
+        console.warn('🔑 Session expired or invalid. Clearing storage and redirecting...');
+        sessionStorage.clear();
+        localStorage.clear();
+        // Delay reload slightly to let current operations potentially clean up
+        setTimeout(() => window.location.reload(), 500);
+        return response; // Return to let caller handle
       }
 
       // Server error (5xx) - retry if we have attempts left

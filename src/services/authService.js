@@ -47,10 +47,13 @@ export const register = async ({ username, email, password }) => {
   let response;
   try {
     response = await retryFetch(
-      () => fetch(`${API_URL}/api/auth/register`, {
+      () => fetch(`${API_URL}/api/auth/register?t=${Date.now()}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0"
         },
         body: JSON.stringify(body),
       }),
@@ -90,10 +93,13 @@ export const login = async ({ email, password }) => {
   let response;
   try {
     response = await retryFetch(
-      () => fetch(`${API_URL}/api/auth/login`, {
+      () => fetch(`${API_URL}/api/auth/login?t=${Date.now()}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0"
         },
         body: JSON.stringify(body),
       }),

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, MoreVertical, Phone, Video, ChevronLeft, Trash2, Forward, X } from "lucide-react";
+import { Search, MoreVertical, Phone, Video, ChevronLeft, Trash2, Forward, X, MessageSquare } from "lucide-react";
 
 import MessageBubble from "./MessageBubble";
 import InputBox from "./InputBox";
