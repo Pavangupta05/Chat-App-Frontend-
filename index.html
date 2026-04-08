@@ -106,7 +106,7 @@
 
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw-v4.js').then(reg => {
+            navigator.serviceWorker.register('/sw-v4-0-1.js?v=' + APP_VERSION).then(reg => {
               console.log('📡 SW Active');
             }).catch(() => {});
           });
