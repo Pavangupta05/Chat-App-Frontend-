@@ -1,8 +1,14 @@
-export const formatTime = (value) =>
-  new Intl.DateTimeFormat("en-US", {
+export const formatTime = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  // Check if date is valid
+  if (isNaN(date.getTime())) return String(value);
+  
+  return new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
     minute: "2-digit",
-  }).format(value);
+  }).format(date);
+};
 
 export const formatListTime = (value) => {
   const messageDate = new Date(value);
@@ -108,7 +114,7 @@ export const normalizeMessage = (message, chatId) => {
     status:
       message.status ??
       ((message.sender ?? "other") === "me" ? "sent" : "delivered"),
-    time: message.time ?? "",
+    time: message.time ? formatTime(message.time) : "",
     username: message.username ?? "",
   };
 
