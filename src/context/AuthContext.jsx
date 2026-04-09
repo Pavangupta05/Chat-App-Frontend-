@@ -98,12 +98,22 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  // 🚪 LOGOUT
-  const logout = () => {
-    logoutService();
-    sessionStorage.clear();
-    setUser(null);
-    setToken(null);
+  // 🔄 UPDATE USER DATA (Sync state + session)
+  const updateUser = (newData) => {
+    if (!user) return;
+    
+    const updatedUser = {
+      ...user,
+      ...newData,
+      id: String(user.id), // Preserve ID consistency
+    };
+
+    flushSync(() => {
+      setUser(updatedUser);
+    });
+
+    // Sync to storage
+    sessionStorage.setItem("chat-user", JSON.stringify(updatedUser));
   };
 
   const value = {
@@ -113,6 +123,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateUser,
   };
 
   // ⏳ Prevent app render until auth is ready

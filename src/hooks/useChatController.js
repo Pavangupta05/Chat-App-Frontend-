@@ -350,11 +350,32 @@ function useChatController() {
         ),
       );
     });
+    
+    // 👤 Listen for profile updates from other users
+    const unsubscribeUserUpdated = subscribe("user_updated", (payload) => {
+      if (!payload?.userId) return;
+      
+      const updatedUserId = String(payload.userId);
+      if (updatedUserId === currentUserId) return; // Ignore our own broadcast
+
+      setChats((currentChats) =>
+        currentChats.map((chat) =>
+          String(chat.id) === updatedUserId
+            ? {
+                ...chat,
+                name: payload.username || chat.name,
+                avatar: payload.profilePic || chat.avatar,
+              }
+            : chat
+        )
+      );
+    });
 
     return () => {
       unsubscribeMessage();
       unsubscribeChatCreated();
       unsubscribeMessageDeleted();
+      unsubscribeUserUpdated();
     };
   }, [
     clearTypingForChat,

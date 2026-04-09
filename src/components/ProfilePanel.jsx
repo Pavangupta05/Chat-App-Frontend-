@@ -7,7 +7,8 @@ import OverlayPage from "./OverlayPage";
 import ConfirmModal from "./ConfirmModal";
 
 function ProfilePanel({ isOpen, onClose, editMode = false }) {
-  const { user, token } = useAuth();
+  const { user, token, updateUser } = useAuth();
+  const { emit } = useSocket();
   const [username, setUsername] = useState(user?.username ?? "");
   const [profilePic, setProfilePic] = useState(user?.profilePic ?? "");
   const [saving, setSaving] = useState(false);
@@ -106,6 +107,16 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
         throw new Error(updateJson.error || "Failed to update profile info.");
       }
 
+      const updatedUserRes = await updateRes.json();
+      updateUser(updatedUserRes); // Sync global state
+      
+      // Notify other users via socket
+      emit("profile_updated", {
+        userId: user.id,
+        username: updatedUserRes.username,
+        profilePic: updatedUserRes.profilePic
+      });
+
       setProfilePic(cacheBustedUrl);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -137,6 +148,17 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
         const json = await res.json();
         throw new Error(json.error || "Failed to save profile.");
       }
+
+      const updatedUserRes = await res.json();
+      updateUser(updatedUserRes); // Sync global state
+      
+      // Notify other users via socket
+      emit("profile_updated", {
+        userId: user.id,
+        username: updatedUserRes.username,
+        profilePic: updatedUserRes.profilePic
+      });
+
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
