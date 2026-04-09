@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Moon, Sun, Bell, BellOff, LogOut, Palette, Image, Trash2, X } from "lucide-react";
+import { Moon, Sun, Bell, BellOff, LogOut, Palette, Image, Trash2, X, Shield, FileText, HelpCircle, Info } from "lucide-react";
 import { deleteCurrentUser } from "../services/userService";
 import ConfirmModal from "./ConfirmModal";
 import { useAuth } from "../context/AuthContext";
@@ -237,6 +237,49 @@ function SettingsPanel({
                   {notifStatus === "granted" ? "On" : "Enable"}
                 </button>
               )}
+            </div>
+          </div>
+
+          {/* Legal & About */}
+          <div className="ios-list-group">
+            <div className="settings-row" onClick={() => window.location.hash = "/settings/privacy"} style={{ cursor: 'pointer' }}>
+              <div className="settings-row__info">
+                <Shield size={22} />
+                <div>
+                  <strong>Privacy Policy</strong>
+                  <p>How we protect your data</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="settings-row" onClick={() => window.location.hash = "/settings/terms"} style={{ cursor: 'pointer' }}>
+              <div className="settings-row__info">
+                <FileText size={22} />
+                <div>
+                  <strong>Terms of Service</strong>
+                  <p>Community guidelines</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="settings-row" onClick={() => window.location.hash = "/settings/help"} style={{ cursor: 'pointer' }}>
+              <div className="settings-row__info">
+                <HelpCircle size={22} />
+                <div>
+                  <strong>Help Center</strong>
+                  <p>Get assistance</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="settings-row" onClick={() => window.location.hash = "/settings/about"} style={{ cursor: 'pointer', borderBottom: 'none' }}>
+              <div className="settings-row__info">
+                <Info size={22} />
+                <div>
+                  <strong>About</strong>
+                  <p>App versions and info</p>
+                </div>
+              </div>
             </div>
           </div>
 

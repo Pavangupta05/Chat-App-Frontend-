@@ -59,6 +59,18 @@ function Sidebar({
     return () => document.removeEventListener("pointerdown", handler);
   }, [isFabOpen]);
 
+  const handlePanEnd = (e, info) => {
+    const threshold = 50;
+    const velocityThreshold = 200;
+    if (info.offset.x > threshold || info.velocity.x > velocityThreshold) {
+      const currentIndex = tabs.indexOf(activeTab);
+      if (currentIndex > 0) onTabChange?.(tabs[currentIndex - 1]);
+    } else if (info.offset.x < -threshold || info.velocity.x < -velocityThreshold) {
+      const currentIndex = tabs.indexOf(activeTab);
+      if (currentIndex < tabs.length - 1) onTabChange?.(tabs[currentIndex + 1]);
+    }
+  };
+
   return (
     <aside className={`sidebar${isOpen ? "" : " sidebar--closed"}`}>
 
@@ -200,7 +212,11 @@ function Sidebar({
       )}
 
       {/* ── 4. CHAT LIST / CONTACTS LIST ──────────────────────────────── */}
-      <div className="chat-list" style={{ padding: "0 8px" }}>
+      <motion.div 
+        className="chat-list" 
+        style={{ padding: "0 8px", flex: 1, overflowY: "auto" }}
+        onPanEnd={handlePanEnd}
+      >
         {activeTab === "Contacts" ? (
           // RENDER CONTACTS VIEW
           (() => {
@@ -336,7 +352,7 @@ function Sidebar({
             );
           })
         )}
-      </div>
+      </motion.div>
 
       {/* ── 5. FAB (Desktop Only) ─────────────────────────────────────── */}
       {!isMobile && (

@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
-import { X, Camera, Save, ArrowLeft, Edit } from "lucide-react";
+import { X, Camera, Save, ArrowLeft, Edit, Trash2 } from "lucide-react";
 import { API_URL } from "../config/app";
 import { useAuth } from "../context/AuthContext";
 import { getImageUrl, handleImageError } from "../utils/imageHelper";
 import OverlayPage from "./OverlayPage";
+import ConfirmModal from "./ConfirmModal";
 
 function ProfilePanel({ isOpen, onClose, editMode = false }) {
   const { user, token } = useAuth();
@@ -13,7 +14,34 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [imageLoadError, setImageLoadError] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef(null);
+
+  const handleDeletePhoto = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_URL}/api/users/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ profilePic: "" }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to delete profile photo.");
+      }
+      setProfilePic("");
+      setShowDeleteConfirm(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleFileClick = () => {
     fileInputRef.current?.click();
@@ -207,18 +235,37 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
 
         {error && <p className="profile-error">{error}</p>}
 
-        {editMode && (
-          <button
-            className="profile-save-btn"
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-          >
-            {saving ? "Saving…" : saved ? "✓ Saved!" : (
-              <><Save size={20} /> Save Changes</>
-            )}
-          </button>
-        )}
+        <div style={{ marginTop: "20px" }}>
+          {editMode && (
+            <button
+              className="profile-save-btn"
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? "Saving…" : saved ? "✓ Saved!" : (
+                <><Save size={20} /> Save Changes</>
+              )}
+            </button>
+          )}
+          
+          {profilePic && (
+            <button
+              className="profile-save-btn"
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={saving}
+              style={{ 
+                marginTop: "12px", 
+                backgroundColor: "transparent", 
+                color: "var(--danger)",
+                border: "1px solid var(--danger)"
+              }}
+            >
+              <Trash2 size={20} /> Remove Photo
+            </button>
+          )}
+        </div>
         
         {!editMode && (
           <div style={{ textAlign: 'center', marginTop: '20px' }}>
@@ -228,6 +275,16 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Remove Profile Photo"
+        description="Are you sure you want to remove your profile photo? It will be replaced by your initials."
+        actionLabel="Remove"
+        onConfirm={handleDeletePhoto}
+        onCancel={() => setShowDeleteConfirm(false)}
+        variant="danger"
+      />
     </OverlayPage>
   );
 }

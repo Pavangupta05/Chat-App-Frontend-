@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import SettingsPanel from "./SettingsPanel";
 import ProfilePanel from "./ProfilePanel";
+import StaticPanel from "./StaticPanel";
 
 /**
  * NavigationStack - Manages the stack of overlay pages based on URL.
@@ -14,9 +15,16 @@ const NavigationStack = ({ theme, onThemeToggle, onLogout, backgroundDoodle, onB
   const navigate = useNavigate();
 
   const handleClose = () => {
-    // Navigate back to home or step out of the stack
-    if (location.pathname.startsWith("/profile/edit")) {
+    const path = location.pathname;
+    
+    // BACK NAVIGATION LOGIC
+    if (path.startsWith("/profile/edit")) {
       navigate("/profile");
+    } else if (path === "/profile" || path === "/settings") {
+      navigate("/");
+    } else if (path.startsWith("/settings/")) {
+      // Swipe back from Privacy/Terms goes back to Settings
+      navigate("/settings");
     } else {
       navigate("/");
     }
@@ -52,6 +60,20 @@ const NavigationStack = ({ theme, onThemeToggle, onLogout, backgroundDoodle, onB
           onClose={handleClose}
           editMode={true}
         />
+      )}
+
+      {/* Static Info Pages */}
+      {location.pathname === "/settings/privacy" && (
+        <StaticPanel key="privacy" type="privacy" onClose={handleClose} />
+      )}
+      {location.pathname === "/settings/terms" && (
+        <StaticPanel key="terms" type="terms" onClose={handleClose} />
+      )}
+      {location.pathname === "/settings/help" && (
+        <StaticPanel key="help" type="help" onClose={handleClose} />
+      )}
+      {location.pathname === "/settings/about" && (
+        <StaticPanel key="about" type="about" onClose={handleClose} />
       )}
     </AnimatePresence>
   );
