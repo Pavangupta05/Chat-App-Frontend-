@@ -71,9 +71,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Cache first for versioned static assets (JS, CSS, Images)
+  // 2. Network first for static assets (JS, CSS, Images)
+  // This ensures updates are caught immediately while online.
   if (isStaticAsset(url.pathname)) {
-    event.respondWith(cacheFirst(request));
+    event.respondWith(networkFirst(request));
   } else {
     // 3. Network first for everything else
     event.respondWith(networkFirst(request));

@@ -3,16 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#3390ec" />
+    <meta name="theme-color" content="#0b141a" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="description" content="A modern Telegram-style chat application with real-time messaging, audio calls, and advanced features" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="ChatApp" />
+    <meta name="apple-mobile-web-app-title" content="TalkNow+" />
     <link rel="manifest" href="/manifest.json" />
-    <link rel="icon" href="/icon-192x192.png" sizes="192x192" />
-    <link rel="apple-touch-icon" href="/icon-192x192.png" />
-    <title>Neon Relay Chat</title>
+    <link rel="icon" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <title>TalkNow+</title>
   </head>
     <style>
       #app-loader {
@@ -21,14 +21,14 @@
         align-items: center; justify-content: center; z-index: 9999;
         color: white; font-family: -apple-system, system-ui, sans-serif;
       }
-      .loader-spinner {
+    .loader-spinner {
         width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
-        border-top: 3px solid #3390ec; border-radius: 50%;
+        border-top: 3px solid #0b141a; border-radius: 50%;
         animation: spin 1s linear infinite; margin-bottom: 20px;
       }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
       #failsafe-btn {
-        margin-top: 30px; padding: 12px 24px; background: #3390ec;
+        margin-top: 30px; padding: 12px 24px; background: #0b141a;
         color: white; border: none; border-radius: 8px; font-weight: 600;
         display: none; cursor: pointer;
       }
@@ -36,7 +36,7 @@
   <body>
     <div id="app-loader">
       <div class="loader-spinner"></div>
-      <div id="loader-status">Initializing Neon Relay...</div>
+      <div id="loader-status">Initializing TalkNow+...</div>
       <button id="failsafe-btn" onclick="clearAllData()">Failsafe App Reset</button>
     </div>
 
@@ -49,7 +49,7 @@
     <script type="module" src="/src/main.jsx"></script>
     <script>
       // 🚀 BOOTSTRAP VERSION (Deep Purge for v4.0.0)
-      const APP_VERSION = '4.0.0'; 
+      const APP_VERSION = '4.0.1'; 
       
       async function clearAllData() {
         if (document.getElementById('loader-status')) {

@@ -11,6 +11,7 @@ import Sidebar from "./Sidebar";
 import ChatWindow from "./ChatWindow";
 import Call from "./Call";
 import AudioCallModal from "./AudioCallModal";
+import NavigationStack from "./NavigationStack";
 import useChatController from "../hooks/useChatController";
 import { useAuth } from "../context/AuthContext";
 
@@ -66,65 +67,11 @@ function ChatLayout() {
 
   const [confirmAction, setConfirmAction] = useState(null);
   const [chatModalMode, setChatModalMode] = useState(null); // null | "chat" | "group"
-  const [panelMode, setPanelMode] = useState(null);        // null | "profile" | "settings"
   const { logout } = useAuth();
   
   const cameraInputRef = useRef(null);
 
-  // ── SWIPE-BACK GESTURE LOGIC ──────────────────────────────────────────
-  const swipeStartRef = useRef(null);
-  
-  useEffect(() => {
-    if (!isMobileView || !isMobileChatOpen) return;
 
-    const handleTouchStart = (e) => {
-      const touch = e.touches[0];
-      // Only start swipe from the left edge (e.g., first 32px)
-      if (touch.clientX < 32) {
-        swipeStartRef.current = { x: touch.clientX, y: touch.clientY };
-      } else {
-        swipeStartRef.current = null;
-      }
-    };
-
-    const handleTouchMove = (e) => {
-      if (!swipeStartRef.current) return;
-      
-      const touch = e.touches[0];
-      const deltaX = touch.clientX - swipeStartRef.current.x;
-      const deltaY = touch.clientY - swipeStartRef.current.y;
-
-      // If they are swiping horizontally more than vertically
-      if (deltaX > 20 && Math.abs(deltaX) > Math.abs(deltaY)) {
-        // Prevent default browser behavior if we're definitely swiping back
-        if (e.cancelable) e.preventDefault();
-      }
-    };
-
-    const handleTouchEnd = (e) => {
-      if (!swipeStartRef.current) return;
-      
-      const touch = e.changedTouches[0];
-      const deltaX = touch.clientX - swipeStartRef.current.x;
-      
-      // If swipe distance > threshold (e.g., 120px)
-      if (deltaX > 120) {
-        handleMobileBack();
-      }
-      
-      swipeStartRef.current = null;
-    };
-
-    document.addEventListener("touchstart", handleTouchStart, { passive: true });
-    document.addEventListener("touchmove", handleTouchMove, { passive: false });
-    document.addEventListener("touchend", handleTouchEnd, { passive: true });
-
-    return () => {
-      document.removeEventListener("touchstart", handleTouchStart);
-      document.removeEventListener("touchmove", handleTouchMove);
-      document.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [isMobileView, isMobileChatOpen]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -162,13 +109,10 @@ function ChatLayout() {
     const pathSegments = location.pathname.split("/").filter(Boolean);
     
     if (location.pathname === "/" || pathSegments.length === 0) {
-      setPanelMode(null);
       if (isMobileView) setIsMobileChatOpen(false);
     } else if (location.pathname === "/settings") {
-      setPanelMode("settings");
       if (isMobileView) setIsMobileChatOpen(false);
     } else if (location.pathname === "/profile") {
-      setPanelMode("profile");
       if (isMobileView) setIsMobileChatOpen(false);
     } else if (pathSegments[0] === "chat" && pathSegments[1]) {
       const chatId = pathSegments[1];
@@ -225,17 +169,14 @@ function ChatLayout() {
   };
 
   const handleOpenSettings = () => {
-    setPanelMode("settings");
     navigate("/settings");
   };
 
   const handleOpenProfile = () => {
-    setPanelMode("profile");
     navigate("/profile");
   };
 
   const handleClosePanel = () => {
-    setPanelMode(null);
     navigate("/");
   };
 
@@ -244,7 +185,6 @@ function ChatLayout() {
     
     // 1. Instantly close visual layers
     setIsMobileChatOpen(false);
-    setPanelMode(null);
     setChatModalMode(null);
 
     // 2. Clear state in ONE movement
@@ -264,7 +204,7 @@ function ChatLayout() {
     closeConfirmModal();
   };
 
-  const isChatVisible = !!currentChat && !panelMode;
+  const isChatVisible = !!currentChat;
   
   const layoutClass = isMobileView
     ? isMobileChatOpen && isChatVisible
@@ -272,7 +212,7 @@ function ChatLayout() {
       : "is-mobile-sidebar"
     : "";
 
-  const showEmptyState = !isMobileView && !currentChat && !panelMode;
+  const showEmptyState = !isMobileView && !currentChat;
 
   // Calculate unread total
   const totalUnreadCount = chats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
@@ -437,10 +377,10 @@ function ChatLayout() {
             <span style={{ fontSize: '10px' }}>Contacts</span>
           </button>
           <button 
-            className={`mobile-nav__item ${panelMode === 'settings' ? 'is-active' : ''}`}
+            className={`mobile-nav__item ${location.pathname === '/settings' ? 'is-active' : ''}`}
             onClick={handleOpenSettings}
           >
-            {panelMode === 'settings' && (
+            {location.pathname === '/settings' && (
               <motion.div 
                 layoutId="activeTabPill"
                 className="mobile-nav__highlight"
@@ -452,10 +392,10 @@ function ChatLayout() {
             <span style={{ fontSize: '10px' }}>Settings</span>
           </button>
           <button 
-            className={`mobile-nav__item ${panelMode === 'profile' ? 'is-active' : ''}`}
+            className={`mobile-nav__item ${location.pathname === '/profile' ? 'is-active' : ''}`}
             onClick={handleOpenProfile}
           >
-            {panelMode === 'profile' && (
+            {location.pathname === '/profile' && (
               <motion.div 
                 layoutId="activeTabPill"
                 className="mobile-nav__highlight"
@@ -527,13 +467,7 @@ function ChatLayout() {
         remoteStream={call.remoteStream}
         secureContext={call.secureContext}
       />
-      <ProfilePanel
-        isOpen={panelMode === "profile"}
-        onClose={handleClosePanel}
-      />
-      <SettingsPanel
-        isOpen={panelMode === "settings"}
-        onClose={handleClosePanel}
+      <NavigationStack 
         theme={theme}
         onThemeToggle={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
         onLogout={logout}

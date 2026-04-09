@@ -54,4 +54,13 @@ export default defineConfig({
       "/health": apiProxy,
     },
   },
+  build: {
+    assetsDir: "assets",
+    emptyOutDir: true, // Clean the dist folder before building
+    rollupOptions: {
+      output: {
+        manualChunks: undefined, // Default hashing behavior
+      },
+    },
+  },
 });
