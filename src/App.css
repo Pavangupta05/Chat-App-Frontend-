@@ -878,6 +878,19 @@ body {
   border-top-right-radius: 2px;
 }
 
+.message__bubble--emoji-only {
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 42px !important;
+  padding: 4px 0 !important;
+  line-height: 1 !important;
+}
+
+.message__bubble--emoji-only p {
+  font-size: 42px !important;
+  margin: 0 !important;
+}
+
 .message__bubble p {
   margin: 0 0 4px;
   line-height: 1.45;
@@ -4302,6 +4315,20 @@ body {
   z-index: 2000;
   animation: slideUpNav 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden; /* Key for highlight clipping */
+  pointer-events: auto;
+}
+
+.mobile-viewport {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.is-swiping * {
+  pointer-events: none !important;
 }
 
 @keyframes slideUpNav {
@@ -4721,6 +4748,12 @@ body {
     /* Use fixed padding for docking reliability */
     padding-bottom: env(safe-area-inset-bottom, 8px) !important;
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
+    margin-bottom: constant(safe-area-inset-bottom) !important; 
+    margin-bottom: env(safe-area-inset-bottom) !important;
+  }
+
+  .chat-window__messages {
+    padding-bottom: 110px !important; /* Ensure content doesn't get hidden by dock */
   }
 
   .input-box-shell {

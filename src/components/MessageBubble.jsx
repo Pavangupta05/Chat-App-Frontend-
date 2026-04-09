@@ -95,6 +95,27 @@ function MessageBubble({
     if (!isSelectionMode) onToggleSelect();
   };
 
+  // Detect if message is purely emojis (up to 3) for large rendering
+  const isOnlyEmoji = useMemo(() => {
+    if (!message.text || message.type === "file") return false;
+    // Regex for emojis (very simplified but effective for most common ones)
+    const emojiRegex = /^(\u2702|\u2705|\u2708|\u2709|\u270A-\u270D|\u270F|\u2712|\u2714|\u2716|\u271D|\u2721|\u2728|\u2733|\u2734|\u2744|\u2747|\u274C|\u274E|\u2753-\u2755|\u2757|\u2763|\u2764|\u2795-\u2797|\u27A1|\u27B0|\u27BF|\u2934|\u2935|\u2B05-\u2B07|\u2B1B|\u2B1C|\u2B50|\u2B55|\u3030|\u303D|\u3297|\u3299|\uD83C[\uDC04\uDCCF\uDD70\uDD71\uDD7E\uDD7F\uDD8E\uDD91-\uDD9A\uDDE6-\uDDFF\uDE01\uDE02\uDE1A\uDE2F\uDE32-\uDE3A\uDE50\uDE51\uDF00-\uDF21\uDF24-\uDF93\uDF96-\uDF9B\uDF9E-\uDFA0\uDFA2-\uDFAF\uDFB1-\uDFBF\uDFC1-\uDFC4\uDFC6-\uDFCA\uDFCE-\uDFFF]|\uD83D[\uDC00-\uDCFD\uDCFF-\uDD3D\uDD49-\uDD4E\uDD50-\uDD67\uDD6F-\uDD70\uDD73-\uDD7A\uDD87\uDD8A-\uDD8D\uDD90\uDD95\uDD96\uDDA5\uDDA8\uDDB1\uDDB2\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA-\uDE4F\uDE80-\uDEC5\uDECB-\uDED2\uDEE0-\uDEE5\uDEE9\uDEEB\uDEEC\uDEF0-\uDEF3]|\uD83E[\uDD10-\uDD1E\uDD20-\uDD27\uDD30\uDD33-\uDD3A\uDD3C-\uDD3E\uDD40-\uDD45\uDD47-\uDD4B\uDD50-\uDD5E\uDD80-\uDD91\uDDC0])[\s\uFE0F]*$/u;
+    
+    // Split by whitespace and check each character
+    const chars = Array.from(message.text.trim());
+    if (chars.length > 3) return false;
+    
+    // Simple check: if removing emojis leaves nothing but whitespace
+    const emojiOnly = message.text.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF]/g, '').trim().length === 0;
+    return emojiOnly && chars.length <= 3;
+  }, [message.text, message.type]);
+
+  const bubbleClass = [
+    "message__bubble",
+    isOutgoing ? "message__bubble--outgoing" : "message__bubble--incoming",
+    isOnlyEmoji ? "message__bubble--emoji-only" : "",
+  ].join(" ").trim();
+
   return (
     <article
       className={[
@@ -134,9 +155,7 @@ function MessageBubble({
         />
       )}
       <div
-        className={`message__bubble${
-          isOutgoing ? " message__bubble--outgoing" : " message__bubble--incoming"
-        }`}
+        className={bubbleClass}
         style={{ pointerEvents: isSelectionMode ? "none" : "auto" }}
       >
         {/* Sender name (group / incoming) */}

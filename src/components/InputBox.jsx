@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Smile, Paperclip, Send, X } from "lucide-react";
-import EmojiPicker from "./EmojiPicker";
+import EmojiPicker from 'emoji-picker-react';
 import FileUpload from "./FileUpload";
 import ReplyPreview from "./ReplyPreview";
 
@@ -29,21 +29,35 @@ function InputBox({
     }
   }, [value]);
 
-  const handleEmojiInsert = (emoji) => {
-    onChange(`${value}${emoji}`);
-    setIsEmojiPickerOpen(false);
-    inputRef.current?.focus();
+  const handleEmojiInsert = (emojiData) => {
+    const emoji = emojiData.emoji;
+    const input = inputRef.current;
+    if (!input) return;
+
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const text = value;
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+
+    onChange(before + emoji + after);
+    
+    // Position cursor after the emoji in the next tick
+    setTimeout(() => {
+      input.selectionStart = input.selectionEnd = start + emoji.length;
+      input.focus();
+    }, 0);
   };
 
   useEffect(() => {
     const handler = (e) => {
-      if (!emojiPickerRef.current?.contains(e.target)) {
+      if (isEmojiPickerOpen && !emojiPickerRef.current?.contains(e.target)) {
         setIsEmojiPickerOpen(false);
       }
     };
     window.addEventListener("pointerdown", handler);
     return () => window.removeEventListener("pointerdown", handler);
-  }, []);
+  }, [isEmojiPickerOpen]);
 
   const handleChange = (e) => onChange(e.target.value);
 
@@ -110,9 +124,17 @@ function InputBox({
                   initial={{ opacity: 0, y: 8, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                  style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 12, zIndex: 30 }}
+                  style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 12, zIndex: 3000 }}
                 >
-                  <EmojiPicker onSelect={handleEmojiInsert} />
+                  <EmojiPicker 
+                    onEmojiClick={handleEmojiInsert} 
+                    theme="dark"
+                    lazyLoadEmojis={true}
+                    skinTonesDisabled
+                    searchDisabled={false}
+                    width={320}
+                    height={400}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>

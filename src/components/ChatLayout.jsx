@@ -217,99 +217,231 @@ function ChatLayout() {
   // Calculate unread total
   const totalUnreadCount = chats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
 
+  // -- Swipe Back Gesture Implementation -------------------------
+  const [swipeX, setSwipeX] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const touchStart = useRef(0);
+  const isAnimating = useRef(false);
+
+  const handleTouchStart = (e) => {
+    if (!isMobileView || !isMobileChatOpen || isAnimating.current) return;
+    const x = e.touches[0].clientX;
+    if (x < 40) { // Only trigger near the left edge
+      touchStart.current = x;
+      setIsSwiping(true);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isSwiping) return;
+    const currentX = e.touches[0].clientX;
+    const deltaX = Math.max(0, currentX - touchStart.current);
+    setSwipeX(deltaX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isSwiping) return;
+    
+    const threshold = window.innerWidth / 3;
+    if (swipeX > threshold) {
+      // Complete back gesture
+      isAnimating.current = true;
+      setSwipeX(window.innerWidth);
+      setTimeout(() => {
+        handleMobileBack();
+        setSwipeX(0); // Reset for next time
+        setIsSwiping(false);
+        isAnimating.current = false;
+      }, 300);
+    } else {
+      // Snap back
+      isAnimating.current = true;
+      setSwipeX(0);
+      setTimeout(() => {
+        setIsSwiping(false);
+        isAnimating.current = false;
+      }, 300);
+    }
+  };
+
   return (
-    <main className={`app ${isMobileView ? 'chat-layout--mobile' : ''}`}>
-      <section className={`telegram-layout telegram-layout--${viewport} ${layoutClass}`}>
-        <Sidebar
-          activeChatId={currentChat?.id}
-          activeTab={activeTab}
-          chats={chats}
-          connectionLabel={socketState.isConnected ? "Online" : (socketState.connectionError ?? "Connecting…")}
-          isOpen={isMobileView ? true : isSidebarOpen}
-          isUserOnline={isUserOnline}
-          onLogout={logout}
-          onNewChat={() => setChatModalMode("chat")}
-          onNewGroup={() => setChatModalMode("group")}
-          onProfile={handleOpenProfile}
-          onSettings={handleOpenSettings}
-          onThemeToggle={() =>
-            setTheme((t) => (t === "dark" ? "light" : "dark"))
-          }
-          onSearchChange={setSearchTerm}
-          onSelectChat={handleSelectChat}
-          onDeleteChat={(id) => {
-            selectChat(id);
-            setConfirmAction("delete-chat");
-          }}
-          onTabChange={setActiveTab}
-          onToggleSidebar={() => setIsSidebarOpen((v) => !v)}
-          searchTerm={searchTerm}
-          theme={theme}
-          username={username}
-          viewport={viewport}
-        />
+    <main 
+      className={`app ${isMobileView ? 'chat-layout--mobile' : ''} ${isSwiping ? 'is-swiping' : ''}`}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div 
+        className="mobile-viewport"
+        style={{
+          transform: isMobileView && isMobileChatOpen 
+            ? `translate3d(${swipeX}px, 0, 0)` 
+            : 'translate3d(0, 0, 0)',
+          transition: isSwiping ? 'none' : 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+          willChange: 'transform',
+          height: '100%',
+          width: '100%',
+          position: 'relative'
+        }}
+      >
+        <section className={`telegram-layout telegram-layout--${viewport} ${layoutClass}`}>
+          <Sidebar
+            activeChatId={currentChat?.id}
+            activeTab={activeTab}
+            chats={chats}
+            connectionLabel={socketState.isConnected ? "Online" : (socketState.connectionError ?? "Connecting…")}
+            isOpen={isMobileView ? true : isSidebarOpen}
+            isUserOnline={isUserOnline}
+            onLogout={logout}
+            onNewChat={() => setChatModalMode("chat")}
+            onNewGroup={() => setChatModalMode("group")}
+            onProfile={handleOpenProfile}
+            onSettings={handleOpenSettings}
+            onThemeToggle={() =>
+              setTheme((t) => (t === "dark" ? "light" : "dark"))
+            }
+            onSearchChange={setSearchTerm}
+            onSelectChat={handleSelectChat}
+            onDeleteChat={(id) => {
+              selectChat(id);
+              setConfirmAction("delete-chat");
+            }}
+            onTabChange={setActiveTab}
+            onToggleSidebar={() => setIsSidebarOpen((v) => !v)}
+            searchTerm={searchTerm}
+            theme={theme}
+            username={username}
+            viewport={viewport}
+          />
 
-        <div className={`chat-main-area ${backgroundDoodle?.type ? `chat-bg-doodle-${backgroundDoodle.type}` : ""}`}
-             style={{ "--bg-overlay-opacity": backgroundDoodle?.opacity ?? 0.3 }}>
-          {showEmptyState ? (
-            <div className="chat-window" style={{ background: "transparent" }}>
-              <div className="chat-window__empty">
-                <div className="chat-window__empty-icon">
-                  <MessageSquare size={36} />
+          <div className={`chat-main-area ${backgroundDoodle?.type ? `chat-bg-doodle-${backgroundDoodle.type}` : ""}`}
+               style={{ "--bg-overlay-opacity": backgroundDoodle?.opacity ?? 0.3 }}>
+            {showEmptyState ? (
+              <div className="chat-window" style={{ background: "transparent" }}>
+                <div className="chat-window__empty">
+                  <div className="chat-window__empty-icon">
+                    <MessageSquare size={36} />
+                  </div>
+                  <p style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
+                    Select a chat
+                  </p>
+                  <p style={{ color: "var(--text-secondary)", maxWidth: 260 }}>
+                    Choose a conversation from the list to start messaging
+                  </p>
                 </div>
-                <p style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
-                  Select a chat
-                </p>
-                <p style={{ color: "var(--text-secondary)", maxWidth: 260 }}>
-                  Choose a conversation from the list to start messaging
-                </p>
               </div>
-            </div>
-          ) : (
-            <ChatWindow
-              backgroundDoodle={backgroundDoodle}
-              callProps={{
-                acceptCall: call.acceptCall,
-                callDuration: call.callDuration,
-                callError: call.callError,
-                callMode: call.callMode,
-                callStatus: call.callStatus,
-                endCall: call.endCall,
-                incomingCall: call.incomingCall,
-                isMuted: call.isMuted,
-                localStream: call.localStream,
-                remoteStream: call.remoteStream,
-                toggleMute: call.toggleMute,
-              }}
-              chat={currentChat}
-              draftMessage={draftMessage}
-              isCompactInput={viewport !== "desktop"}
-              isMobileView={isMobileView}
-              onClearReply={clearReply}
-              onConfirmClearChat={() => setConfirmAction("clear-chat")}
-              onConfirmDeleteChat={() => setConfirmAction("delete-chat")}
-              onDeleteMessageForEveryone={deleteMessageForEveryone}
-              onDeleteMessageForMe={deleteMessageForMe}
-              onDraftChange={(nextValue) => {
-                setDraftMessage(nextValue);
-                handleTypingInputChange(nextValue);
-              }}
-              onFileUpload={sendFileMessage}
-              onForwardMessage={startForwardMessage}
-              onMobileBack={handleMobileBack}
-              onReplyMessage={setReplyMessage}
-              onSendMessage={sendMessage}
-              onStartAudioCall={() => call.startCall("audio")}
-              onStartVideoCall={() => call.startCall("video")}
-              replyMessage={replyMessage}
-              typingText={socketState.isConnected ? typing.text : ""}
-            />
-          )}
-        </div>
-      </section>
+            ) : (
+              <ChatWindow
+                backgroundDoodle={backgroundDoodle}
+                callProps={{
+                  acceptCall: call.acceptCall,
+                  callDuration: call.callDuration,
+                  callError: call.callError,
+                  callMode: call.callMode,
+                  callStatus: call.callStatus,
+                  endCall: call.endCall,
+                  incomingCall: call.incomingCall,
+                  isMuted: call.isMuted,
+                  localStream: call.localStream,
+                  remoteStream: call.remoteStream,
+                  toggleMute: call.toggleMute,
+                }}
+                chat={currentChat}
+                draftMessage={draftMessage}
+                isCompactInput={viewport !== "desktop"}
+                isMobileView={isMobileView}
+                onClearReply={clearReply}
+                onConfirmClearChat={() => setConfirmAction("clear-chat")}
+                onConfirmDeleteChat={() => setConfirmAction("delete-chat")}
+                onDeleteMessageForEveryone={deleteMessageForEveryone}
+                onDeleteMessageForMe={deleteMessageForMe}
+                onDraftChange={(nextValue) => {
+                  setDraftMessage(nextValue);
+                  handleTypingInputChange(nextValue);
+                }}
+                onFileUpload={sendFileMessage}
+                onForwardMessage={startForwardMessage}
+                onMobileBack={handleMobileBack}
+                onReplyMessage={setReplyMessage}
+                onSendMessage={sendMessage}
+                onStartAudioCall={() => call.startCall("audio")}
+                onStartVideoCall={() => call.startCall("video")}
+                replyMessage={replyMessage}
+                typingText={socketState.isConnected ? typing.text : ""}
+              />
+            )}
+          </div>
+        </section>
 
-      {/* MOBILE UI ELEMENTS */}
-      {/* FABs - Visible on Mobile and Desktop */}
+        {/* MOBILE BOTTOM NAVIGATION - Now inside mobile-viewport wrapper */}
+        {isMobileView && !isMobileChatOpen && (
+          <nav className="mobile-nav">
+            <button 
+              className={`mobile-nav__item ${activeTab === 'All Chats' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('All Chats')}
+            >
+              {activeTab === 'All Chats' && (
+                <motion.div 
+                  layoutId="activeTabPill"
+                  className="mobile-nav__highlight"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <div className="mobile-nav__pill"></div>
+              <MessageSquare size={24} />
+              <span style={{ fontSize: '10px' }}>Chats</span>
+              {totalUnreadCount > 0 && <span className="mobile-nav__badge">{totalUnreadCount}</span>}
+            </button>
+            <button 
+              className={`mobile-nav__item ${activeTab === 'Contacts' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('Contacts')}
+            >
+              {activeTab === 'Contacts' && (
+                <motion.div 
+                  layoutId="activeTabPill"
+                  className="mobile-nav__highlight"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <div className="mobile-nav__pill"></div>
+              <Users size={24} />
+              <span style={{ fontSize: '10px' }}>Contacts</span>
+            </button>
+            <button 
+              className={`mobile-nav__item ${location.pathname === '/settings' ? 'is-active' : ''}`}
+              onClick={handleOpenSettings}
+            >
+              {location.pathname === '/settings' && (
+                <motion.div 
+                  layoutId="activeTabPill"
+                  className="mobile-nav__highlight"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <div className="mobile-nav__pill"></div>
+              <Settings size={24} />
+              <span style={{ fontSize: '10px' }}>Settings</span>
+            </button>
+            <button 
+              className={`mobile-nav__item ${location.pathname === '/profile' ? 'is-active' : ''}`}
+              onClick={handleOpenProfile}
+            >
+              {location.pathname === '/profile' && (
+                <motion.div 
+                  layoutId="activeTabPill"
+                  className="mobile-nav__highlight"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <div className="mobile-nav__pill"></div>
+              <User size={24} />
+              <span style={{ fontSize: '10px' }}>Profile</span>
+            </button>
+          </nav>
+        )}
+      </div>
+
+      {/* FABs - Outside moving viewport but only visible on Home */}
       {!isMobileChatOpen && (
         <>
           <input
@@ -340,73 +472,6 @@ function ChatLayout() {
             <Camera size={26} />
           </button>
         </>
-      )}
-
-      {/* MOBILE BOTTOM NAVIGATION */}
-      {isMobileView && !isMobileChatOpen && (
-        <nav className="mobile-nav">
-          <button 
-            className={`mobile-nav__item ${activeTab === 'All Chats' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('All Chats')}
-          >
-            {activeTab === 'All Chats' && (
-              <motion.div 
-                layoutId="activeTabPill"
-                className="mobile-nav__highlight"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-              />
-            )}
-            <div className="mobile-nav__pill"></div>
-            <MessageSquare size={24} />
-            <span style={{ fontSize: '10px' }}>Chats</span>
-            {totalUnreadCount > 0 && <span className="mobile-nav__badge">{totalUnreadCount}</span>}
-          </button>
-          <button 
-            className={`mobile-nav__item ${activeTab === 'Contacts' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('Contacts')}
-          >
-            {activeTab === 'Contacts' && (
-              <motion.div 
-                layoutId="activeTabPill"
-                className="mobile-nav__highlight"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-              />
-            )}
-            <div className="mobile-nav__pill"></div>
-            <Users size={24} />
-            <span style={{ fontSize: '10px' }}>Contacts</span>
-          </button>
-          <button 
-            className={`mobile-nav__item ${location.pathname === '/settings' ? 'is-active' : ''}`}
-            onClick={handleOpenSettings}
-          >
-            {location.pathname === '/settings' && (
-              <motion.div 
-                layoutId="activeTabPill"
-                className="mobile-nav__highlight"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-              />
-            )}
-            <div className="mobile-nav__pill"></div>
-            <Settings size={24} />
-            <span style={{ fontSize: '10px' }}>Settings</span>
-          </button>
-          <button 
-            className={`mobile-nav__item ${location.pathname === '/profile' ? 'is-active' : ''}`}
-            onClick={handleOpenProfile}
-          >
-            {location.pathname === '/profile' && (
-              <motion.div 
-                layoutId="activeTabPill"
-                className="mobile-nav__highlight"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-              />
-            )}
-            <div className="mobile-nav__pill"></div>
-            <User size={24} />
-            <span style={{ fontSize: '10px' }}>Profile</span>
-          </button>
-        </nav>
       )}
 
       <ForwardModal
