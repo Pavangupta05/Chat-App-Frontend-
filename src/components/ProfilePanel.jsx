@@ -13,7 +13,80 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [imageLoadError, setImageLoadError] = useState(false);
-  const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  const handleFileClick = () => {
+    if (editMode) fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 1. Validation
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      setError("File is too large. Max size is 5MB.");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file.");
+      return;
+    }
+
+    // 2. Local Preview (URL.createObjectURL)
+    const previewUrl = URL.createObjectURL(file);
+    setProfilePic(previewUrl); 
+    setError("");
+
+    // 3. Upload to server
+    setSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadRes = await fetch(`${API_URL}/upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        const uploadJson = await uploadRes.json();
+        throw new Error(uploadJson.error || "Upload failed.");
+      }
+
+      const { fileUrl } = await uploadRes.json();
+      
+      // 4. Update Profile in DB
+      // We append a timestamp to the URL for cache busting
+      const cacheBustedUrl = `${fileUrl}?v=${new Date().getTime()}`;
+      
+      const updateRes = await fetch(`${API_URL}/api/users/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ profilePic: cacheBustedUrl }),
+      });
+
+      if (!updateRes.ok) {
+        throw new Error("Failed to save profile after upload.");
+      }
+
+      setProfilePic(cacheBustedUrl);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setError(err.message);
+      // Revert if failed? Or keep the preview but show error
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!username.trim()) {
@@ -66,7 +139,7 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
 
       <div className="side-panel__body">
         {/* Avatar preview */}
-        <div className="profile-avatar-wrap">
+        <div className="profile-avatar-wrap" onClick={handleFileClick} style={{ cursor: editMode ? 'pointer' : 'default' }}>
           {displayImage && !imageLoadError ? (
             <img
               src={displayImage}
@@ -80,14 +153,19 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
           ) : (
             <div className="profile-avatar-fallback">{initials}</div>
           )}
-          <button
-            className="profile-avatar-edit"
-            type="button"
-            title="Change avatar (paste URL below)"
-            onClick={() => inputRef.current?.focus()}
-          >
-            <Camera size={18} />
-          </button>
+          {editMode && (
+            <div className="profile-avatar-edit">
+              <Camera size={18} />
+            </div>
+          )}
+          
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            style={{ display: 'none' }} 
+            accept="image/*"
+          />
         </div>
 
         <div className="ios-list-group">
@@ -99,19 +177,6 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               maxLength={32}
-              readOnly={!editMode}
-            />
-          </label>
-
-          <label className="profile-label">
-            <span>Avatar URL</span>
-            <input
-              ref={inputRef}
-              className="profile-input"
-              type="url"
-              placeholder="Paste image URL here"
-              value={profilePic}
-              onChange={(e) => setProfilePic(e.target.value)}
               readOnly={!editMode}
             />
           </label>

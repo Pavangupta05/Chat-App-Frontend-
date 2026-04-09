@@ -3507,6 +3507,13 @@ body {
   font-size: 36px;
   display: grid;
   place-items: center;
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.profile-avatar-wrap[style*="cursor: pointer"]:hover .profile-avatar-img,
+.profile-avatar-wrap[style*="cursor: pointer"]:hover .profile-avatar-fallback {
+  filter: brightness(0.85);
+  transform: scale(1.02);
 }
 
 .profile-avatar-edit {
@@ -4629,7 +4636,7 @@ body {
   }
   
   .chat-main-area {
-    background: var(--app-background);
+    background-color: var(--app-background);
   }
 
   /* Sidebar Position */
