@@ -52,7 +52,7 @@ function StaticPanel({ type, onClose }) {
           {content.text}
         </div>
         
-        <div style={{ marginTop: "48px", borderTop: "1px solid var(--border-color)",调节: "24px 0" }}>
+        <div style={{ marginTop: "48px", borderTop: "1px solid var(--border-color)", padding: "24px 0" }}>
           <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
             © 2026 Chat App. All rights reserved.
           </p>

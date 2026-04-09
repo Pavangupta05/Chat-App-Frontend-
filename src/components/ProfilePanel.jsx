@@ -102,15 +102,16 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
       });
 
       if (!updateRes.ok) {
-        throw new Error("Failed to save profile after upload.");
+        const updateJson = await updateRes.json();
+        throw new Error(updateJson.error || "Failed to update profile info.");
       }
 
       setProfilePic(cacheBustedUrl);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      setError(err.message);
-      // Revert if failed? Or keep the preview but show error
+      console.error("[Profile Update Error]", err);
+      setError(`Failed: ${err.message}`);
     } finally {
       setSaving(false);
     }
