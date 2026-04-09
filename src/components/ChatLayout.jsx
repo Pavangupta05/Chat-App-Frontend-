@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Users, Settings, User, Camera, ArrowLeft, UserPlus } from "lucide-react";
+import { MessageSquare, Users, Settings, User, Camera, ArrowLeft, UserPlus, Plus } from "lucide-react";
 import ConfirmModal from "./ConfirmModal";
 import ForwardModal from "./ForwardModal";
 import NewChatModal from "./NewChatModal";
@@ -73,23 +73,16 @@ function ChatLayout() {
 
 
 
+  // Handle Viewport Changes
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;
-      if (w < 768) {
-        setViewport("mobile");
+      const nextViewport = w < 768 ? "mobile" : w < 1024 ? "tablet" : "desktop";
+      setViewport(nextViewport);
+      
+      if (nextViewport !== "mobile") {
         setIsSidebarOpen(true);
-        return;
       }
-      if (w < 1024) {
-        setViewport("tablet");
-        setIsSidebarOpen(false);
-        setActiveScreen("chat");
-        return;
-      }
-      setViewport("desktop");
-      setIsSidebarOpen(true);
-      setActiveScreen("chat");
     };
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -108,22 +101,20 @@ function ChatLayout() {
   useEffect(() => {
     const pathSegments = location.pathname.split("/").filter(Boolean);
     
-    if (location.pathname === "/" || pathSegments.length === 0) {
+    if (pathSegments.length === 0) {
       setActiveScreen("chatList");
-    } else if (location.pathname === "/settings") {
+    } else if (pathSegments[0] === "settings") {
       setActiveScreen("settings");
-    } else if (location.pathname === "/profile") {
+    } else if (pathSegments[0] === "profile") {
       setActiveScreen("profile");
     } else if (pathSegments[0] === "chat" && pathSegments[1]) {
       const chatId = pathSegments[1];
       setActiveScreen("chat");
-      
       if (currentChat?.id !== chatId) {
-        const chat = chats.find((c) => c.id === chatId);
-        if (chat) selectChat(chatId);
+        selectChat(chatId);
       }
     }
-  }, [location.pathname, chats, selectChat, currentChat?.id]);
+  }, [location.pathname, selectChat, currentChat?.id]);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -210,10 +201,15 @@ function ChatLayout() {
   const layoutClass = isMobileView
     ? (activeScreen === "chat" && isChatVisible)
       ? "is-mobile-chat"
-      : "is-mobile-sidebar"
+      : (activeScreen === "settings")
+        ? "is-mobile-settings chat-layout--mobile"
+        : (activeScreen === "profile")
+          ? "is-mobile-profile chat-layout--mobile"
+          : "is-mobile-sidebar chat-layout--mobile"
     : "";
 
-  const isMobileChatOpen = activeScreen === "chat";
+  const isMobileMainScreen = activeScreen === "chatList";
+  const isMobileDetailScreen = activeScreen !== "chatList";
 
   const showEmptyState = !isMobileView && !currentChat;
 
@@ -223,13 +219,13 @@ function ChatLayout() {
   // -- Swipe Back Gesture Implementation -------------------------
   const [swipeX, setSwipeX] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   const touchStart = useRef(0);
-  const isAnimating = useRef(false);
 
   const handleTouchStart = (e) => {
-    if (!isMobileView || activeScreen !== "chat" || isAnimating.current) return;
+    if (!isMobileView || activeScreen !== "chat" || isAnimating) return;
     const x = e.touches[0].clientX;
-    if (x < 60) { // Slight buffer from edge
+    if (x < 60) { // Edge swipe only
       touchStart.current = x;
       setIsSwiping(true);
     }
@@ -245,287 +241,156 @@ function ChatLayout() {
   const handleTouchEnd = () => {
     if (!isSwiping) return;
     
-    const threshold = 100; // Increased threshold for stability
+    const threshold = 100;
     if (swipeX > threshold) {
-      // Complete back gesture
-      isAnimating.current = true;
+      setIsAnimating(true);
       setSwipeX(window.innerWidth);
-      
-      // Delay to allow animation to complete
       setTimeout(() => {
         handleMobileBack();
-        setSwipeX(0); // Reset for next time
+        setSwipeX(0);
         setIsSwiping(false);
-        isAnimating.current = false;
-      }, 350);
+        setIsAnimating(false);
+      }, 300);
     } else {
-      // Snap back
-      isAnimating.current = true;
+      setIsAnimating(true);
       setSwipeX(0);
       setTimeout(() => {
         setIsSwiping(false);
-        isAnimating.current = false;
-      }, 300);
+        setIsAnimating(false);
+      }, 250);
     }
+  };
+
+  const getStackTransform = () => {
+    const slideAmount = isMobileDetailScreen ? -50 : 0;
+    if (isSwiping) {
+      // Swipe back: starts at -50% and goes towards 0%
+      const swipePercent = (swipeX / window.innerWidth) * 50;
+      return `translateX(${slideAmount + swipePercent}%)`;
+    }
+    return `translateX(${slideAmount}%)`;
   };
 
   return (
     <main 
-      className={`app ${isMobileView ? 'chat-layout--mobile' : ''} ${isSwiping ? 'is-swiping' : ''} ${layoutClass}`}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      className={`app-container ${isMobileView ? 'is-mobile' : ''} ${isSwiping ? 'is-swiping' : ''} ${isAnimating ? 'is-animating' : ''} ${layoutClass}`}
     >
-      {isMobileView ? (
-        /* 📱 MOBILE VIEWPORT (Strip Layout) */
-        <div 
-          className="mobile-viewport"
-          style={{
-            transform: (activeScreen === "chat")
-              ? `translate3d(calc(-100vw + ${swipeX}px), 0, 0)` 
-              : 'translate3d(0, 0, 0)',
-            transition: isSwiping ? 'none' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-            willChange: 'transform',
-            height: '100%',
-            width: '200vw',
-            display: 'flex',
-            position: 'relative'
+      <div 
+        className="app-content-stack"
+        style={{ transform: isMobileView ? getStackTransform() : 'none' }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+      {/* SCREEN 1: LIST / HOME */}
+      <section className="app-screen app-screen--list">
+        <Sidebar
+          activeChatId={currentChat?.id}
+          activeTab={activeTab}
+          chats={chats}
+          connectionLabel={socketState.isConnected ? "Online" : (socketState.connectionError ?? "Connecting…")}
+          isOpen={isSidebarOpen}
+          isUserOnline={isUserOnline}
+          onLogout={logout}
+          onNewChat={() => setChatModalMode("chat")}
+          onNewGroup={() => setChatModalMode("group")}
+          onProfile={handleOpenProfile}
+          onSettings={handleOpenSettings}
+          onThemeToggle={() =>
+            setTheme((t) => (t === "dark" ? "light" : "dark"))
+          }
+          onSearchChange={setSearchTerm}
+          onSelectChat={handleSelectChat}
+          onDeleteChat={(id) => {
+            selectChat(id);
+            setConfirmAction("delete-chat");
           }}
-        >
-          {/* SCREEN 1: MAIN (Sidebar + Bottom Nav) */}
-          <div className="mobile-screen-main">
-            <section className={`telegram-layout telegram-layout--${viewport} ${layoutClass}`}>
-              <Sidebar
-                activeChatId={currentChat?.id}
-                activeTab={activeTab}
-                chats={chats}
-                connectionLabel={socketState.isConnected ? "Online" : (socketState.connectionError ?? "Connecting…")}
-                isOpen={true}
-                isUserOnline={isUserOnline}
-                onLogout={logout}
-                onNewChat={() => setChatModalMode("chat")}
-                onNewGroup={() => setChatModalMode("group")}
-                onProfile={handleOpenProfile}
-                onSettings={handleOpenSettings}
-                onThemeToggle={() =>
-                  setTheme((t) => (t === "dark" ? "light" : "dark"))
-                }
-                onSearchChange={setSearchTerm}
-                onSelectChat={handleSelectChat}
-                onDeleteChat={(id) => {
-                  selectChat(id);
-                  setConfirmAction("delete-chat");
-                }}
-                onTabChange={setActiveTab}
-                onToggleSidebar={() => setIsSidebarOpen((v) => !v)}
-                searchTerm={searchTerm}
-                theme={theme}
-                username={username}
-                viewport={viewport}
-              />
-            </section>
+          onTabChange={setActiveTab}
+          onToggleSidebar={() => setIsSidebarOpen((v) => !v)}
+          searchTerm={searchTerm}
+          theme={theme}
+          username={username}
+          viewport={viewport}
+        />
 
-            <nav className="mobile-nav">
-              <button 
-                className={`mobile-nav__item ${activeTab === 'All Chats' ? 'is-active' : ''}`}
-                onClick={() => setActiveTab('All Chats')}
-              >
-                {activeTab === 'All Chats' && (
-                  <motion.div 
-                    layoutId="activeTabPill"
-                    className="mobile-nav__highlight"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                <div className="mobile-nav__pill"></div>
-                <MessageSquare size={24} />
-                <span style={{ fontSize: '10px' }}>Chats</span>
-                {totalUnreadCount > 0 && <span className="mobile-nav__badge">{totalUnreadCount}</span>}
-              </button>
-              <button 
-                className={`mobile-nav__item ${activeTab === 'Contacts' ? 'is-active' : ''}`}
-                onClick={() => setActiveTab('Contacts')}
-              >
-                {activeTab === 'Contacts' && (
-                  <motion.div 
-                    layoutId="activeTabPill"
-                    className="mobile-nav__highlight"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                <div className="mobile-nav__pill"></div>
-                <Users size={24} />
-                <span style={{ fontSize: '10px' }}>Contacts</span>
-              </button>
-              <button 
-                className={`mobile-nav__item ${activeScreen === 'settings' ? 'is-active' : ''}`}
-                onClick={handleOpenSettings}
-              >
-                {activeScreen === 'settings' && (
-                  <motion.div 
-                    layoutId="activeTabPill"
-                    className="mobile-nav__highlight"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                <div className="mobile-nav__pill"></div>
-                <Settings size={24} />
-                <span style={{ fontSize: '10px' }}>Settings</span>
-              </button>
-              <button 
-                className={`mobile-nav__item ${activeScreen === 'profile' ? 'is-active' : ''}`}
-                onClick={handleOpenProfile}
-              >
-                {activeScreen === 'profile' && (
-                  <motion.div 
-                    layoutId="activeTabPill"
-                    className="mobile-nav__highlight"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                <div className="mobile-nav__pill"></div>
-                <User size={24} />
-                <span style={{ fontSize: '10px' }}>Profile</span>
-              </button>
-            </nav>
-          </div>
-
-          {/* SCREEN 2: CHAT */}
-          <div className="mobile-screen-chat">
-            <div className={`chat-main-area ${backgroundDoodle?.type ? `chat-bg-doodle-${backgroundDoodle.type}` : ""}`}
-                 style={{ 
-                   "--bg-overlay-opacity": backgroundDoodle?.opacity ?? 0.3,
-                   width: '100%',
-                   height: '100dvh' 
-                 }}>
-              {!currentChat ? (
-                <div className="chat-window" style={{ background: "transparent" }}>
-                  <div className="chat-window__empty">
-                    <div className="chat-window__empty-icon">
-                      <MessageSquare size={36} />
-                    </div>
-                    <p style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
-                      Select a chat
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <ChatWindow
-                  backgroundDoodle={backgroundDoodle}
-                  callProps={{
-                    acceptCall: call.acceptCall,
-                    callDuration: call.callDuration,
-                    callError: call.callError,
-                    callMode: call.callMode,
-                    callStatus: call.callStatus,
-                    endCall: call.endCall,
-                    incomingCall: call.incomingCall,
-                    isMuted: call.isMuted,
-                    localStream: call.localStream,
-                    remoteStream: call.remoteStream,
-                    toggleMute: call.toggleMute,
-                  }}
-                  chat={currentChat}
-                  draftMessage={draftMessage}
-                  isCompactInput={true}
-                  isMobileView={true}
-                  onClearReply={clearReply}
-                  onConfirmClearChat={() => setConfirmAction("clear-chat")}
-                  onConfirmDeleteChat={() => setConfirmAction("delete-chat")}
-                  onDeleteMessageForEveryone={deleteMessageForEveryone}
-                  onDeleteMessageForMe={deleteMessageForMe}
-                  onDraftChange={(nextValue) => {
-                    setDraftMessage(nextValue);
-                    handleTypingInputChange(nextValue);
-                  }}
-                  onFileUpload={sendFileMessage}
-                  onForwardMessage={startForwardMessage}
-                  onMobileBack={handleMobileBack}
-                  onReplyMessage={setReplyMessage}
-                  onSendMessage={sendMessage}
-                  onStartAudioCall={() => call.startCall("audio")}
-                  onStartVideoCall={() => call.startCall("video")}
-                  replyMessage={replyMessage}
-                  typingText={socketState.isConnected ? typing.text : ""}
-                />
+        {isMobileView && (
+          <nav className="mobile-nav">
+            <button 
+              className={`mobile-nav__item ${activeTab === 'All Chats' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('All Chats')}
+            >
+              {activeTab === 'All Chats' && (
+                <motion.div layoutId="activeTabPill" className="mobile-nav__highlight" />
               )}
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* 💻 DESKTOP LAYOUT (Classic Sidebar + Chat) */
-        <section className={`telegram-layout telegram-layout--${viewport} ${layoutClass}`}>
-          <Sidebar
-            activeChatId={currentChat?.id}
-            activeTab={activeTab}
-            chats={chats}
-            connectionLabel={socketState.isConnected ? "Online" : (socketState.connectionError ?? "Connecting…")}
-            isOpen={isSidebarOpen}
-            isUserOnline={isUserOnline}
-            onLogout={logout}
-            onNewChat={() => setChatModalMode("chat")}
-            onNewGroup={() => setChatModalMode("group")}
-            onProfile={handleOpenProfile}
-            onSettings={handleOpenSettings}
-            onThemeToggle={() =>
-              setTheme((t) => (t === "dark" ? "light" : "dark"))
-            }
-            onSearchChange={setSearchTerm}
-            onSelectChat={handleSelectChat}
-            onDeleteChat={(id) => {
-              selectChat(id);
-              setConfirmAction("delete-chat");
-            }}
-            onTabChange={setActiveTab}
-            onToggleSidebar={() => setIsSidebarOpen((v) => !v)}
-            searchTerm={searchTerm}
-            theme={theme}
-            username={username}
-            viewport={viewport}
-          />
+              <MessageSquare size={24} />
+              <span>Chats</span>
+              {totalUnreadCount > 0 && <span className="mobile-nav__badge">{totalUnreadCount}</span>}
+            </button>
+            <button 
+              className={`mobile-nav__item ${activeTab === 'Contacts' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('Contacts')}
+            >
+              {activeTab === 'Contacts' && (
+                <motion.div layoutId="activeTabPill" className="mobile-nav__highlight" />
+              )}
+              <Users size={24} />
+              <span>Contacts</span>
+            </button>
+            <button 
+              className={`mobile-nav__item ${activeScreen === 'profile' ? 'is-active' : ''}`}
+              onClick={handleOpenProfile}
+            >
+              {activeScreen === 'profile' && (
+                <motion.div layoutId="activeTabPill" className="mobile-nav__highlight" />
+              )}
+              <User size={24} />
+              <span>Profile</span>
+            </button>
+            <button 
+              className={`mobile-nav__item ${activeScreen === 'settings' ? 'is-active' : ''}`}
+              onClick={handleOpenSettings}
+            >
+              {activeScreen === 'settings' && (
+                <motion.div layoutId="activeTabPill" className="mobile-nav__highlight" />
+              )}
+              <Settings size={24} />
+              <span>Settings</span>
+            </button>
+          </nav>
+        )}
+      </section>
 
+      {/* SCREEN 2: DETAIL (Chat / Settings / Profile) */}
+      <div className="app-screen app-screen--detail">
+        {activeScreen === "chat" ? (
           <div className={`chat-main-area ${backgroundDoodle?.type ? `chat-bg-doodle-${backgroundDoodle.type}` : ""}`}
                style={{ "--bg-overlay-opacity": backgroundDoodle?.opacity ?? 0.3 }}>
-            {showEmptyState ? (
-              <div className="chat-window" style={{ background: "transparent" }}>
-                <div className="chat-window__empty">
-                  <div className="chat-window__empty-icon">
-                    <MessageSquare size={36} />
-                  </div>
-                  <p style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
-                    Select a chat to start messaging
-                  </p>
+            {!currentChat ? (
+              activeChatId ? (
+                <div className="chat-window chat-window--loading">
+                  <div className="pulse-loader"></div>
+                  <p>Loading conversation...</p>
                 </div>
-              </div>
+              ) : (
+                <div className="chat-window chat-window--empty">
+                  <MessageSquare size={48} />
+                  <p>Select a chat to start messaging</p>
+                </div>
+              )
             ) : (
               <ChatWindow
                 backgroundDoodle={backgroundDoodle}
-                callProps={{
-                  acceptCall: call.acceptCall,
-                  callDuration: call.callDuration,
-                  callError: call.callError,
-                  callMode: call.callMode,
-                  callStatus: call.callStatus,
-                  endCall: call.endCall,
-                  incomingCall: call.incomingCall,
-                  isMuted: call.isMuted,
-                  localStream: call.localStream,
-                  remoteStream: call.remoteStream,
-                  toggleMute: call.toggleMute,
-                }}
+                callProps={{...call}}
                 chat={currentChat}
                 draftMessage={draftMessage}
-                isCompactInput={viewport !== "desktop"}
-                isMobileView={false}
+                isCompactInput={isMobileView}
+                isMobileView={isMobileView}
                 onClearReply={clearReply}
                 onConfirmClearChat={() => setConfirmAction("clear-chat")}
                 onConfirmDeleteChat={() => setConfirmAction("delete-chat")}
                 onDeleteMessageForEveryone={deleteMessageForEveryone}
                 onDeleteMessageForMe={deleteMessageForMe}
-                onDraftChange={(nextValue) => {
-                  setDraftMessage(nextValue);
-                  handleTypingInputChange(nextValue);
-                }}
+                onDraftChange={(val) => { setDraftMessage(val); handleTypingInputChange(val); }}
                 onFileUpload={sendFileMessage}
                 onForwardMessage={startForwardMessage}
                 onMobileBack={handleMobileBack}
@@ -538,33 +403,45 @@ function ChatLayout() {
               />
             )}
           </div>
-        </section>
-      )}
+        ) : activeScreen === "settings" ? (
+          <div className="detail-screen-placeholder">Settings Screen (In Development)</div>
+        ) : activeScreen === "profile" ? (
+          <div className="detail-screen-placeholder">Profile Screen (In Development)</div>
+        ) : null}
+      </div>
+      </div>
 
-      {/* FABs - Outside moving viewport but only visible on Home */}
-      {!isMobileChatOpen && (
-        <>
+      {/* FABs - Only visible on mobile list view to prevent desktop clashing */}
+      {isMobileView && activeScreen === "chatList" && (
+        <div className="fab-group">
           <input
             type="file"
-            ref={cameraInputRef}
-            style={{ display: "none" }}
             accept="image/*"
+            style={{ display: "none" }}
+            ref={cameraInputRef}
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) {
-                console.log("Camera file selected:", file);
                 setChatModalMode("chat");
               }
             }}
           />
           <button 
-            className="camera-fab" 
+            className="fab-item fab-item--camera" 
             aria-label="Camera"
             onClick={() => cameraInputRef.current?.click()}
           >
             <Camera size={26} />
           </button>
-        </>
+          
+          <button 
+            className="fab-item fab-item--plus" 
+            aria-label="New Chat"
+            onClick={() => setChatModalMode("chat")}
+          >
+            <Plus size={28} />
+          </button>
+        </div>
       )}
 
       <ForwardModal

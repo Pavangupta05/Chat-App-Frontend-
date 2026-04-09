@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { fetchMessagesBetween, fetchUserChats, isPeerMongoId, clearChatHistory, deleteChat } from "../services/messageService";
+import { fetchMessagesBetween, fetchUserChats, isPeerMongoId, clearChatHistory, deleteChat, deleteSingleMessage, deleteMessageForEveryoneApi } from "../services/messageService";
 import useCall from "./useCall";
 import useMessageStatus from "./useMessageStatus";
 import useNotifications from "./useNotifications";
@@ -48,10 +48,7 @@ function useChatController() {
     if (!currentUserId) return [];
     return loadStoredChatState(currentUserId)?.chats ?? [];
   });
-  const [activeChatId, setActiveChatId] = useState(() => {
-    if (!currentUserId) return null;
-    return loadStoredChatState(currentUserId)?.activeChatId ?? null;
-  });
+  const [activeChatId, setActiveChatId] = useState(null); // Managed by URL or user action
   const [activeTab, setActiveTab] = useState(() => {
     if (!currentUserId) return "All Chats";
     return loadStoredChatState(currentUserId)?.activeTab ?? "All Chats";
@@ -181,12 +178,10 @@ function useChatController() {
     });
   }, [activeTab, searchTerm, sortedChats]);
 
-  const resolvedActiveChatId = chats.some((chat) => String(chat.id) === String(activeChatId))
-    ? activeChatId
-    : filteredChats[0]?.id ?? null;
-
+  // We resolve the ID strictly ONLY for the actual data lookup, 
+  // but we keep activeChatId for UI selection state persistence correctly.
   const activeChat =
-    chats.find((chat) => String(chat.id) === String(resolvedActiveChatId)) ?? filteredChats[0] ?? null;
+    chats.find((chat) => String(chat.id) === String(activeChatId)) ?? null;
 
   // ── Reply hook ──────────────────────────────────────────────────────────────
   const { clearReply, replyMessage, setReplyMessage } = useReply();
@@ -259,7 +254,7 @@ function useChatController() {
                     isTyping: false,
                     updatedAt: receivedAt,
                     unreadCount:
-                      String(payload.chatId) === String(resolvedActiveChatId)
+                      String(payload.chatId) === String(activeChatId)
                         ? 0
                         : chat.unreadCount + 1,
                     messages: [...chat.messages, nextMessage],
@@ -394,7 +389,7 @@ function useChatController() {
     clearTypingForChat,
     createChatRecord,
     currentUserId,
-    resolvedActiveChatId,
+    activeChatId,
     socketId,
     subscribe,
   ]);
@@ -795,8 +790,14 @@ function useChatController() {
             : chat,
         ),
       );
+      // Persist to server
+      if (token) {
+        deleteSingleMessage(token, messageId).catch((err) => {
+          console.error("[chat] Failed to persist message deletion:", err);
+        });
+      }
     },
-    [activeChat],
+    [activeChat, token],
   );
 
   const deleteMessageForEveryone = useCallback(
@@ -832,8 +833,15 @@ function useChatController() {
         messageId,
         receiverUserId: String(activeChat.id),
       });
+
+      // Persist to server
+      if (token) {
+        deleteMessageForEveryoneApi(token, messageId, activeChat.id).catch((err) => {
+          console.error("[chat] Failed to persist message deletion for everyone:", err);
+        });
+      }
     },
-    [activeChat, emit],
+    [activeChat, emit, token],
   );
 
   const startForwardMessage = useCallback((message) => {

@@ -47,6 +47,26 @@ body {
   overflow-y: scroll;
 }
 
+:root {
+  --sidebar-width: 400px;
+  --header-height: 60px;
+  --tg-blue: #3390ec;
+  --tg-blue-hover: #2c81d6;
+  --app-background: #000000;
+  --sidebar-surface: #0a0a0a;
+  --surface-hover: #1a1a1a;
+  --border-color: #1f1f1f;
+  --border-subtle: #1a1a1a;
+  --text-primary: #ffffff;
+  --text-secondary: #999999;
+  --text-muted: #666666;
+  --accent: #3390ec;
+  --danger: #ff595a;
+  --input-bg: #121212;
+  --surface-background: var(--app-background);
+  --surface-header: rgba(10, 10, 10, 0.8);
+}
+
 .app {
   width: 100%;
   height: 100vh;
@@ -4239,6 +4259,98 @@ body {
   margin-bottom: 12px;
 }
 
+.app-container {
+  width: 100vw;
+  height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--surface-background);
+}
+
+.is-mobile .app-content-stack {
+  display: flex;
+  width: 200%; /* Two columns: List + Detail */
+  height: 100%;
+  transition: transform 0.3s cubic-bezier(0.1, 0.7, 0.1, 1);
+  will-change: transform;
+}
+
+.is-mobile .app-screen {
+  width: 100vw !important; /* Ensure each screen is exactly one viewport wide */
+  flex-shrink: 0;
+}
+
+.is-swiping .app-content-stack {
+  transition: none !important;
+}
+
+.app-screen {
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.app-screen--list {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-screen--detail {
+  background-color: var(--app-background);
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.is-animating * {
+  pointer-events: none !important;
+}
+
+/* Base Desktop layout override */
+@media (min-width: 768px) {
+  .app-container {
+     /* Support for side-by-side desktop layout */
+  }
+
+  .app-content-stack {
+    display: flex;
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    transform: none !important; /* Never translate on desktop */
+  }
+  
+  .app-screen--list {
+    width: var(--sidebar-width, 400px) !important;
+    border-right: 1px solid var(--border-color);
+    flex-shrink: 0;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+  }
+  
+  .app-screen--detail {
+    flex: 1;
+    width: auto !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .chat-main-area, .chat-window, .sidebar {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+}
+
+.is-animating * {
+  pointer-events: none !important;
+}
+
+.app {
+  display: none; /* Old class cleanup */
+}
+
 .password-match-status {
   padding: 12px 16px;
   border-radius: 14px;
@@ -4262,6 +4374,32 @@ body {
   background: rgba(245, 101, 101, 0.1);
   color: #f56565;
   border-color: rgba(245, 101, 101, 0.2);
+}
+
+
+.chat-window--loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: var(--app-background);
+  color: var(--text-secondary);
+}
+
+.pulse-loader {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  animation: pulse-ring-anim 1.5s infinite;
+}
+
+@keyframes pulse-ring-anim {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.3; }
+  100% { transform: scale(0.8); opacity: 0.5; }
 }
 
 /* -- Mobile Dock Navigation --------------------------------------------- */
@@ -4298,13 +4436,9 @@ body {
   will-change: transform;
 }
 
-.mobile-screen-main,
-.mobile-screen-chat {
-  width: 100vw !important;
-  height: 100% !important;
-  flex-shrink: 0 !important;
-  position: relative !important;
-  overflow: hidden;
+/* Cleanup old viewport rules */
+.mobile-viewport, .mobile-screen-main, .mobile-screen-chat {
+  display: none !important;
 }
 
 .is-swiping * {
@@ -4331,6 +4465,12 @@ body {
   cursor: pointer;
   position: relative;
   flex: 1;
+  min-width: 0;
+}
+
+.mobile-nav__item span {
+  font-size: 10px;
+  font-weight: 500;
 }
 
 .mobile-nav__item.is-active {
@@ -4380,62 +4520,53 @@ body {
   border: 2px solid #17212B;
 }
 
-/* Camera FAB & Add User FAB */
-.camera-fab, .add-user-fab {
+/* 🧪 Unified FAB System (Stacked above Dock) */
+.fab-group {
   position: fixed;
-  right: 24px;
+  right: 20px;
+  bottom: 110px; /* Base bottom above the dock */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 10001;
+}
+
+.fab-item {
   width: 56px;
   height: 56px;
   border-radius: 28px;
-  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
   border: none;
   cursor: pointer;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  color: #ffffff;
 }
 
-.camera-fab {
-  bottom: 108px;
+.fab-item--camera {
   background: linear-gradient(135deg, #3390EC, #4facfe);
-  box-shadow: 0 8px 25px rgba(51, 144, 236, 0.4);
+  order: 1; /* Appears above Plus if needed, or keep order */
 }
 
-.add-user-fab {
-  bottom: 180px;
+.fab-item--plus {
   background: linear-gradient(135deg, #14b8a6, #22c55e);
-  box-shadow: 0 8px 25px rgba(20, 184, 166, 0.4);
+  order: 2;
 }
 
-.camera-fab:hover, .add-user-fab:hover {
-  transform: scale(1.1) translateY(-5px);
-}
+.fab-item:hover { transform: scale(1.1) translateY(-4px); }
+.fab-item:active { transform: scale(0.9); }
 
-.camera-fab:active, .add-user-fab:active {
-  transform: scale(0.9);
-}
-
-.is-mobile-chat .camera-fab,
-.is-mobile-chat .add-user-fab,
-.is-mobile-chat .mobile-nav {
+.is-mobile-chat .fab-group {
   display: none !important;
 }
 
-/* Ensure FABs are visible on desktop but positioned correctly */
+/* Ensure Sidebar FAB is only desktop if moved */
 @media (min-width: 768px) {
-  .camera-fab, .add-user-fab {
-    right: 48px; /* Slightly more inside on desktop */
-    opacity: 0.9;
-  }
-  
-  .camera-fab {
-    bottom: 100px;
-  }
-  
-  .add-user-fab {
-    bottom: 170px;
+  .fab-group {
+    bottom: 40px;
+    right: 48px;
   }
 }
 
@@ -4497,6 +4628,51 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+
+  .emoji-picker-container-wrapper {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 320px !important;
+    z-index: 10000 !important;
+    display: flex !important;
+    background: var(--surface-sidebar) !important;
+    border-radius: 20px 20px 0 0 !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5) !important;
+    transform: translateY(0);
+    transition: transform 0.3s ease;
+  }
+
+  .emoji-picker-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    padding: 10px 0 !important;
+  }
+
+  .emoji-picker__header {
+    padding: 0 16px !important;
+  }
+
+  /* Fixed back button for mobile detail views */
+  .chat-window__back {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-right: 8px;
+  }
+
+  .mobile-nav {
+    border-top: 1px solid var(--border-subtle);
+    padding-bottom: env(safe-area-inset-bottom, 12px) !important;
+  }
+
+  .app-screen--list .sidebar {
+    padding-bottom: 70px !important; /* Make room for dock on list view */
+  }
 
 .chat-bg-selector {
   display: grid;
@@ -4757,8 +4933,27 @@ body {
     margin-bottom: env(safe-area-inset-bottom) !important;
   }
 
-  .chat-layout--mobile {
-    --sidebar-fab-bottom: 100px;
+  .is-mobile {
+    --sidebar-fab-bottom: 120px; /* Position for the New Chat (+) button */
+  }
+
+  .sidebar-fab {
+    position: fixed !important;
+    bottom: var(--sidebar-fab-bottom, 120px) !important;
+    right: 24px !important;
+    z-index: 1001 !important;
+  }
+
+  .camera-fab {
+    bottom: 190px !important; /* Move Camera button HIGHER than New Chat button */
+    right: 24px !important;
+    z-index: 1001 !important;
+  }
+
+  .add-user-fab {
+    bottom: 260px !important;
+    right: 24px !important;
+    z-index: 1001 !important;
   }
 
   .is-mobile-chat .chat-window__messages {
@@ -4811,6 +5006,10 @@ body {
     display: flex;
     justify-content: center;
   }
+} /* Closing media query */
+
+.is-mobile .is-animating * {
+  pointer-events: none !important;
 }
 
 

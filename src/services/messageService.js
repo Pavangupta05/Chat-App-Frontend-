@@ -115,3 +115,35 @@ export async function deleteChat(token, chatId) {
 
   return data;
 }
+
+/**
+ * Delete a single message for the current user
+ */
+export async function deleteSingleMessage(token, messageId) {
+  if (!messageId) throw new Error("messageId is required.");
+  const response = await fetch(`${API_URL}/api/messages/${messageId}?t=${Date.now()}`, {
+    method: "DELETE",
+    headers: { 
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+  });
+  if (!response.ok) throw new Error("Failed to delete message.");
+  return response.json().catch(() => ({}));
+}
+
+/**
+ * Delete a message for everyone
+ */
+export async function deleteMessageForEveryoneApi(token, messageId, chatId) {
+  if (!messageId || !chatId) throw new Error("messageId and chatId are required.");
+  const response = await fetch(`${API_URL}/api/messages/${messageId}?everyone=true&chatId=${chatId}&t=${Date.now()}`, {
+    method: "DELETE",
+    headers: { 
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+  });
+  if (!response.ok) throw new Error("Failed to delete message for everyone.");
+  return response.json().catch(() => ({}));
+}
