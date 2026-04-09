@@ -112,10 +112,10 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
       updateUser(updatedUserRes); // Sync global state
       
       // Notify other users via socket
-      emit("profile_updated", {
-        userId: user.id,
+      emit("profileUpdated", {
+        userId: user.id || user._id,
         username: updatedUserRes.username,
-        profilePic: updatedUserRes.profilePic
+        avatar: updatedUserRes.profilePic
       });
 
       setProfilePic(cacheBustedUrl);
@@ -154,10 +154,10 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
       updateUser(updatedUserRes); // Sync global state
       
       // Notify other users via socket
-      emit("profile_updated", {
-        userId: user.id,
+      emit("profileUpdated", {
+        userId: user.id || user._id,
         username: updatedUserRes.username,
-        profilePic: updatedUserRes.profilePic
+        avatar: updatedUserRes.profilePic
       });
 
       setSaved(true);

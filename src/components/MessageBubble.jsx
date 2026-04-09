@@ -49,15 +49,20 @@ function MessageBubble({
   const touchStartPos = useRef({ x: 0, y: 0 });
 
   const handlePointerDown = (e) => {
+    // Only handle primary button (left click / touch)
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    
     if (isSelectionMode) return;
     
     // Store starting position to check for move threshold
     touchStartPos.current = { x: e.clientX, y: e.clientY };
     
-    // 500ms delay for long press
+    // 500ms delay for long press - Slightly shorter for responsiveness
     longPressRef.current = window.setTimeout(() => {
       onToggleSelect();
-    }, 500);
+      // Provide haptic feedback if available
+      if (window.navigator.vibrate) window.navigator.vibrate(50);
+    }, 450);
   };
 
   const handlePointerMove = (e) => {
@@ -67,7 +72,7 @@ function MessageBubble({
     const moveX = Math.abs(e.clientX - touchStartPos.current.x);
     const moveY = Math.abs(e.clientY - touchStartPos.current.y);
     
-    if (moveX > 10 || moveY > 10) {
+    if (moveX > 10 || moveY > 15) {
       window.clearTimeout(longPressRef.current);
       longPressRef.current = null;
     }
@@ -81,14 +86,13 @@ function MessageBubble({
   const handleClick = (e) => {
     if (isSelectionMode) {
       e.stopPropagation();
-      e.preventDefault();
       onToggleSelect();
     }
   };
 
   const handleContextMenu = (e) => {
     e.preventDefault();
-    onToggleSelect();
+    if (!isSelectionMode) onToggleSelect();
   };
 
   return (
@@ -99,14 +103,14 @@ function MessageBubble({
         isSelected ? "message--selected" : "",
       ].join(" ").trim()}
       style={{
-        padding: isSelected ? "6px 10px" : "2px 0",
+        padding: "2px 0",
         backgroundColor: isSelected
-          ? "rgba(51, 144, 236, 0.12)"
+          ? "rgba(51, 144, 236, 0.15)"
           : "transparent",
-        borderRadius: 10,
-        transition: "background-color 0.18s, padding 0.18s",
+        transition: "background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
         cursor: isSelectionMode ? "pointer" : "default",
-        userSelect: isSelectionMode ? "none" : "auto",
+        userSelect: "none",
+        position: "relative"
       }}
       onContextMenu={handleContextMenu}
       onPointerDown={handlePointerDown}
@@ -115,6 +119,20 @@ function MessageBubble({
       onPointerLeave={handlePointerUpOrLeave}
       onClick={handleClick}
     >
+      {isSelected && (
+        <div 
+          className="message-selection-overlay"
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: "4px",
+            height: "100%",
+            backgroundColor: "var(--accent)",
+            zIndex: 5
+          }}
+        />
+      )}
       <div
         className={`message__bubble${
           isOutgoing ? " message__bubble--outgoing" : " message__bubble--incoming"

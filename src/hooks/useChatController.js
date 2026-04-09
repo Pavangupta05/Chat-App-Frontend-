@@ -40,7 +40,7 @@ const loadStoredChatState = (userId) => {
 };
 
 function useChatController() {
-  const { token, user } = useAuth();
+  const { token, user, updateUser } = useAuth();
   const currentUserId = user?.id != null ? String(user.id) : "";
   const currentUsername = user?.username || "Anonymous";
 
@@ -352,11 +352,20 @@ function useChatController() {
     });
     
     // 👤 Listen for profile updates from other users
-    const unsubscribeUserUpdated = subscribe("user_updated", (payload) => {
+    const handleProfileUpdate = (payload) => {
       if (!payload?.userId) return;
       
       const updatedUserId = String(payload.userId);
-      if (updatedUserId === currentUserId) return; // Ignore our own broadcast
+      const avatarUrl = payload.profilePic || payload.avatar;
+      
+      // If it's the current user, sync global Auth context
+      if (updatedUserId === currentUserId) {
+        updateUser({
+          username: payload.username,
+          profilePic: avatarUrl
+        });
+        return;
+      }
 
       setChats((currentChats) =>
         currentChats.map((chat) =>
@@ -364,18 +373,22 @@ function useChatController() {
             ? {
                 ...chat,
                 name: payload.username || chat.name,
-                avatar: payload.profilePic || chat.avatar,
+                avatar: avatarUrl || chat.avatar,
               }
             : chat
         )
       );
-    });
+    };
+
+    const unsubscribeUserUpdated = subscribe("user_updated", handleProfileUpdate);
+    const unsubscribeProfileUpdated = subscribe("profileUpdated", handleProfileUpdate);
 
     return () => {
       unsubscribeMessage();
       unsubscribeChatCreated();
       unsubscribeMessageDeleted();
       unsubscribeUserUpdated();
+      unsubscribeProfileUpdated();
     };
   }, [
     clearTypingForChat,

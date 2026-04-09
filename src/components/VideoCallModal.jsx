@@ -199,22 +199,47 @@ function VideoCallModal({
         <div className="video-call-modal__footer">
           {incomingCall && callStatus !== "calling" ? (
             <div className="video-call-modal__actions">
-              <button onClick={onAcceptCall} className="v-btn v-btn--accept">Accept</button>
-              <button onClick={onEndCall} className="v-btn v-btn--decline">Decline</button>
+              <button 
+                onClick={onAcceptCall} 
+                className="v-btn v-btn--accept"
+                style={{ backgroundColor: "#22c55e", color: "white", padding: "10px 24px", borderRadius: "12px", display: "flex", alignItems: "center", gap: "8px", fontWeight: "600", border: "none" }}
+              >
+                <Video size={18} /> Accept
+              </button>
+              <button 
+                onClick={onEndCall} 
+                className="v-btn v-btn--decline"
+                style={{ backgroundColor: "#ef4444", color: "white", padding: "10px 24px", borderRadius: "12px", display: "flex", alignItems: "center", gap: "8px", fontWeight: "600", border: "none" }}
+              >
+                <PhoneOff size={18} /> Reject
+              </button>
             </div>
           ) : (
             <div className="video-call-modal__controls-row">
-              <button onClick={onToggleMute} className={`v-control-btn ${isMuted ? "v-control-btn--active" : ""}`}>
-                {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+              <button 
+                onClick={onToggleMute} 
+                className={`v-control-btn ${isMuted ? "v-control-btn--active" : ""}`}
+                title={isMuted ? "Unmute" : "Mute"}
+              >
+                {isMuted ? <MicOff size={22} color="#ef4444" /> : <Mic size={22} />}
               </button>
-              <button onClick={onToggleCamera} className={`v-control-btn ${isCameraOff ? "v-control-btn--active" : ""}`}>
-                {isCameraOff ? <VideoOff size={20} /> : <Video size={20} />}
+              <button 
+                onClick={onToggleCamera} 
+                className={`v-control-btn ${isCameraOff ? "v-control-btn--active" : ""}`}
+                title={isCameraOff ? "Turn Camera On" : "Turn Camera Off"}
+              >
+                {isCameraOff ? <VideoOff size={22} color="#ef4444" /> : <Video size={22} />}
               </button>
-              <button onClick={onFlipCamera} className="v-control-btn">
-                <RefreshCcw size={20} />
+              <button onClick={onFlipCamera} className="v-control-btn" title="Flip Camera">
+                <RefreshCcw size={22} />
               </button>
-              <button onClick={onEndCall} className="v-control-btn v-control-btn--danger">
-                <PhoneOff size={20} />
+              <button 
+                onClick={onEndCall} 
+                className="v-control-btn v-control-btn--danger"
+                style={{ backgroundColor: "#ef4444", borderRadius: "50%", width: "48px", height: "48px" }}
+                title="End Call"
+              >
+                <PhoneOff size={22} color="white" />
               </button>
             </div>
           )}

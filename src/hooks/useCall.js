@@ -107,16 +107,28 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
         startTimer();
       });
 
-      peer.on("close", resetCallState);
+        peer.on("close", resetCallState);
 
-      peer.on("error", (error) => {
-        console.error("Peer Error:", error);
-        setCallError(error.message || "Call failed.");
-        resetCallState();
-      });
-    },
-    [resetCallState, startTimer],
-  );
+        // ISSUE 2 FIX: Handle ICE connection state changes for stability
+        if (peer._pc) {
+          peer._pc.oniceconnectionstatechange = () => {
+            const state = peer._pc.iceConnectionState;
+            console.log("ICE Connection State:", state);
+            if (state === "disconnected" || state === "failed") {
+              console.warn("Call connection failed/disconnected. Resetting.");
+              resetCallState();
+            }
+          };
+        }
+
+        peer.on("error", (error) => {
+          console.error("Peer Error:", error);
+          setCallError(error.message || "Call failed.");
+          resetCallState();
+        });
+      },
+      [resetCallState, startTimer],
+    );
 
   useEffect(() => {
     return () => {
@@ -147,11 +159,13 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
     });
 
     const unsubscribeEndCall = subscribe("end_call", () => resetCallState());
+    const unsubscribeCallEnded = subscribe("callEnded", () => resetCallState());
 
     return () => {
       unsubscribeIncomingCall();
       unsubscribeAcceptedCall();
       unsubscribeEndCall();
+      unsubscribeCallEnded();
     };
   }, [currentUserId, resetCallState, socketId, startTimer, subscribe]);
 
@@ -281,12 +295,18 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
   }, [callMode, ensureMediaStream, facingMode, localStream]);
 
   const endCall = useCallback(() => {
+    const receiverId = incomingCall?.callerUserId || activeChatId;
+    
     emit("end_call", {
       chatId: activeChatId,
       targetSocketId: activeCallSocketId || incomingCall?.callerSocketId,
-      receiverUserId: incomingCall?.callerUserId || activeChatId,
+      receiverUserId: receiverId,
       username,
     });
+
+    // ISSUE 1 FIX: Emit callEnded specifically
+    emit("callEnded", { to: receiverId });
+
     resetCallState();
   }, [activeCallSocketId, activeChatId, emit, incomingCall, resetCallState, username]);
 

@@ -4493,27 +4493,31 @@ body {
 
 .chat-bg-selector {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  padding: 12px 16px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 16px;
 }
 
 .chat-bg-option {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: none;
   border: none;
   cursor: pointer;
+  width: 100%;
 }
 
 .chat-bg-preview {
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 16 / 9;
   border-radius: 12px;
-  border: 2px solid transparent;
-  transition: all 0.2s;
+  border: 2.5px solid transparent;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  object-fit: cover;
+  background-size: cover;
+  background-position: center;
 }
 
 .chat-bg-option.is-active .chat-bg-preview {
