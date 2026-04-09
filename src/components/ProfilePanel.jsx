@@ -1,7 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X, Camera, Save, ArrowLeft, Edit, Trash2 } from "lucide-react";
 import { API_URL } from "../config/app";
 import { useAuth } from "../context/AuthContext";
+import useSocket from "../hooks/useSocket";
 import { getImageUrl, handleImageError } from "../utils/imageHelper";
 import OverlayPage from "./OverlayPage";
 import ConfirmModal from "./ConfirmModal";

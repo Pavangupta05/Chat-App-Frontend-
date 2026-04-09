@@ -116,6 +116,14 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.setItem("chat-user", JSON.stringify(updatedUser));
   };
 
+  // 🚪 LOGOUT
+  const logout = () => {
+    logoutService();
+    sessionStorage.clear();
+    setUser(null);
+    setToken(null);
+  };
+
   const value = {
     user,
     token,
