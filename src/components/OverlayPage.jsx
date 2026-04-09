@@ -24,8 +24,8 @@ const OverlayPage = ({
   const opacity = useTransform(x, [0, 150], [1, 0]);
   
   const handleDragEnd = (event, info) => {
-    // If dragged more than 100px to the right, or flicked with high velocity
-    if (info.offset.x > 100 || info.velocity.x > 500) {
+    // If dragged more than 60px to the right, or flicked with decent velocity
+    if (info.offset.x > 60 || info.velocity.x > 300) {
       if (onClose) {
         onClose();
       } else {
@@ -53,13 +53,13 @@ const OverlayPage = ({
         exit={{ x: "100%" }}
         transition={{ 
           type: "spring", 
-          damping: 25, 
-          stiffness: 200,
-          mass: 0.8
+          damping: 28, 
+          stiffness: 260,
+          mass: 0.6
         }}
         drag="x"
         dragConstraints={{ left: 0, right: window.innerWidth }}
-        dragElastic={0.05}
+        dragElastic={0.15}
         style={{ x }}
         onDragEnd={handleDragEnd}
       >

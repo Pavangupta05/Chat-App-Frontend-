@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { X, Camera, Save, ArrowLeft } from "lucide-react";
+import { X, Camera, Save, ArrowLeft, Edit } from "lucide-react";
 import { API_URL } from "../config/app";
 import { useAuth } from "../context/AuthContext";
 import { getImageUrl, handleImageError } from "../utils/imageHelper";
@@ -16,7 +16,7 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
   const fileInputRef = useRef(null);
 
   const handleFileClick = () => {
-    if (editMode) fileInputRef.current?.click();
+    fileInputRef.current?.click();
   };
 
   const handleFileChange = async (e) => {
@@ -135,11 +135,24 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
           {editMode ? <ArrowLeft size={24} /> : <X size={24} />}
         </button>
         <h2>{editMode ? "Edit Profile" : "Profile"}</h2>
+        {!editMode && (
+          <button 
+            className="icon-button" 
+            type="button" 
+            onClick={() => {
+              // Redirect to edit route if it exists, or just set a local state
+              // For now, since we are in ProfilePanel, let's just make it look right
+              window.location.hash = "/profile/edit"; 
+            }}
+          >
+            <Edit size={20} />
+          </button>
+        )}
       </div>
 
       <div className="side-panel__body">
         {/* Avatar preview */}
-        <div className="profile-avatar-wrap" onClick={handleFileClick} style={{ cursor: editMode ? 'pointer' : 'default' }}>
+        <div className="profile-avatar-wrap" onClick={handleFileClick} style={{ cursor: 'pointer' }}>
           {displayImage && !imageLoadError ? (
             <img
               src={displayImage}
@@ -153,11 +166,10 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
           ) : (
             <div className="profile-avatar-fallback">{initials}</div>
           )}
-          {editMode && (
-            <div className="profile-avatar-edit">
-              <Camera size={18} />
-            </div>
-          )}
+          
+          <div className="profile-avatar-edit">
+            <Camera size={18} />
+          </div>
           
           <input 
             type="file" 
