@@ -199,9 +199,54 @@ function Sidebar({
         </div>
       )}
 
-      {/* ── 4. CHAT LIST ──────────────────────────────────────────────── */}
+      {/* ── 4. CHAT LIST / CONTACTS LIST ──────────────────────────────── */}
       <div className="chat-list" style={{ padding: "0 8px" }}>
-        {chats.length === 0 ? (
+        {activeTab === "Contacts" ? (
+          // RENDER CONTACTS VIEW
+          (() => {
+            const contacts = Array.from(new Set(chats.map(c => c.name))).map(name => {
+              return chats.find(c => c.name === name);
+            }).sort((a, b) => a.name.localeCompare(b.name));
+
+            if (contacts.length === 0) {
+              return (
+                <div style={{ padding: "48px 16px", textAlign: "center", color: "var(--text-muted)" }}>
+                  <User size={48} style={{ opacity: 0.3, marginBottom: "16px" }} />
+                  <p>No contacts found.</p>
+                </div>
+              );
+            }
+
+            return contacts.map((chat) => (
+              <motion.div
+                whileTap={{ scale: 0.98 }}
+                key={`contact-${chat.id}`}
+                role="button"
+                tabIndex={0}
+                className={`chat-list__item ${String(chat.id) === String(activeChatId) ? "is-active" : ""}`}
+                onClick={() => onSelectChat(chat.id)}
+                style={{
+                  borderRadius: "12px",
+                  margin: "2px 0",
+                  padding: "10px 12px",
+                }}
+              >
+                <div className="chat-list__avatar" style={{ "--avatar-accent": chat.accent, width: "40px", height: "40px" }}>
+                  {chat.avatar}
+                </div>
+                <div className="chat-list__body">
+                  <div className="chat-list__row">
+                    <h2 style={{ fontSize: "15px" }}>{chat.name}</h2>
+                  </div>
+                  <div className="chat-list__row chat-list__row--secondary">
+                    <p style={{ fontSize: "13px" }}>{chat.lastSeen || "Last seen recently"}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ));
+          })()
+        ) : chats.length === 0 ? (
+          // RENDER EMPTY CHATS
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -215,6 +260,7 @@ function Sidebar({
             <p style={{ fontSize: "14px" }}>No messages here yet...</p>
           </motion.div>
         ) : (
+          // RENDER CHATS LIST
           chats.map((chat) => {
             const preview = getChatPreview(chat);
             const isActive = String(chat.id) === String(activeChatId);
@@ -268,7 +314,6 @@ function Sidebar({
                         </motion.span>
                       )}
                       
-                      {/* Delete button (only on hover or in certain contexts) */}
                       {!isMobile && (
                         <button
                           type="button"

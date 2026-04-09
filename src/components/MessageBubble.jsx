@@ -46,14 +46,36 @@ function MessageBubble({
   const [imageLoadError, setImageLoadError] = useState(false);
 
   const longPressRef = useRef(null);
+  const touchStartPos = useRef({ x: 0, y: 0 });
 
-  const handlePointerDown = () => {
+  const handlePointerDown = (e) => {
     if (isSelectionMode) return;
-    longPressRef.current = window.setTimeout(() => onToggleSelect(), 500);
+    
+    // Store starting position to check for move threshold
+    touchStartPos.current = { x: e.clientX, y: e.clientY };
+    
+    // 500ms delay for long press
+    longPressRef.current = window.setTimeout(() => {
+      onToggleSelect();
+    }, 500);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!longPressRef.current) return;
+    
+    // If finger moves more than 10 pixels, it's a scroll, not a long press
+    const moveX = Math.abs(e.clientX - touchStartPos.current.x);
+    const moveY = Math.abs(e.clientY - touchStartPos.current.y);
+    
+    if (moveX > 10 || moveY > 10) {
+      window.clearTimeout(longPressRef.current);
+      longPressRef.current = null;
+    }
   };
 
   const handlePointerUpOrLeave = () => {
     window.clearTimeout(longPressRef.current);
+    longPressRef.current = null;
   };
 
   const handleClick = (e) => {
@@ -88,6 +110,7 @@ function MessageBubble({
       }}
       onContextMenu={handleContextMenu}
       onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUpOrLeave}
       onPointerLeave={handlePointerUpOrLeave}
       onClick={handleClick}

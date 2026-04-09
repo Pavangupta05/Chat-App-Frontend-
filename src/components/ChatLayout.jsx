@@ -9,7 +9,7 @@ import ProfilePanel from "./ProfilePanel";
 import SettingsPanel from "./SettingsPanel";
 import Sidebar from "./Sidebar";
 import ChatWindow from "./ChatWindow";
-import Call from "./Call";
+import VideoCallModal from "./VideoCallModal";
 import AudioCallModal from "./AudioCallModal";
 import NavigationStack from "./NavigationStack";
 import useChatController from "../hooks/useChatController";
@@ -437,18 +437,25 @@ function ChatLayout() {
           if (isMobileView) setIsMobileChatOpen(true);
         }}
       />
-      <Call
+      <VideoCallModal
         callMode={call.callMode}
         callError={call.callError}
         callStatus={call.callStatus}
-        incomingCall={call.incomingCall}
+        callDuration={call.callDuration}
+        chatName={call.incomingCall?.username ?? currentChat?.name ?? "Unknown Caller"}
+        incomingCall={call.callMode === "video" ? call.incomingCall : null}
+        isMuted={call.isMuted}
+        isCameraOff={call.isCameraOff}
         localStream={call.localStream}
         permissionRetryable={call.permissionRetryable}
         remoteStream={call.remoteStream}
         secureContext={call.secureContext}
         onAcceptCall={() => call.acceptCall()}
         onEndCall={() => call.endCall()}
-        onRetryPermission={() => call.startCall(call.callMode || "video")}
+        onRetryPermission={() => call.startCall("video")}
+        onToggleMute={call.toggleMute}
+        onToggleCamera={call.toggleCamera}
+        onFlipCamera={call.flipCamera}
       />
       <AudioCallModal
         callError={call.callError}
