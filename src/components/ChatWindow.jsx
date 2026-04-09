@@ -6,6 +6,31 @@ import MessageBubble from "./MessageBubble";
 import InputBox from "./InputBox";
 import TypingIndicator from "./TypingIndicator";
 
+const DateSeparator = ({ date }) => (
+  <div className="date-separator">
+    <span className="date-separator__label">{date}</span>
+  </div>
+);
+
+function formatDateSeparator(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  
+  const isToday = date.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+  
+  if (isToday) return "Today";
+  if (isYesterday) return "Yesterday";
+  
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+}
+
 function ChatWindow({
   backgroundDoodle,
   callProps,
@@ -208,16 +233,14 @@ function ChatWindow({
           /* Normal header */
           <>
             <div className="chat-window__identity">
-              {isMobileView && (
-                <button
-                  type="button"
-                  className="chat-window__back icon-button"
-                  onClick={onMobileBack}
-                  aria-label="Back"
-                >
-                  <ChevronLeft size={26} />
-                </button>
-              )}
+              <button
+                type="button"
+                className="chat-window__back icon-button"
+                onClick={onMobileBack}
+                aria-label="Back"
+              >
+                <ChevronLeft size={26} />
+              </button>
 
               <div
                 className="chat-window__avatar"
@@ -316,18 +339,29 @@ function ChatWindow({
           <div className="chat-window__empty-search">No messages matched your search.</div>
         )}
 
-        {visibleMessages.map((message) => (
-          <MessageBubble
-            key={message.id}
-            message={message}
-            searchTerm={messageSearch}
-            isSelected={selectedMessageIds.has(message.id)}
-            onToggleSelect={() => toggleSelection(message.id)}
-            onPreview={setPreviewMessage}
-            onReply={onReplyMessage}
-            isSelectionMode={hasSelection}
-          />
-        ))}
+        {visibleMessages.map((message, index) => {
+          const prevMessage = visibleMessages[index - 1];
+          const currentDate = new Date(message.createdAt).toDateString();
+          const prevDate = prevMessage ? new Date(prevMessage.createdAt).toDateString() : null;
+          const showSeparator = currentDate !== prevDate;
+
+          return (
+            <div key={message.id || index}>
+              {showSeparator && (
+                <DateSeparator date={formatDateSeparator(message.createdAt)} />
+              )}
+              <MessageBubble
+                message={message}
+                searchTerm={messageSearch}
+                isSelected={selectedMessageIds.has(message.id)}
+                onToggleSelect={() => toggleSelection(message.id)}
+                onPreview={setPreviewMessage}
+                onReply={onReplyMessage}
+                isSelectionMode={hasSelection}
+              />
+            </div>
+          );
+        })}
 
         <TypingIndicator text={typingText} />
         <div ref={messagesEndRef} style={{ height: 4 }} />
@@ -358,6 +392,7 @@ function ChatWindow({
         <InputBox
           disabled={callProps?.callStatus === "calling" || hasSelection}
           isCompact={isCompactInput}
+          isMobile={isMobileView}
           value={draftMessage}
           onChange={onDraftChange}
           onClearReply={onClearReply}

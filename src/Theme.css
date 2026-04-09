@@ -142,3 +142,45 @@
   --primary-sat: 100%;
   --primary-light: 60%;
 }
+
+/* Teal Theme */
+:root.theme-teal {
+  --primary-hue: 175;
+  --primary-sat: 100%;
+  --primary-light: 35%;
+}
+
+/* Rose Theme */
+:root.theme-rose {
+  --primary-hue: 350;
+  --primary-sat: 90%;
+  --primary-light: 60%;
+}
+
+/* Cyan Theme */
+:root.theme-cyan {
+  --primary-hue: 190;
+  --primary-sat: 100%;
+  --primary-light: 45%;
+}
+
+/* Indigo Theme */
+:root.theme-indigo {
+  --primary-hue: 240;
+  --primary-sat: 60%;
+  --primary-light: 65%;
+}
+
+/* Yellow Theme */
+:root.theme-yellow {
+  --primary-hue: 48;
+  --primary-sat: 100%;
+  --primary-light: 50%;
+}
+
+/* Amber Theme */
+:root.theme-amber {
+  --primary-hue: 38;
+  --primary-sat: 100%;
+  --primary-light: 55%;
+}

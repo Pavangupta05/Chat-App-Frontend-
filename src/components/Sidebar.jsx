@@ -354,56 +354,60 @@ function Sidebar({
         )}
       </motion.div>
 
-      {/* ── 5. FAB (Desktop Only) ─────────────────────────────────────── */}
-      {!isMobile && (
-        <div
-          ref={fabRef}
-          style={{ position: "absolute", right: "16px", bottom: "20px", zIndex: 100 }}
-        >
-          <AnimatePresence>
-            {isFabOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: 16, scale: 0.85 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 16, scale: 0.85 }}
-                style={{
-                  position: "absolute", bottom: "60px", right: "0",
-                  display: "flex", flexDirection: "column", gap: "8px",
-                }}
+      {/* ── 5. FAB (Floating action button) ─────────────────────────────────── */}
+      <div
+        ref={fabRef}
+        className="sidebar-fab-container"
+        style={{ 
+          position: "absolute", 
+          right: "16px", 
+          bottom: "var(--sidebar-fab-bottom, 20px)", 
+          zIndex: 100 
+        }}
+      >
+        <AnimatePresence>
+          {isFabOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.85 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.85 }}
+              style={{
+                position: "absolute", bottom: "60px", right: "0",
+                display: "flex", flexDirection: "column", gap: "8px",
+              }}
+            >
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                className="sidebar-fab-item"
+                onClick={() => { setIsFabOpen(false); onNewGroup?.(); }}
               >
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  className="sidebar-fab-item"
-                  onClick={() => { setIsFabOpen(false); onNewGroup?.(); }}
-                >
-                  <Users size={18} /> New Group
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  className="sidebar-fab-item"
-                  onClick={() => { setIsFabOpen(false); onNewChat?.(); }}
-                >
-                  <MessageSquare size={18} /> New Chat
-                </motion.button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="sidebar-fab"
-            onClick={() => setIsFabOpen((v) => !v)}
-            style={{ width: "56px", height: "56px" }}
-          >
-            <motion.div animate={{ rotate: isFabOpen ? 45 : 0 }}>
-              <Edit size={24} />
+                <Users size={18} /> New Group
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                className="sidebar-fab-item"
+                onClick={() => { setIsFabOpen(false); onNewChat?.(); }}
+              >
+                <MessageSquare size={18} /> New Chat
+              </motion.button>
             </motion.div>
-          </motion.button>
-        </div>
-      )}
+          )}
+        </AnimatePresence>
+
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className="sidebar-fab"
+          onClick={() => setIsFabOpen((v) => !v)}
+          style={{ width: "56px", height: "56px" }}
+        >
+          <motion.div animate={{ rotate: isFabOpen ? 45 : 0 }}>
+            <Edit size={24} />
+          </motion.div>
+        </motion.button>
+      </div>
     </aside>
   );
 }

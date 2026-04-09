@@ -603,13 +603,13 @@ body {
 }
 
 .chat-window__back {
-  display: none;
+  display: inline-grid;
+  place-items: center;
+  margin-right: 4px;
 }
 
 @media (max-width: 767px) {
   .chat-window__back {
-    display: inline-grid;
-    place-items: center;
     margin-right: 4px;
   }
 }
@@ -722,6 +722,40 @@ body {
     radial-gradient(circle at 80% 80%, rgba(115, 40, 220, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 40% 30%, rgba(52, 211, 153, 0.08) 0%, transparent 50%),
     linear-gradient(135deg, rgba(15, 32, 39, 0.95) 0%, rgba(44, 83, 100, 0.95) 100%);
+}
+
+.chat-bg-doodle-midnight {
+  background-color: #0b141a;
+  background-image: none !important;
+}
+
+.chat-bg-doodle-obsidian {
+  background: 
+    radial-gradient(circle at 50% 50%, rgba(26, 26, 26, 0.4) 0%, #000 100%),
+    radial-gradient(circle at 0% 0%, rgba(51, 144, 236, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(115, 40, 220, 0.05) 0%, transparent 40%),
+    #000 !important;
+  background-image: none !important;
+}
+
+.chat-bg-doodle-aura {
+  background: 
+    linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%),
+    radial-gradient(circle at 10% 20%, rgba(51, 144, 236, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 90% 80%, rgba(115, 40, 220, 0.15) 0%, transparent 50%) !important;
+  background-image: none !important;
+}
+
+.chat-bg-doodle-cosmos {
+  background-color: #050b18;
+  background-image: 
+    radial-gradient(1px 1px at 20px 30px, #eee, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 160px 120px, #ddd, rgba(0,0,0,0));
+  background-size: 200px 200px;
 }
 
 .chat-bg-doodle-minimal {
@@ -1774,18 +1808,19 @@ body {
   height: 44px;
   padding: 0 14px;
   border-radius: 12px;
-  background: var(--input-bg);
-  border: 1.5px solid transparent;
+  background: #111;
+  border: none;
   color: var(--text-primary);
   font-size: 16px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.2s;
   -webkit-appearance: none;
   appearance: none;
+  outline: none !important;
 }
 
 .auth-field input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(51,144,236,0.2);
+  border: none;
+  box-shadow: none;
 }
 
 .auth-field input::placeholder { color: var(--text-muted); }
@@ -2356,7 +2391,7 @@ body {
   }
 }
 
-/* ── Container — full gradient backdrop ───────────────────────────────── */
+/* ── Container — full deep black backdrop ───────────────────────────────── */
 .auth-container {
   position: relative;
   min-height: 100vh;
@@ -2364,59 +2399,21 @@ body {
   place-items: center;
   padding: 24px 16px;
   overflow: hidden;
-  /* Animated gradient */
-  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364, #0f2027);
-  background-size: 400% 400%;
-  animation: auth-gradient-shift 12s ease infinite, page-fade-in 0.6s ease;
+  background: #000;
+  animation: page-fade-in 0.6s ease;
 }
 
-/* Floating orbs */
-.auth-container::before,
-.auth-container::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.auth-container::before {
-  width: 420px;
-  height: 420px;
-  background: radial-gradient(circle, rgba(51, 144, 236, 0.45), transparent 70%);
-  top: -80px;
-  left: -100px;
-  animation: orb-float-1 9s ease-in-out infinite, orb-pulse 5s ease-in-out infinite;
-}
-
-.auth-container::after {
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(115, 40, 220, 0.40), transparent 70%);
-  bottom: -60px;
-  right: -60px;
-  animation: orb-float-2 11s ease-in-out infinite, orb-pulse 7s ease-in-out infinite 1s;
-}
-
-/* ── Card — glassmorphism ─────────────────────────────────────────────── */
+/* ── Card — clean dark minimal ─────────────────────────────────────────── */
 .auth-card {
   position: relative;
   z-index: 1;
   width: 100%;
-  width: 100%;
   max-width: 420px;
   padding: 24px 24px 20px;
   border-radius: 20px;
-  /* Glassmorphism */
-  background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(51, 144, 236, 0.1) inset;
-  /* Entrance animation */
+  background: #000;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
   animation: auth-card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -2496,16 +2493,16 @@ body {
   height: 42px;
   padding: 0 14px;
   border-radius: 12px;
-  border: 1.5px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.07);
+  border: none;
+  background: #111;
   color: #ffffff;
   font-size: 14.5px;
   transition: all var(--transition-smooth);
+  outline: none !important;
 }
 
 .form-group input:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.09);
+  background: #181818;
 }
 
 .form-group input::placeholder {
@@ -2513,13 +2510,10 @@ body {
 }
 
 .form-group input:focus {
-  outline: none;
-  border-color: rgba(51, 144, 236, 0.8);
-  background: rgba(51, 144, 236, 0.08);
-  box-shadow:
-    0 0 0 3px rgba(51, 144, 236, 0.18),
-    0 0 16px rgba(51, 144, 236, 0.15);
-  animation: input-focus-glow 0.5s ease;
+  outline: none !important;
+  border: none;
+  background: #181818;
+  box-shadow: none;
 }
 
 /* ── Password wrapper ────────────────────────────────────────────────── */
@@ -2557,7 +2551,7 @@ body {
   width: 100%;
   height: 42px;
   border-radius: 12px;
-  border: 0;
+  border: none;
   background: linear-gradient(135deg, #3390EC 0%, #2070cc 100%);
   color: #ffffff;
   font-size: 15px;
@@ -2566,38 +2560,18 @@ body {
   cursor: pointer;
   display: grid;
   place-items: center;
-  box-shadow: 0 4px 20px rgba(51, 144, 236, 0.45);
+  box-shadow: 0 4px 15px rgba(51, 144, 236, 0.3);
   transition: transform 0.14s ease, box-shadow 0.14s ease, opacity 0.14s;
-  overflow: hidden;
-}
-
-/* Shimmer sweep on hover */
-.auth-button::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 35%,
-    rgba(255,255,255,0.18) 50%,
-    transparent 65%
-  );
-  transform: translateX(-100%);
-  transition: transform 0.45s ease;
+  outline: none !important;
 }
 
 .auth-button:hover {
-  transform: translateY(-2px) scale(1.012);
-  box-shadow: 0 8px 28px rgba(51, 144, 236, 0.6);
-}
-
-.auth-button:hover::after {
-  transform: translateX(100%);
+  transform: translateY(-1px);
+  opacity: 0.95;
 }
 
 .auth-button:active {
-  transform: translateY(1px) scale(0.98);
-  box-shadow: 0 2px 10px rgba(51, 144, 236, 0.35);
+  transform: translateY(1px);
 }
 
 .auth-button:disabled {
@@ -2609,18 +2583,15 @@ body {
 
 /* ── Secondary (ghost) button ────────────────────────────────────────── */
 .auth-button--secondary {
-  background: transparent;
-  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  background: #111;
+  border: none;
   color: rgba(255, 255, 255, 0.8);
   box-shadow: none;
 }
 
 .auth-button--secondary:hover {
-  background: rgba(255,255,255,0.07);
-  border-color: rgba(255,255,255,0.3);
-  transform: translateY(-1px) scale(1.008);
-  box-shadow: none;
-  opacity: 1;
+  background: #181818;
+  transform: translateY(-1px);
 }
 
 /* ── Footer ──────────────────────────────────────────────────────────── */
@@ -4295,12 +4266,12 @@ body {
 
 /* -- Mobile Dock Navigation --------------------------------------------- */
 .mobile-nav {
-  position: fixed;
+  position: absolute;
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  width: calc(100% - 48px);
-  max-width: 400px;
+  width: calc(100% - 32px);
+  max-width: 420px;
   height: 64px;
   background: rgba(23, 33, 43, 0.75);
   backdrop-filter: blur(25px);
@@ -4311,20 +4282,29 @@ body {
   align-items: center;
   justify-content: space-around;
   padding: 0 8px;
-  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5);
-  z-index: 2000;
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
   animation: slideUpNav 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden; /* Key for highlight clipping */
+  overflow: hidden;
   pointer-events: auto;
 }
 
 .mobile-viewport {
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: row !important;
   overflow: hidden;
   will-change: transform;
+}
+
+.mobile-screen-main,
+.mobile-screen-chat {
+  width: 100vw !important;
+  height: 100% !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+  overflow: hidden;
 }
 
 .is-swiping * {
@@ -4542,9 +4522,32 @@ body {
   border-radius: 12px;
   border: 2.5px solid transparent;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  object-fit: cover;
-  background-size: cover;
-  background-position: center;
+  object-fit: cover !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+/* Date Separator */
+.date-separator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.date-separator__label {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  user-select: none;
 }
 
 .chat-bg-option.is-active .chat-bg-preview {
@@ -4640,8 +4643,7 @@ body {
    ══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
   .telegram-layout {
-    width:100vw !important;
-    height: 60vh !important;
+    width: 100vw !important;
     height: 100dvh !important;
     position: fixed !important;
     top: 0 !important;
@@ -4649,34 +4651,37 @@ body {
     right: 0 !important;
     bottom: 0 !important;
     overflow: hidden !important;
-    display: block !important; /* Switch from flex to block/absolute stacking */
+    display: block !important;
   }
 
-  /* Absolute Stacking for Sidebar and Chat */
+  /* Simplified Stacking for Strip View */
   .sidebar,
   .chat-main-area {
-    position: absolute !important;
+    position: relative !important;
     left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transform: none !important;
+    transition: none !important;
   }
 
   .sidebar {
     background: var(--sidebar-surface) !important;
+    height: 100dvh !important;
+    padding-bottom: 90px !important; /* Space for dock */
   }
   
   .chat-main-area {
     background-color: var(--app-background);
   }
 
-  /* Sidebar Position */
-  .is-mobile-sidebar .sidebar { transform: translateX(0) !important; z-index: 10; }
-  .is-mobile-sidebar .chat-main-area { transform: translateX(100%) !important; z-index: 5; }
-
-  /* Chat Position */
-  .is-mobile-chat .sidebar { transform: translateX(-100%) !important; z-index: 5; }
-  .is-mobile-chat .chat-main-area { transform: translateX(0) !important; z-index: 10; }
+  /* Remove old position rules that fight with strip layout */
+  .is-mobile-sidebar .sidebar,
+  .is-mobile-sidebar .chat-main-area,
+  .is-mobile-chat .sidebar,
+  .is-mobile-chat .chat-main-area { 
+    transform: none !important;
+  }
 
   .sidebar {
     height: 100% !important;
@@ -4752,6 +4757,14 @@ body {
     margin-bottom: env(safe-area-inset-bottom) !important;
   }
 
+  .chat-layout--mobile {
+    --sidebar-fab-bottom: 100px;
+  }
+
+  .is-mobile-chat .chat-window__messages {
+    padding-bottom: 70px !important; /* Reduced padding since dock is hidden */
+  }
+
   .chat-window__messages {
     padding-bottom: 110px !important; /* Ensure content doesn't get hidden by dock */
   }
@@ -4788,6 +4801,15 @@ body {
   .is-mobile-chat .camera-fab,
   .is-mobile-chat .add-user-fab {
     display: none !important;
+  }
+
+  /* Emoji Picker Responsive Fixes */
+  .emoji-picker-container-wrapper {
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    display: flex;
+    justify-content: center;
   }
 }
 

@@ -8,6 +8,7 @@ import ReplyPreview from "./ReplyPreview";
 function InputBox({
   disabled,
   isCompact,
+  isMobile,
   onChange,
   onFileUpload,
   onSend,
@@ -55,6 +56,7 @@ function InputBox({
         setIsEmojiPickerOpen(false);
       }
     };
+    // Use pointerdown for both mouse and touch
     window.addEventListener("pointerdown", handler);
     return () => window.removeEventListener("pointerdown", handler);
   }, [isEmojiPickerOpen]);
@@ -121,19 +123,26 @@ function InputBox({
             <AnimatePresence>
               {isEmojiPickerOpen && (
                 <motion.div
+                  className="emoji-picker-container-wrapper"
                   initial={{ opacity: 0, y: 8, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                  style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 12, zIndex: 3000 }}
+                  style={{ 
+                    position: "absolute", 
+                    bottom: "100%", 
+                    left: isMobile ? "-40px" : 0, 
+                    marginBottom: 12, 
+                    zIndex: 3000 
+                  }}
                 >
                   <EmojiPicker 
                     onEmojiClick={handleEmojiInsert} 
                     theme="dark"
                     lazyLoadEmojis={true}
                     skinTonesDisabled
-                    searchDisabled={false}
-                    width={320}
-                    height={400}
+                    searchDisabled={isMobile} // Disable internal search for mobile to save space
+                    width={isMobile ? "calc(100vw - 32px)" : 320}
+                    height={isMobile ? 320 : 400}
                   />
                 </motion.div>
               )}

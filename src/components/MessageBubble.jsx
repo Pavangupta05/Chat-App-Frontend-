@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import MessageStatus from "./MessageStatus";
 import { getImageUrl, handleImageError } from "../utils/imageHelper";
 

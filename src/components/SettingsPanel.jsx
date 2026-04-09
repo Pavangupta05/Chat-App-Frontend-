@@ -13,13 +13,23 @@ const THEME_COLORS = [
   { name: "Red", value: "red", hue: 0, label: "Telegram Red" },
   { name: "Orange", value: "orange", hue: 33, label: "Telegram Orange" },
   { name: "Pink", value: "pink", hue: 338, label: "Telegram Pink" },
+  { name: "Teal", value: "teal", hue: 175, label: "Deep Teal" },
+  { name: "Rose", value: "rose", hue: 350, label: "Soft Rose" },
+  { name: "Cyan", value: "cyan", hue: 190, label: "Neon Cyan" },
+  { name: "Indigo", value: "indigo", hue: 240, label: "Royal Indigo" },
+  { name: "Yellow", value: "yellow", hue: 48, label: "Sunny Yellow" },
+  { name: "Amber", value: "amber", hue: 38, label: "Warm Amber" },
 ];
 
 const BACKGROUND_DOODLES = [
-  { name: "Light", value: "light", label: "Light Doodle" },
-  { name: "Dark", value: "dark", label: "Dark Doodle" },
+  { name: "Light D", value: "light", label: "Light Doodle" },
+  { name: "Dark D", value: "dark", label: "Dark Doodle" },
   { name: "Minimal", value: "minimal", label: "Minimal Pattern" },
   { name: "Wave", value: "wave", label: "Wave Pattern" },
+  { name: "Midnight", value: "midnight", label: "Solid Midnight" },
+  { name: "Obsidian", value: "obsidian", label: "Solid Obsidian" },
+  { name: "Aura", value: "aura", label: "Aura Gradient" },
+  { name: "Cosmos", value: "cosmos", label: "Cosmos Pattern" },
 ];
 
 function SettingsPanel({ 
@@ -37,7 +47,7 @@ function SettingsPanel({
   
   const [selectedColor, setSelectedColor] = useState(() => {
     const stored = typeof window !== "undefined" 
-      ? window.sessionStorage.getItem("chat-color-theme") 
+      ? window.localStorage.getItem("chat-color-theme") 
       : null;
     return stored || "blue";
   });
@@ -76,7 +86,7 @@ function SettingsPanel({
     root.classList.add(`theme-${color.value}`);
     
     if (typeof window !== "undefined") {
-      window.sessionStorage.setItem("chat-color-theme", color.value);
+      window.localStorage.setItem("chat-color-theme", color.value);
     }
   };
 
