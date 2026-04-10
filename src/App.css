@@ -74,7 +74,7 @@ body {
 
 .app {
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
   height: 100dvh;
   overflow: hidden;
   position: relative;
@@ -83,7 +83,7 @@ body {
 
 .telegram-layout {
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
   height: 100dvh;
   display: flex;
   background: var(--app-background);
@@ -732,15 +732,11 @@ body {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  /* Top padding ensures first message starts below header. Bottom padding for input box. */
-  padding: 72px 12px 110px 12px;
+  padding: 72px 12px 120px 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   background: transparent !important;
-  background-attachment: fixed;
-  background-size: cover;
-  background-position: center;
   position: relative;
 }
 
@@ -1216,127 +1212,161 @@ body {
    5. INPUT BOX
    ══════════════════════════════════════════════════════════════════════════ */
 
-.input-box-shell {
+/* ══════════════════════════════════════════════════════════════════════════
+   5. LIQUID GLASS INPUT (TELEGRAM STYLE)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.input-wrapper {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 12px));
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-  padding: 8px 12px 14px 12px;
-  background: rgba(var(--sidebar-surface-rgb, 22, 33, 46), 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255,255,255,0.05);
+  justify-content: center;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Offset for desktop sidebar width to keep floating bar centered in chat area */
+@media (min-width: 1025px) {
+  .input-wrapper {
+    left: calc(var(--sidebar-width, 320px) + 12px) !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .input-wrapper {
+    left: calc(300px + 12px) !important;
+  }
 }
 
 .input-box {
-  display: flex;
-  align-items: center; /* Ensures icons and center are aligned */
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  padding: 4px 8px 4px 14px;
-  min-height: 48px;
   width: 100%;
-  border: 1px solid rgba(255,255,255,0.1);
-  transition: all var(--transition-normal);
+  max-width: 700px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  pointer-events: auto;
+
+  border-radius: 32px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255, 255, 255, 0.15);
+
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .input-box:focus-within {
-  background: var(--surface);
-  box-shadow: 0 0 0 1px var(--accent);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-.input-box input {
+.input-box textarea {
   flex: 1;
-  min-width: 0;
-  border: 0;
   background: transparent;
-  color: var(--text-primary);
-  font-size: 14px;
-  padding: 6px 4px;
-  transition: color var(--transition-normal);
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 15px;
+  padding: 0;
+  max-height: 180px;
+  resize: none;
+  font-family: inherit;
+  line-height: 1.4;
 }
 
-.input-box input::placeholder { 
-  color: var(--text-muted);
-  transition: color var(--transition-normal);
+.input-box textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
 }
 
-.input-box__actions-left {
+/* Icon Buttons (Emoji, Attach) */
+.icon-btn {
+  background: transparent;
+  border: none;
+  padding: 4px;
   display: flex;
   align-items: center;
-  gap: 2px;
-}
-
-/* Send button */
-.send-button {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 0;
-  background: var(--accent);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  transition: background var(--transition-normal), transform var(--transition-fast), box-shadow var(--transition-normal);
+  justify-content: center;
   cursor: pointer;
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.2s ease;
+  border-radius: 50%;
 }
 
-.send-button:hover {
-  background: var(--accent-dark);
-  box-shadow: 0 4px 12px rgba(51, 144, 236, 0.4);
+.icon-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.send-button:active {
-  transform: scale(0.95);
+/* Send Button (Glow Effect) */
+.send-btn {
+  background: rgba(0, 150, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(0, 150, 255, 0.4);
+  flex-shrink: 0;
 }
 
-.send-button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.send-btn.is-active {
+  background: #0088cc;
+  color: #fff;
+  box-shadow: 0 0 20px rgba(0, 150, 255, 0.6);
+  transform: scale(1.05);
+}
 
-/* Reply preview strip */
+.send-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+/* Reply Preview Strip inside Input Box */
 .reply-preview {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 12px;
-  border-radius: 10px;
-  background: var(--surface);
-  border-left: 3px solid var(--accent);
-  animation: fadeSlideUp 0.16s ease;
+  padding: 4px 8px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 2px solid #3390EC;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  animation: slideInDown 0.2s ease;
 }
 
-.reply-preview__content {
-  flex: 1;
-  min-width: 0;
-}
-
-.reply-preview__content strong {
-  font-size: 12px;
-  color: var(--accent);
-  display: block;
-  margin-bottom: 2px;
-}
-
-.reply-preview__content p {
-  font-size: 12px;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin: 0;
-}
-
-/* Image preview */
+/* Media preview inside input box */
 .input-image-preview {
-  position: relative;
-  display: inline-block;
-  margin-bottom: 4px;
+  display: flex;
+  gap: 8px;
+  padding: 4px;
+  width: 100%;
+  margin-bottom: 8px;
 }
 
 .input-image-preview img {
-  max-height: 120px;
-  border-radius: 10px;
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
 }
 
 .input-image-preview__close {
@@ -1876,7 +1906,7 @@ body {
    ══════════════════════════════════════════════════════════════════════════ */
 
 .auth-container {
-  min-height: 100vh;
+  min-height: 100dvh;
   min-height: 100dvh;
   display: grid;
   place-items: center;
@@ -2538,7 +2568,7 @@ body {
 /* ── Container — full deep black backdrop ───────────────────────────────── */
 .auth-container {
   position: relative;
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 24px 16px;
@@ -3464,7 +3494,7 @@ body {
   right: 0;
   width: 100%;
   max-width: 420px;
-  height: 100vh;
+  height: 100dvh;
   height: 100dvh;
   background: var(--surface);
   z-index: 4950;
@@ -4032,7 +4062,7 @@ body {
 }
 
 .app-container {
-  height: 100vh;
+  height: 100dvh;
   height: 100dvh;
   width: 100vw;
   display: flex;
@@ -4138,7 +4168,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 100dvh;
   min-height: 100dvh;
   padding: 24px;
   background: #000; /* Pure Black Background */
@@ -4507,7 +4537,7 @@ body {
   .app-content-stack {
     display: flex;
     width: 100% !important;
-    height: 100vh !important;
+    height: 100dvh !important;
     height: 100dvh !important;
     transform: none !important; /* Never translate on desktop */
   }
@@ -5370,95 +5400,6 @@ body {
     z-index: 10;
   }
 
-  /* Messages area */
-  /* Messages area: Must take all remaining space and scroll */
-  .chat-window__messages {
-    flex: 1 !important;
-    height: auto !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    padding: 12px 12px 140px !important; /* Increased padding */
-    order: 2 !important;
-    -webkit-overflow-scrolling: touch;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Message input bar (Footer): Stuck to bottom, outside scrollable area */
-  .chat-window__footer {
-    position: absolute !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    background: transparent !important;
-    border: none !important;
-    padding: 8px 0 !important;
-    margin: 0 !important;
-    z-index: 100 !important;
-    /* Use fixed padding for docking reliability */
-    padding-bottom: calc(env(safe-area-inset-bottom, 8px) + 8px) !important;
-    box-shadow: none !important;
-  }
-
-  .is-mobile {
-    --sidebar-fab-bottom: 120px; /* Position for the New Chat (+) button */
-  }
-
-  .sidebar-fab {
-    position: fixed !important;
-    bottom: var(--sidebar-fab-bottom, 120px) !important;
-    right: 24px !important;
-    z-index: 1001 !important;
-  }
-
-  .camera-fab {
-    bottom: 190px !important; /* Move Camera button HIGHER than New Chat button */
-    right: 24px !important;
-    z-index: 1001 !important;
-  }
-
-  .add-user-fab {
-    bottom: 260px !important;
-    right: 24px !important;
-    z-index: 1001 !important;
-  }
-
-  .is-mobile-chat .chat-window__messages {
-    padding-bottom: 100px !important; /* Increased padding to prevent overlap with footer */
-  }
-
-  .chat-window__messages {
-    padding-bottom: 110px !important; /* Ensure content doesn't get hidden by dock */
-  }
-
-  .input-box-shell {
-    padding: 6px 10px !important;
-  }
-
-  .input-box-container {
-    padding: 6px 10px 6px 14px !important;
-    border-radius: 24px !important;
-    min-height: 44px !important;
-  }
-
-  .chat-input-area {
-    padding: 6px 0 !important;
-    font-size: 16px !important; /* Prevents auto-zoom on iOS */
-  }
-
-  .send-button-ios {
-    width: 36px !important;
-    height: 36px !important;
-  }
-
-  .icon-button,
-  .sidebar__action,
-  .chat-window__back {
-    width: 44px !important;
-    height: 44px !important;
-  }
-
   /* Prevent FAB/Dock overlap when in chat */
   .is-mobile-chat .mobile-nav,
   .is-mobile-chat .fab-group {
@@ -5508,7 +5449,7 @@ body {
 
 @media (max-width: 500px) {
   .camera-modal-container {
-    max-height: 100vh;
+    max-height: 100dvh;
   }
 }
 
