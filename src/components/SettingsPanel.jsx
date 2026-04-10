@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Moon, Sun, Bell, BellOff, LogOut, Palette, Image, Trash2, X, Shield, FileText, HelpCircle, Info } from "lucide-react";
+import { Moon, Sun, Bell, BellOff, LogOut, Palette, Image, Trash2, X, Shield, FileText, HelpCircle, Info, Plus } from "lucide-react";
 import { deleteCurrentUser } from "../services/userService";
 import ConfirmModal from "./ConfirmModal";
 import { useAuth } from "../context/AuthContext";

@@ -212,24 +212,22 @@ function Sidebar({
       </div>
 
       {/* ── 3. TABS (Desktop Only) ────────────────────────────────────── */}
-      {!isMobile && (
-        <div className="sidebar__tabs" role="tablist" style={{ padding: "0 16px 12px", gap: "8px" }}>
-          {tabs.map((tab) => (
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              key={tab}
-              className={`sidebar__tab${tab === activeTab ? " is-active" : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={tab === activeTab}
-              onClick={() => onTabChange?.(tab)}
-              style={{ fontSize: "14px", height: "32px", borderRadius: "8px" }}
-            >
-              {tab}
-            </motion.button>
-          ))}
-        </div>
-      )}
+      <div className="sidebar__tabs" role="tablist" style={{ padding: "0 16px 12px", gap: "8px" }}>
+        {tabs.map((tab) => (
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            key={tab}
+            className={`sidebar__tab${tab === activeTab ? " is-active" : ""}`}
+            type="button"
+            role="tab"
+            aria-selected={tab === activeTab}
+            onClick={() => onTabChange?.(tab)}
+            style={{ fontSize: "14px", height: "32px", borderRadius: "8px" }}
+          >
+            {tab}
+          </motion.button>
+        ))}
+      </div>
 
       {/* ── 4. CHAT LIST / CONTACTS LIST ──────────────────────────────── */}
       <motion.div 

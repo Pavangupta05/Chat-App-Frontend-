@@ -152,7 +152,13 @@ function ChatLayout() {
   });
 
   const handleBackgroundChange = (type, opacity, customUrl = null) => {
-    const newBg = { type, opacity, customUrl: customUrl || backgroundDoodle.customUrl };
+    // If we're setting a standard doodle, we keep the previous customUrl just in case the user switches back.
+    // If we're setting 'custom', we MUST have a customUrl.
+    const newBg = { 
+      type, 
+      opacity: opacity !== undefined ? opacity : backgroundDoodle.opacity, 
+      customUrl: type === 'custom' ? (customUrl || backgroundDoodle.customUrl) : (backgroundDoodle.customUrl || null)
+    };
     setBackgroundDoodle(newBg);
     window.localStorage.setItem("chat-bg-doodle", JSON.stringify(newBg));
   };
@@ -217,14 +223,24 @@ function ChatLayout() {
       <div className="app-content-stack">
       {/* SCREEN 1: LIST / HOME */}
       <section className="app-screen app-screen--list">
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
-            key={activeTab === 'Contacts' ? 'contacts' : 'chats'}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            transition={{ duration: 0.2 }}
-            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            key={activeTab}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              width: '100%', 
+              height: '100%',
+              zIndex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              background: 'var(--sidebar-surface)' /* Solid background to prevent ghosting */
+            }}
           >
             <Sidebar
               activeChatId={currentChat?.id}
@@ -306,14 +322,21 @@ function ChatLayout() {
 
       {/* SCREEN 2: DETAIL (Chat / Settings / Profile) */}
       <div className="app-screen app-screen--detail">
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
             key={location.pathname.split('/')[1] || 'empty'}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            style={{ height: '100%', width: '100%' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              width: '100%', 
+              height: '100%',
+              zIndex: 1
+            }}
           >
             <Outlet context={{
               activeChatId,

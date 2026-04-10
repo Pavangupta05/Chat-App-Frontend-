@@ -5,6 +5,7 @@ import { Search, MoreVertical, Phone, Video, ChevronLeft, Trash2, Forward, X, Me
 import MessageBubble from "./MessageBubble";
 import InputBox from "./InputBox";
 import TypingIndicator from "./TypingIndicator";
+import ChatLanding from "./ChatLanding";
 
 const DateSeparator = ({ date }) => (
   <div className="date-separator">
@@ -168,17 +169,20 @@ function ChatWindow({
 
   // Render empty state on mobile if no chat
   if (!chat) {
-    return (
-      <div className="chat-window">
-        <div className="chat-window__empty">
-          <div className="chat-window__empty-icon">
-            <MessageSquare size={36} />
+    if (isMobileView) {
+      return (
+        <div className="chat-window">
+          <div className="chat-window__empty">
+            <div className="chat-window__empty-icon">
+              <MessageSquare size={36} />
+            </div>
+            <p style={{ fontWeight: 600, fontSize: 15, color: "var(--text-primary)" }}>Select a chat</p>
+            <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>Start a conversation</p>
           </div>
-          <p style={{ fontWeight: 600, fontSize: 15, color: "var(--text-primary)" }}>Select a chat</p>
-          <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>Start a conversation</p>
         </div>
-      </div>
-    );
+      );
+    }
+    return <ChatLanding />;
   }
 
   return (
