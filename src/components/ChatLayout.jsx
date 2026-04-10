@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Outlet, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Users, Settings, User, Camera, ArrowLeft, UserPlus, Plus } from "lucide-react";
+import { MessageSquare, Users, Settings, User, Camera, ArrowLeft, UserPlus, Plus, X } from "lucide-react";
 import ConfirmModal from "./ConfirmModal";
 import ForwardModal from "./ForwardModal";
 import NewChatModal from "./NewChatModal";
@@ -11,15 +11,16 @@ import Sidebar from "./Sidebar";
 import ChatWindow from "./ChatWindow";
 import VideoCallModal from "./VideoCallModal";
 import AudioCallModal from "./AudioCallModal";
-import NavigationStack from "./NavigationStack";
 import useChatController from "../hooks/useChatController";
 import { useAuth } from "../context/AuthContext";
+
 
 function ChatLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   
   const {
+    activeChatId,
     activeTab,
     call,
     chats,
@@ -30,6 +31,7 @@ function ChatLayout() {
     deleteActiveChat,
     deleteMessageForEveryone,
     deleteMessageForMe,
+    drawerOpen,
     draftMessage,
     forwardingMessage,
     handleTypingInputChange,
@@ -49,7 +51,11 @@ function ChatLayout() {
     socketState,
     typing,
     username,
+    isLoadingMessages,
+    loadMessagesError,
+    retryLoadMessages,
   } = useChatController();
+
 
   const [viewport, setViewport] = useState(() => {
     if (window.innerWidth < 768) return "mobile";
@@ -58,8 +64,15 @@ function ChatLayout() {
   });
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 1024);
-  const [activeScreen, setActiveScreen] = useState("chatList"); // "chatList" | "chat" | "settings" | "profile"
   const isMobileView = viewport === "mobile";
+  
+  // DRIVER: Derive activeScreen from URL
+  const activeScreen = location.pathname === "/" ? "chatList"
+                     : location.pathname.startsWith("/chat") ? "chat"
+                     : location.pathname.startsWith("/settings") ? "settings"
+                     : location.pathname.startsWith("/profile") ? "profile"
+                     : "chatList";
+
 
   const [theme, setTheme] = useState(
     () => window.sessionStorage.getItem("chat-theme") || "dark",
@@ -89,32 +102,25 @@ function ChatLayout() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // SYNC URL WITH UI STATE (ONLY WHEN USER ACTS)
-  const syncUrl = useCallback((mode, chatId) => {
-    if (mode === "settings") navigate("/settings");
-    else if (mode === "profile") navigate("/profile");
-    else if (chatId) navigate(`/chat/${chatId}`);
-    else navigate("/");
-  }, [navigate]);
-
-  // LISTEN FOR URL CHANGES AND SYNC TO activeScreen
+  // ── AUTO-SYNC INTERNAL STATE (Chat ID) WITH URL ──────────────────────────
+  // RULE: URL is the single source of truth. We only sync FROM the URL INTO state.
+  // We never reset state because the URL is "/" — that could fire during animations
+  // or back-swipes on mobile and wipe out the selected chat mid-navigation.
   useEffect(() => {
-    const pathSegments = location.pathname.split("/").filter(Boolean);
-    
-    if (pathSegments.length === 0) {
-      setActiveScreen("chatList");
-    } else if (pathSegments[0] === "settings") {
-      setActiveScreen("settings");
-    } else if (pathSegments[0] === "profile") {
-      setActiveScreen("profile");
-    } else if (pathSegments[0] === "chat" && pathSegments[1]) {
-      const chatId = pathSegments[1];
-      setActiveScreen("chat");
-      if (currentChat?.id !== chatId) {
-        selectChat(chatId);
+    console.log("[ChatLayout] Route:", location.pathname);
+
+    if (location.pathname.startsWith("/chat/")) {
+      const urlChatId = location.pathname.split("/chat/")[1];
+      console.log("[ChatLayout] Chat ID from URL:", urlChatId);
+
+      // Only call selectChat when the ID actually changes to avoid redundant fetches
+      if (urlChatId && String(activeChatId) !== String(urlChatId)) {
+        selectChat(urlChatId);
       }
     }
-  }, [location.pathname, selectChat, currentChat?.id]);
+    // ✅ DO NOT call selectChat(null) when pathname === "/".
+    // Deselection happens only via explicit user actions (back button, handleMobileBack).
+  }, [location.pathname, selectChat, activeChatId]);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -152,41 +158,26 @@ function ChatLayout() {
   // Scoping doodle logic is now handled in ChatWindow via props
 
   const handleSelectChat = (id) => {
-    selectChat(id);
     navigate(`/chat/${id}`);
-    setActiveScreen("chat");
   };
 
   const handleOpenSettings = () => {
     navigate("/settings");
-    setActiveScreen("settings");
   };
 
   const handleOpenProfile = () => {
     navigate("/profile");
-    setActiveScreen("profile");
   };
 
   const handleClosePanel = () => {
     navigate("/");
-    setActiveScreen("chatList");
   };
+
 
   const handleMobileBack = useCallback((e) => {
     if (e && e.preventDefault) e.preventDefault();
-    
-    // 1. Move to chatList state
-    setActiveScreen("chatList");
-    setChatModalMode(null);
-
-    // 2. Clear state
-    selectChat(null);
-
-    // 3. Navigate back safely
-    if (location.pathname !== "/") {
-      navigate("/", { replace: true });
-    }
-  }, [navigate, selectChat, location.pathname]);
+    navigate("/", { replace: true });
+  }, [navigate]);
 
   const closeConfirmModal = () => setConfirmAction(null);
 
@@ -196,7 +187,7 @@ function ChatLayout() {
     closeConfirmModal();
   };
 
-  const isChatVisible = !!currentChat;
+  const isChatVisible = activeScreen === "chat" || !!currentChat;
   
   const layoutClass = isMobileView
     ? (activeScreen === "chat" && isChatVisible)
@@ -216,72 +207,12 @@ function ChatLayout() {
   // Calculate unread total
   const totalUnreadCount = chats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
 
-  // -- Swipe Back Gesture Implementation -------------------------
-  const [swipeX, setSwipeX] = useState(0);
-  const [isSwiping, setIsSwiping] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const touchStart = useRef(0);
-
-  const handleTouchStart = (e) => {
-    if (!isMobileView || activeScreen !== "chat" || isAnimating) return;
-    const x = e.touches[0].clientX;
-    if (x < 60) { // Edge swipe only
-      touchStart.current = x;
-      setIsSwiping(true);
-    }
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isSwiping) return;
-    const currentX = e.touches[0].clientX;
-    const deltaX = Math.max(0, currentX - touchStart.current);
-    setSwipeX(deltaX);
-  };
-
-  const handleTouchEnd = () => {
-    if (!isSwiping) return;
-    
-    const threshold = 100;
-    if (swipeX > threshold) {
-      setIsAnimating(true);
-      setSwipeX(window.innerWidth);
-      setTimeout(() => {
-        handleMobileBack();
-        setSwipeX(0);
-        setIsSwiping(false);
-        setIsAnimating(false);
-      }, 300);
-    } else {
-      setIsAnimating(true);
-      setSwipeX(0);
-      setTimeout(() => {
-        setIsSwiping(false);
-        setIsAnimating(false);
-      }, 250);
-    }
-  };
-
-  const getStackTransform = () => {
-    const slideAmount = isMobileDetailScreen ? -50 : 0;
-    if (isSwiping) {
-      // Swipe back: starts at -50% and goes towards 0%
-      const swipePercent = (swipeX / window.innerWidth) * 50;
-      return `translateX(${slideAmount + swipePercent}%)`;
-    }
-    return `translateX(${slideAmount}%)`;
-  };
 
   return (
     <main 
-      className={`app-container ${isMobileView ? 'is-mobile' : ''} ${isSwiping ? 'is-swiping' : ''} ${isAnimating ? 'is-animating' : ''} ${layoutClass}`}
+      className={`app-container ${isMobileView ? 'is-mobile' : ''} ${layoutClass}`}
     >
-      <div 
-        className="app-content-stack"
-        style={{ transform: isMobileView ? getStackTransform() : 'none' }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
+      <div className="app-content-stack">
       {/* SCREEN 1: LIST / HOME */}
       <section className="app-screen app-screen--list">
         <Sidebar
@@ -350,7 +281,7 @@ function ChatLayout() {
               className={`mobile-nav__item ${activeScreen === 'settings' ? 'is-active' : ''}`}
               onClick={handleOpenSettings}
             >
-              {activeScreen === 'settings' && (
+              {location.pathname === '/settings' && (
                 <motion.div layoutId="activeTabPill" className="mobile-nav__highlight" />
               )}
               <Settings size={24} />
@@ -362,57 +293,42 @@ function ChatLayout() {
 
       {/* SCREEN 2: DETAIL (Chat / Settings / Profile) */}
       <div className="app-screen app-screen--detail">
-        {activeScreen === "chat" ? (
-          <div className={`chat-main-area ${backgroundDoodle?.type ? `chat-bg-doodle-${backgroundDoodle.type}` : ""}`}
-               style={{ "--bg-overlay-opacity": backgroundDoodle?.opacity ?? 0.3 }}>
-            {!currentChat ? (
-              activeChatId ? (
-                <div className="chat-window chat-window--loading">
-                  <div className="pulse-loader"></div>
-                  <p>Loading conversation...</p>
-                </div>
-              ) : (
-                <div className="chat-window chat-window--empty">
-                  <MessageSquare size={48} />
-                  <p>Select a chat to start messaging</p>
-                </div>
-              )
-            ) : (
-              <ChatWindow
-                backgroundDoodle={backgroundDoodle}
-                callProps={{...call}}
-                chat={currentChat}
-                draftMessage={draftMessage}
-                isCompactInput={isMobileView}
-                isMobileView={isMobileView}
-                onClearReply={clearReply}
-                onConfirmClearChat={() => setConfirmAction("clear-chat")}
-                onConfirmDeleteChat={() => setConfirmAction("delete-chat")}
-                onDeleteMessageForEveryone={deleteMessageForEveryone}
-                onDeleteMessageForMe={deleteMessageForMe}
-                onDraftChange={(val) => { setDraftMessage(val); handleTypingInputChange(val); }}
-                onFileUpload={sendFileMessage}
-                onForwardMessage={startForwardMessage}
-                onMobileBack={handleMobileBack}
-                onReplyMessage={setReplyMessage}
-                onSendMessage={sendMessage}
-                onStartAudioCall={() => call.startCall("audio")}
-                onStartVideoCall={() => call.startCall("video")}
-                replyMessage={replyMessage}
-                typingText={socketState.isConnected ? typing.text : ""}
-              />
-            )}
-          </div>
-        ) : activeScreen === "settings" ? (
-          <div className="detail-screen-placeholder">Settings Screen (In Development)</div>
-        ) : activeScreen === "profile" ? (
-          <div className="detail-screen-placeholder">Profile Screen (In Development)</div>
-        ) : null}
+          <Outlet context={{
+            activeChatId,
+            backgroundDoodle,
+            call,
+            currentChat,
+            draftMessage,
+            isMobileView,
+            clearReply,
+            setConfirmAction,
+            deleteMessageForEveryone,
+            deleteMessageForMe,
+            setDraftMessage,
+            handleTypingInputChange,
+            sendFileMessage,
+            startForwardMessage,
+            handleMobileBack,
+            setReplyMessage,
+            sendMessage,
+            replyMessage,
+            socketState,
+            typing,
+            isLoadingMessages,
+            loadMessagesError,
+            retryLoadMessages,
+            theme,
+            onThemeToggle: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
+            onLogout: logout,
+            onBackgroundChange: handleBackgroundChange,
+            onClosePanel: handleClosePanel,
+         }} />
+
       </div>
       </div>
 
       {/* FABs - Only visible on mobile list view to prevent desktop clashing */}
-      {isMobileView && activeScreen === "chatList" && (
+      {isMobileView && !currentChat && (
         <div className="fab-group">
           <input
             type="file"
@@ -426,6 +342,15 @@ function ChatLayout() {
               }
             }}
           />
+          <button 
+            className="fab-item fab-item--add-user" 
+            aria-label="Add User or Group"
+            onClick={() => setChatModalMode("group")}
+            style={{ background: 'linear-gradient(135deg, #f59e0b, #ea580c)' }}
+          >
+            <UserPlus size={24} />
+          </button>
+          
           <button 
             className="fab-item fab-item--camera" 
             aria-label="Camera"
@@ -467,9 +392,11 @@ function ChatLayout() {
         mode={chatModalMode ?? "chat"}
         onClose={() => setChatModalMode(null)}
         onCreate={({ name, accent, avatar, peerUserId }) => {
-          createChat({ name, accent, avatar, peerUserId });
+          const newId = createChat({ name, accent, avatar, peerUserId });
           setChatModalMode(null);
-          if (isMobileView) setActiveScreen("chat");
+          if (newId) {
+            navigate(`/chat/${newId}`);
+          }
         }}
       />
       <VideoCallModal
@@ -509,13 +436,8 @@ function ChatLayout() {
         remoteStream={call.remoteStream}
         secureContext={call.secureContext}
       />
-      <NavigationStack 
-        theme={theme}
-        onThemeToggle={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-        onLogout={logout}
-        backgroundDoodle={backgroundDoodle}
-        onBackgroundChange={handleBackgroundChange}
-      />
+      {/* MODALS & PANELS managed by React Router child routes or specific modals above */}
+
     </main>
   );
 }

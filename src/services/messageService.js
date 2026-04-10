@@ -5,6 +5,41 @@ export function isPeerMongoId(value) {
   return typeof value === "string" && /^[a-f\d]{24}$/i.test(value);
 }
 
+/**
+ * Fetch messages by chat ID.
+ * On 401/404, throws an error with code "ACCESS_DENIED" so the caller can
+ * display error UI without triggering a global logout.
+ */
+export async function fetchMessagesByChatId(token, chatId) {
+  const response = await retryFetch(
+    () => fetch(`${API_URL}/api/messages/${chatId}?t=${Date.now()}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+      },
+    }),
+    2 // maxRetries for GET requests
+  );
+
+  // 401 / 403 / 404 — access denied, not a network error
+  if (response.status === 401 || response.status === 403 || response.status === 404) {
+    const err = new Error("Chat not found or access denied.");
+    err.code = "ACCESS_DENIED";
+    err.status = response.status;
+    throw err;
+  }
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to load messages.");
+  }
+
+  return Array.isArray(data) ? data : [];
+}
+
 export async function fetchMessagesBetween(token, withUserId) {
   const params = new URLSearchParams({ withUserId });
   const response = await retryFetch(
@@ -18,6 +53,13 @@ export async function fetchMessagesBetween(token, withUserId) {
     }),
     2 // maxRetries for GET requests
   );
+
+  if (response.status === 401 || response.status === 403 || response.status === 404) {
+    const err = new Error("Access denied.");
+    err.code = "ACCESS_DENIED";
+    err.status = response.status;
+    throw err;
+  }
 
   const data = await response.json().catch(() => ({}));
 

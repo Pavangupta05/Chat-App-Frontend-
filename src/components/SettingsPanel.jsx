@@ -39,7 +39,8 @@ function SettingsPanel({
   onThemeToggle, 
   onLogout,
   backgroundDoodle = { type: "light", opacity: 0.3 },
-  onBackgroundChange = () => {}
+  onBackgroundChange = () => {},
+  isRouted = false
 }) {
   const { token } = useAuth();
   const notifStatus =
@@ -100,237 +101,247 @@ function SettingsPanel({
 
   if (!isOpen) return null;
 
+  const innerContent = (
+    <div className={`side-panel-content-wrapper ${isRouted ? 'is-routed' : ''}`}>
+      <div className="side-panel__header">
+        <button className="icon-button header-close-btn" type="button" onClick={onClose} aria-label="Close">
+          <X size={24} />
+        </button>
+        <h2>Settings</h2>
+      </div>
+
+      <div className="side-panel__body">
+        {/* Appearance Theme */}
+        <div className="ios-list-group">
+          <div className="settings-row">
+            <div className="settings-row__info">
+              {theme === "dark" ? <Moon size={22} /> : <Sun size={22} />}
+              <div>
+                <strong>Appearance</strong>
+                <p>{theme === "dark" ? "Dark mode" : "Light mode"}</p>
+              </div>
+            </div>
+            <button
+              className="settings-toggle"
+              type="button"
+              onClick={onThemeToggle}
+              aria-label="Toggle theme"
+            >
+              <span className={`settings-toggle__track ${theme === "dark" ? "is-active" : ""}`}>
+                <span className="settings-toggle__thumb" />
+              </span>
+            </button>
+          </div>
+
+          {/* Color Theme */}
+          <div className="settings-row settings-row--expanded">
+            <div className="settings-row__info">
+              <Palette size={22} />
+              <div>
+                <strong>Chat Color</strong>
+                <p>Customize accent color</p>
+              </div>
+            </div>
+          </div>
+          <div className="theme-color-picker">
+            {THEME_COLORS.map((color) => (
+              <motion.button
+                key={color.value}
+                type="button"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleColorChange(color)}
+                className={`theme-color-option ${selectedColor === color.value ? "is-active" : ""}`}
+                style={{
+                  backgroundColor: `hsl(${color.hue}, 100%, 56%)`,
+                  boxShadow: selectedColor === color.value 
+                    ? `0 0 0 2.5px var(--surface), 0 0 0 4.5px hsl(${color.hue}, 100%, 56%)`
+                    : "none"
+                }}
+                title={color.label}
+                aria-label={`Select ${color.label}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Chat Background */}
+        <div className="ios-list-group">
+          <div className="settings-row settings-row--expanded">
+            <div className="settings-row__info">
+              <Image size={22} />
+              <div>
+                <strong>Chat Background</strong>
+                <p>Choose doodle pattern</p>
+              </div>
+            </div>
+          </div>
+          <div className="chat-bg-selector">
+            {BACKGROUND_DOODLES.map((bg) => (
+              <motion.button
+                key={bg.value}
+                type="button"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleBackgroundDoodleChange(bg.value)}
+                className={`chat-bg-option ${backgroundDoodle.type === bg.value ? "is-active" : ""}`}
+                title={bg.label}
+                aria-label={`Select ${bg.label}`}
+              >
+                <div className={`chat-bg-preview chat-bg-doodle-${bg.value}`} />
+                <span>{bg.name}</span>
+              </motion.button>
+            ))}
+          </div>
+
+          {/* Transparency Control */}
+          <div className="settings-row settings-row--expanded">
+            <div className="settings-row__info">
+              <div>
+                <strong>Background Transparency</strong>
+                <p>{Math.round(backgroundDoodle.opacity * 100)}% opacity</p>
+              </div>
+            </div>
+          </div>
+          <div className="opacity-slider-container">
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={backgroundDoodle.opacity}
+              onChange={(e) => handleOpacityChange(parseFloat(e.target.value))}
+              className="opacity-slider"
+              aria-label="Background opacity"
+            />
+            <div className="opacity-labels">
+              <span>Transparent</span>
+              <span>Opaque</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Notifications */}
+        <div className="ios-list-group">
+          <div className="settings-row">
+            <div className="settings-row__info">
+              {notifStatus === "granted" ? <Bell size={22} /> : <BellOff size={22} />}
+              <div>
+                <strong>Notifications</strong>
+                <p>
+                  {notifStatus === "granted"
+                    ? "Enabled"
+                    : notifStatus === "denied"
+                    ? "Blocked by browser"
+                    : "Not enabled"}
+                </p>
+              </div>
+            </div>
+            {notifStatus !== "denied" && (
+              <button
+                className="settings-btn"
+                type="button"
+                onClick={requestNotifPermission}
+                disabled={notifStatus === "granted"}
+              >
+                {notifStatus === "granted" ? "On" : "Enable"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Legal & About */}
+        <div className="ios-list-group">
+          <div className="settings-row" onClick={() => window.location.hash = "/settings/privacy"} style={{ cursor: 'pointer' }}>
+            <div className="settings-row__info">
+              <Shield size={22} />
+              <div>
+                <strong>Privacy Policy</strong>
+                <p>How we protect your data</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="settings-row" onClick={() => window.location.hash = "/settings/terms"} style={{ cursor: 'pointer' }}>
+            <div className="settings-row__info">
+              <FileText size={22} />
+              <div>
+                <strong>Terms of Service</strong>
+                <p>Community guidelines</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="settings-row" onClick={() => window.location.hash = "/settings/help"} style={{ cursor: 'pointer' }}>
+            <div className="settings-row__info">
+              <HelpCircle size={22} />
+              <div>
+                <strong>Help Center</strong>
+                <p>Get assistance</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="settings-row" onClick={() => window.location.hash = "/settings/about"} style={{ cursor: 'pointer', borderBottom: 'none' }}>
+            <div className="settings-row__info">
+              <Info size={22} />
+              <div>
+                <strong>About</strong>
+                <p>App versions and info</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Logout */}
+        <div className="ios-list-group">
+          <div className="settings-row settings-row--danger">
+            <div className="settings-row__info">
+              <LogOut size={22} />
+              <div>
+                <strong>Logout</strong>
+                <p>Sign out of your account</p>
+              </div>
+            </div>
+            <button className="settings-btn settings-btn--danger" type="button" onClick={onLogout}>
+              Log Out
+            </button>
+          </div>
+        </div>
+
+        {/* Delete Account */}
+        <div className="ios-list-group" style={{ marginBottom: '120px' }}>
+          <div className="settings-row settings-row--danger">
+            <div className="settings-row__info">
+              <Trash2 size={22} />
+              <div>
+                <strong>Delete Account</strong>
+                <p>Permanently delete your account</p>
+              </div>
+            </div>
+            <button 
+              className="settings-btn settings-btn--danger" 
+              type="button" 
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isDeleting}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <>
-      <OverlayPage onClose={onClose}>
-        <div className="side-panel__header">
-          <button className="icon-button header-close-btn" type="button" onClick={onClose} aria-label="Close">
-            <X size={24} />
-          </button>
-          <h2>Settings</h2>
-        </div>
-
-        <div className="side-panel__body">
-          {/* Appearance Theme */}
-          <div className="ios-list-group">
-            <div className="settings-row">
-              <div className="settings-row__info">
-                {theme === "dark" ? <Moon size={22} /> : <Sun size={22} />}
-                <div>
-                  <strong>Appearance</strong>
-                  <p>{theme === "dark" ? "Dark mode" : "Light mode"}</p>
-                </div>
-              </div>
-              <button
-                className="settings-toggle"
-                type="button"
-                onClick={onThemeToggle}
-                aria-label="Toggle theme"
-              >
-                <span className={`settings-toggle__track ${theme === "dark" ? "is-active" : ""}`}>
-                  <span className="settings-toggle__thumb" />
-                </span>
-              </button>
-            </div>
-
-            {/* Color Theme */}
-            <div className="settings-row settings-row--expanded">
-              <div className="settings-row__info">
-                <Palette size={22} />
-                <div>
-                  <strong>Chat Color</strong>
-                  <p>Customize accent color</p>
-                </div>
-              </div>
-            </div>
-            <div className="theme-color-picker">
-              {THEME_COLORS.map((color) => (
-                <motion.button
-                  key={color.value}
-                  type="button"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleColorChange(color)}
-                  className={`theme-color-option ${selectedColor === color.value ? "is-active" : ""}`}
-                  style={{
-                    backgroundColor: `hsl(${color.hue}, 100%, 56%)`,
-                    boxShadow: selectedColor === color.value 
-                      ? `0 0 0 2.5px var(--surface), 0 0 0 4.5px hsl(${color.hue}, 100%, 56%)`
-                      : "none"
-                  }}
-                  title={color.label}
-                  aria-label={`Select ${color.label}`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Chat Background */}
-          <div className="ios-list-group">
-            <div className="settings-row settings-row--expanded">
-              <div className="settings-row__info">
-                <Image size={22} />
-                <div>
-                  <strong>Chat Background</strong>
-                  <p>Choose doodle pattern</p>
-                </div>
-              </div>
-            </div>
-            <div className="chat-bg-selector">
-              {BACKGROUND_DOODLES.map((bg) => (
-                <motion.button
-                  key={bg.value}
-                  type="button"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleBackgroundDoodleChange(bg.value)}
-                  className={`chat-bg-option ${backgroundDoodle.type === bg.value ? "is-active" : ""}`}
-                  title={bg.label}
-                  aria-label={`Select ${bg.label}`}
-                >
-                  <div className={`chat-bg-preview chat-bg-doodle-${bg.value}`} />
-                  <span>{bg.name}</span>
-                </motion.button>
-              ))}
-            </div>
-
-            {/* Transparency Control */}
-            <div className="settings-row settings-row--expanded">
-              <div className="settings-row__info">
-                <div>
-                  <strong>Background Transparency</strong>
-                  <p>{Math.round(backgroundDoodle.opacity * 100)}% opacity</p>
-                </div>
-              </div>
-            </div>
-            <div className="opacity-slider-container">
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={backgroundDoodle.opacity}
-                onChange={(e) => handleOpacityChange(parseFloat(e.target.value))}
-                className="opacity-slider"
-                aria-label="Background opacity"
-              />
-              <div className="opacity-labels">
-                <span>Transparent</span>
-                <span>Opaque</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Notifications */}
-          <div className="ios-list-group">
-            <div className="settings-row">
-              <div className="settings-row__info">
-                {notifStatus === "granted" ? <Bell size={22} /> : <BellOff size={22} />}
-                <div>
-                  <strong>Notifications</strong>
-                  <p>
-                    {notifStatus === "granted"
-                      ? "Enabled"
-                      : notifStatus === "denied"
-                      ? "Blocked by browser"
-                      : "Not enabled"}
-                  </p>
-                </div>
-              </div>
-              {notifStatus !== "denied" && (
-                <button
-                  className="settings-btn"
-                  type="button"
-                  onClick={requestNotifPermission}
-                  disabled={notifStatus === "granted"}
-                >
-                  {notifStatus === "granted" ? "On" : "Enable"}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Legal & About */}
-          <div className="ios-list-group">
-            <div className="settings-row" onClick={() => window.location.hash = "/settings/privacy"} style={{ cursor: 'pointer' }}>
-              <div className="settings-row__info">
-                <Shield size={22} />
-                <div>
-                  <strong>Privacy Policy</strong>
-                  <p>How we protect your data</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="settings-row" onClick={() => window.location.hash = "/settings/terms"} style={{ cursor: 'pointer' }}>
-              <div className="settings-row__info">
-                <FileText size={22} />
-                <div>
-                  <strong>Terms of Service</strong>
-                  <p>Community guidelines</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="settings-row" onClick={() => window.location.hash = "/settings/help"} style={{ cursor: 'pointer' }}>
-              <div className="settings-row__info">
-                <HelpCircle size={22} />
-                <div>
-                  <strong>Help Center</strong>
-                  <p>Get assistance</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="settings-row" onClick={() => window.location.hash = "/settings/about"} style={{ cursor: 'pointer', borderBottom: 'none' }}>
-              <div className="settings-row__info">
-                <Info size={22} />
-                <div>
-                  <strong>About</strong>
-                  <p>App versions and info</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Logout */}
-          <div className="ios-list-group">
-            <div className="settings-row settings-row--danger">
-              <div className="settings-row__info">
-                <LogOut size={22} />
-                <div>
-                  <strong>Logout</strong>
-                  <p>Sign out of your account</p>
-                </div>
-              </div>
-              <button className="settings-btn settings-btn--danger" type="button" onClick={onLogout}>
-                Log Out
-              </button>
-            </div>
-          </div>
-
-          {/* Delete Account */}
-          <div className="ios-list-group" style={{ marginBottom: '120px' }}>
-            <div className="settings-row settings-row--danger">
-              <div className="settings-row__info">
-                <Trash2 size={22} />
-                <div>
-                  <strong>Delete Account</strong>
-                  <p>Permanently delete your account</p>
-                </div>
-              </div>
-              <button 
-                className="settings-btn settings-btn--danger" 
-                type="button" 
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={isDeleting}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      </OverlayPage>
+      {isRouted ? (
+        innerContent
+      ) : (
+        <OverlayPage onClose={onClose}>
+          {innerContent}
+        </OverlayPage>
+      )}
       
       <ConfirmModal
         isOpen={showDeleteConfirm}
@@ -345,3 +356,4 @@ function SettingsPanel({
 }
 
 export default SettingsPanel;
+

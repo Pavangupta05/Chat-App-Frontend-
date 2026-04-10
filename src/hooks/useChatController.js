@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { fetchMessagesBetween, fetchUserChats, isPeerMongoId, clearChatHistory, deleteChat, deleteSingleMessage, deleteMessageForEveryoneApi } from "../services/messageService";
+import { fetchMessagesByChatId, fetchMessagesBetween, fetchUserChats, isPeerMongoId, clearChatHistory, deleteChat, deleteSingleMessage, deleteMessageForEveryoneApi } from "../services/messageService";
 import useCall from "./useCall";
 import useMessageStatus from "./useMessageStatus";
 import useNotifications from "./useNotifications";
@@ -60,6 +60,8 @@ function useChatController() {
   });
   const [draftMessage, setDraftMessage] = useState("");
   const [forwardingMessage, setForwardingMessage] = useState(null);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [loadMessagesError, setLoadMessagesError] = useState(null);
   const { emit, isConnected, socketId, subscribe } = useSocket();
   const { isUserOnline, getUserLastSeen } = usePresence({ subscribe });
   const { notify } = useNotifications();
@@ -100,32 +102,54 @@ function useChatController() {
     
     fetchUserChats(token)
       .then((apiChats) => {
-        setChats((existingLocalChats) => {
-          const nextChats = [...existingLocalChats];
+        setChats((currentLocal) => {
+          const next = [...currentLocal];
           let updated = false;
-          
+
           apiChats.forEach((apiChat) => {
-            // Find the remote peer safely (tolerate nulls if users were deleted)
-            if (!apiChat?.participants || !Array.isArray(apiChat.participants)) return;
+            if (!apiChat?.participants) return;
             const peer = apiChat.participants.find(p => p && String(p._id) !== currentUserId);
             if (!peer) return;
-            
-            const chatIdKey = String(peer._id);
-            const alreadyExists = nextChats.some(c => String(c.id) === chatIdKey);
-            
-            if (!alreadyExists) {
+
+            const realChatId = String(apiChat._id);
+            const peerUserId = String(peer._id);
+
+            // SMART MERGE: Check if we have this chat by Real ID OR by Peer User ID
+            const existingIndex = next.findIndex(c => String(c.id) === realChatId || String(c.id) === peerUserId);
+
+            if (existingIndex !== -1) {
+              const existing = next[existingIndex];
+              // Update ID to the real backend ID if it was currently using a peerUserId
+              if (String(existing.id) !== realChatId) {
+                console.log(`[SmartSync] Merging local chat ${existing.id} -> ${realChatId}`);
+                next[existingIndex] = { ...existing, id: realChatId, updatedAt: apiChat.updatedAt ? new Date(apiChat.updatedAt).getTime() : existing.updatedAt };
+                updated = true;
+                
+                // FIX: Use functional updater to read current activeChatId without stale closure.
+                // This prevents the case where the effect reads an old activeChatId value
+                // and incorrectly reassigns it when the server syncs a peer ID to a real Mongo ID.
+                setActiveChatId((currentId) => {
+                  if (String(currentId) === String(existing.id)) {
+                    console.log(`[SmartSync] Updating activeChatId ${existing.id} -> ${realChatId}`);
+                    return realChatId;
+                  }
+                  return currentId;
+                });
+              }
+            } else {
+              // New chat from backend
               updated = true;
-              nextChats.push(createChatRecord({
-                id: chatIdKey,
+              next.push(createChatRecord({
+                id: realChatId,
                 name: peer.username,
+                avatar: peer.profilePic,
                 createdAt: apiChat.updatedAt ? new Date(apiChat.updatedAt).getTime() : Date.now(),
-                messages: [], // Real messages load on selectChat
+                messages: [],
               }));
             }
           });
-          
-          // Only trigger a re-render if we actually found missing historical chats
-          return updated ? nextChats.sort((a, b) => b.updatedAt - a.updatedAt) : existingLocalChats;
+
+          return updated ? [...next].sort((a, b) => b.updatedAt - a.updatedAt) : currentLocal;
         });
       })
       .catch((err) => {
@@ -404,6 +428,9 @@ function useChatController() {
 
       const idKey = String(chatId);
       
+      console.log("🔍 [chat] Selecting Chat ID:", idKey);
+      console.log("🔍 [chat] Active User ID:", currentUserId);
+      
       // Reset state when switching chats
       setActiveChatId(chatId);
       clearReply();
@@ -424,27 +451,46 @@ function useChatController() {
         return nextChats;
       });
 
-      // Load messages for the selected chat
-      if (token && isPeerMongoId(idKey)) {
-        fetchMessagesBetween(token, idKey)
-          .then((rows) => {
-            setChats((currentChats) =>
-              currentChats.map((chat) =>
-                String(chat.id) === idKey
-                  ? {
-                      ...chat,
-                      messages: rows,
-                      // Update timestamp only if messages were fetched for the first time
-                      updatedAt: chat.messages.length === 0 && rows.length > 0 ? Date.now() : chat.updatedAt,
-                    }
-                  : chat,
-              ),
-            );
-          })
-          .catch((err) => {
-            console.error("[chat] Failed to load messages for chat:", idKey, err);
-          });
-      }
+       // Load messages for the selected chat
+       if (token && isPeerMongoId(idKey)) {
+         setIsLoadingMessages(true);
+         setLoadMessagesError(null);
+ 
+         fetchMessagesByChatId(token, idKey)
+           .then((msgs) => {
+             setChats((currentChats) =>
+               currentChats.map((chat) =>
+                 String(chat.id) === idKey
+                   ? {
+                       ...chat,
+                       messages: msgs,
+                       // Update timestamp only if messages were fetched for the first time
+                       updatedAt: chat.messages.length === 0 && msgs.length > 0 ? Date.now() : chat.updatedAt,
+                     }
+                   : chat,
+               ),
+             );
+             setIsLoadingMessages(false);
+           })
+           .catch((err) => {
+             console.error("[chat] Failed to load messages for chat:", idKey, err);
+             // FIX: Only show error UI for genuine access-denied situations (typed error from messageService).
+             // For transient network errors, fail silently so the chat view stays usable.
+             // Never redirect or reset navigation from here.
+             if (err.code === "ACCESS_DENIED") {
+               setLoadMessagesError(
+                 err.status === 404
+                   ? "Chat not found. It may have been deleted."
+                   : "Access denied. You are not a participant in this conversation."
+               );
+             } else {
+               // Transient error — log but don't show error UI (chat may still work via socket)
+               console.warn("[chat] Transient fetch error, not showing error UI:", err.message);
+               setLoadMessagesError(null);
+             }
+             setIsLoadingMessages(false);
+           });
+       }
     },
     [clearReply, clearTypingForChat, token],
   );
@@ -520,7 +566,7 @@ function useChatController() {
           });
       }
 
-      return true;
+      return chatId;
     },
     [createChatRecord, currentUsername, emit, newChatName, token],
   );
@@ -588,21 +634,23 @@ function useChatController() {
       return;
     }
 
-    console.log("🔄 Deleting chat:", activeChat.id);
-
+    console.log("🔄 [chat] Deleting chat:", activeChat.id);
+    console.log("🔍 [chat] Active User ID:", currentUserId);
+ 
     // Optimistic UI update
     setChats((currentChats) =>
       currentChats.filter((chat) => String(chat.id) !== String(activeChat.id)),
     );
-    
+     
     setActiveChatId((currentId) => {
-      if (String(currentId) !== String(activeChat.id)) {
-        return currentId;
+      // Find remaining chats after the optimistic removal
+      const remainingChats = chats.filter((chat) => String(chat.id) !== String(activeChat.id));
+      
+      // If we deleted the active chat, pick the first remaining one or null
+      if (String(currentId) === String(activeChat.id)) {
+        return remainingChats.length > 0 ? remainingChats[0].id : null;
       }
-
-      // Find next chat to switch to
-      const remainingChat = chats.find((chat) => String(chat.id) !== String(activeChat.id));
-      return remainingChat?.id ?? null;
+      return currentId;
     });
 
     // Call API to persist the change
@@ -941,6 +989,7 @@ function useChatController() {
     : null;
 
   return {
+    activeChatId,
     activeTab,
     call,
     chats: filteredChats,
@@ -982,6 +1031,9 @@ function useChatController() {
       text: typingText,
     },
     username: currentUsername,
+    isLoadingMessages,
+    loadMessagesError,
+    retryLoadMessages: () => activeChatId && selectChat(activeChatId),
   };
 }
 

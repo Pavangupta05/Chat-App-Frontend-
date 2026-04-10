@@ -5,6 +5,8 @@ import {
   register as registerService,
   logout as logoutService,
 } from "../services/authService";
+import { registerAuthErrorHandler } from "../utils/retry";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext(null);
 
@@ -22,6 +24,24 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  // 🚦 GLOBAL AUTH ERROR HANDLER (Injected into retryFetch)
+  // NOTE: This handler is only called via triggerAuthError() which is reserved
+  // for explicit auth failures (e.g. login rejected). Regular API fetches (messages,
+  // chats) should NEVER call this — they handle 401/404 locally to prevent
+  // unintended logouts during an active chat session.
+  useEffect(() => {
+    const handleAuthError = () => {
+      console.warn("🚨 AuthContext: Session expired. Redirecting to login.");
+      // Do not show an alert() — it blocks the UI and confuses mobile users
+      logout();
+      navigate("/login", { replace: true });
+    };
+
+    registerAuthErrorHandler(handleAuthError);
+    return () => registerAuthErrorHandler(null);
+  }, [navigate]);
 
   // 🔄 Load user from sessionStorage on refresh
   useEffect(() => {

@@ -13,22 +13,30 @@ const DateSeparator = ({ date }) => (
 );
 
 function formatDateSeparator(dateString) {
-  const date = new Date(dateString);
-  const now = new Date();
+  if (!dateString) return "Today";
   
-  const isToday = date.toDateString() === now.toDateString();
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  const isYesterday = date.toDateString() === yesterday.toDateString();
-  
-  if (isToday) return "Today";
-  if (isYesterday) return "Yesterday";
-  
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  });
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "History";
+
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+    
+    if (isToday) return "Today";
+    if (isYesterday) return "Yesterday";
+    
+    return date.toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "short",
+      year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined
+    });
+  } catch (e) {
+    return "History";
+  }
 }
 
 function ChatWindow({

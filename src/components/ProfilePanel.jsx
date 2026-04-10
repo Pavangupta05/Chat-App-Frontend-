@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { X, Camera, Save, ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { API_URL } from "../config/app";
 import { useAuth } from "../context/AuthContext";
 import useSocket from "../hooks/useSocket";
@@ -7,7 +8,8 @@ import { getImageUrl, handleImageError } from "../utils/imageHelper";
 import OverlayPage from "./OverlayPage";
 import ConfirmModal from "./ConfirmModal";
 
-function ProfilePanel({ isOpen, onClose, editMode = false }) {
+function ProfilePanel({ isOpen, onClose, editMode = false, isRouted = false }) {
+  const navigate = useNavigate();
   const { user, token, updateUser } = useAuth();
   const { emit } = useSocket();
   const [username, setUsername] = useState(user?.username ?? "");
@@ -180,8 +182,8 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
 
   if (!isOpen) return null;
 
-  return (
-    <OverlayPage onClose={onClose}>
+  const innerContent = (
+    <div className={`side-panel-content-wrapper ${isRouted ? 'is-routed' : ''}`}>
       <div className="side-panel__header">
         <button className="icon-button header-close-btn" type="button" onClick={onClose} aria-label="Close">
           {editMode ? <ArrowLeft size={24} /> : <X size={24} />}
@@ -192,9 +194,11 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
             className="icon-button" 
             type="button" 
             onClick={() => {
-              // Redirect to edit route if it exists, or just set a local state
-              // For now, since we are in ProfilePanel, let's just make it look right
-              window.location.hash = "/profile/edit"; 
+              if (isRouted) {
+                navigate("/profile?edit=true");
+              } else {
+                window.location.hash = "/profile/edit"; 
+              }
             }}
           >
             <Edit size={20} />
@@ -299,6 +303,18 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
           </div>
         )}
       </div>
+    </div>
+  );
+
+  return (
+    <>
+      {isRouted ? (
+        innerContent
+      ) : (
+        <OverlayPage onClose={onClose}>
+          {innerContent}
+        </OverlayPage>
+      )}
 
       <ConfirmModal
         isOpen={showDeleteConfirm}
@@ -309,8 +325,9 @@ function ProfilePanel({ isOpen, onClose, editMode = false }) {
         onCancel={() => setShowDeleteConfirm(false)}
         variant="danger"
       />
-    </OverlayPage>
+    </>
   );
 }
+
 
 export default ProfilePanel;

@@ -31,10 +31,9 @@ function Sidebar({
   username,
   viewport,
 }) {
-  const fabRef = useRef(null);
   const menuRef = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isFabOpen, setIsFabOpen] = useState(false);
+
 
   const isMobile = viewport === "mobile";
   const currentMode = activeTab === "Contacts" ? "contacts" : "chats";
@@ -49,15 +48,7 @@ function Sidebar({
     return () => document.removeEventListener("pointerdown", handler);
   }, [isMenuOpen]);
 
-  // Close FAB on outside click
-  useEffect(() => {
-    if (!isFabOpen) return;
-    const handler = (e) => {
-      if (!fabRef.current?.contains(e.target)) setIsFabOpen(false);
-    };
-    document.addEventListener("pointerdown", handler);
-    return () => document.removeEventListener("pointerdown", handler);
-  }, [isFabOpen]);
+
 
   const handlePanEnd = (e, info) => {
     const threshold = 50;
@@ -354,60 +345,6 @@ function Sidebar({
         )}
       </motion.div>
 
-      {/* ── 5. FAB (Floating action button) ─────────────────────────────────── */}
-      <div
-        ref={fabRef}
-        className="sidebar-fab-container"
-        style={{ 
-          position: "absolute", 
-          right: "16px", 
-          bottom: "var(--sidebar-fab-bottom, 20px)", 
-          zIndex: 100 
-        }}
-      >
-        <AnimatePresence>
-          {isFabOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 16, scale: 0.85 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16, scale: 0.85 }}
-              style={{
-                position: "absolute", bottom: "60px", right: "0",
-                display: "flex", flexDirection: "column", gap: "8px",
-              }}
-            >
-              <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-                className="sidebar-fab-item"
-                onClick={() => { setIsFabOpen(false); onNewGroup?.(); }}
-              >
-                <Users size={18} /> New Group
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-                className="sidebar-fab-item"
-                onClick={() => { setIsFabOpen(false); onNewChat?.(); }}
-              >
-                <MessageSquare size={18} /> New Chat
-              </motion.button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          className="sidebar-fab"
-          onClick={() => setIsFabOpen((v) => !v)}
-          style={{ width: "56px", height: "56px" }}
-        >
-          <motion.div animate={{ rotate: isFabOpen ? 45 : 0 }}>
-            <Edit size={24} />
-          </motion.div>
-        </motion.button>
-      </div>
     </aside>
   );
 }

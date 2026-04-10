@@ -1,13 +1,22 @@
 export const formatTime = (value) => {
   if (!value) return "";
-  const date = new Date(value);
-  // Check if date is valid
-  if (isNaN(date.getTime())) return String(value);
   
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
+  try {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) {
+      // If it looks like an ISO string or similar but Date() failed, return as-is
+      return typeof value === "string" ? value.split("T")[1]?.slice(0, 5) || value : String(value);
+    }
+    
+    return new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    }).format(date);
+  } catch (err) {
+    console.error("[formatTime] Error parsing date:", value, err);
+    return String(value);
+  }
 };
 
 export const formatListTime = (value) => {

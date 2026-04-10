@@ -4,6 +4,9 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NetworkStatus from "./components/NetworkStatus";
 import ChatLayout from "./components/ChatLayout";
+import ChatView from "./components/ChatView";
+import SettingsView from "./components/SettingsView";
+import ProfileView from "./components/ProfileView";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -46,9 +49,9 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <NetworkStatus />
-        <BrowserRouter>
+      <BrowserRouter>
+        <AuthProvider>
+          <NetworkStatus />
           <Routes>
             {/* ── Auth pages (redirect to chat if already logged in) ─────────── */}
             <Route
@@ -72,18 +75,25 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-            {/* ── Protected chat ──────────────────────────────────────────────── */}
+            {/* ── Protected chat & Main App Shell ─────────────────────────────────── */}
             <Route
-              path="/*"
+              path="/"
               element={
                 <ProtectedRoute>
                   <ChatLayout />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route path="chat/:id" element={<ChatView />} />
+              <Route path="settings" element={<SettingsView />} />
+              <Route path="profile" element={<ProfileView />} />
+            </Route>
+            
+            {/* Fallback for any other route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }
