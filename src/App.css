@@ -584,11 +584,12 @@ body {
   justify-content: space-between;
   padding: 0 12px 0 16px;
   gap: 8px;
-  background: rgba(var(--sidebar-surface-rgb), 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  z-index: 100;
+  /* Glassmorphism Header */
+  background: rgba(15, 23, 33, 0.4) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1000;
 }
 
 .chat-window__header--selection {
@@ -732,7 +733,8 @@ body {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 72px 12px 120px 12px;
+  /* Top padding for header, optimized bottom padding to clear the floating liquid bar without excessive gap */
+  padding: 72px 12px 100px 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -858,14 +860,21 @@ body {
   flex: 0 0 auto;
   display: flex;
   align-items: flex-end;
-  padding: 0 0 env(safe-area-inset-bottom);
+  /* Floating gap of 12px above the bottom + safe area for mobile */
+  padding: 0 0 calc(12px + env(safe-area-inset-bottom, 0px));
   background: transparent !important;
   border: none !important;
-  z-index: 100;
+  z-index: 1000;
   width: 100%;
   position: absolute;
   bottom: 0;
   left: 0;
+  right: 0;
+  pointer-events: none; /* Let clicks pass through empty space */
+}
+
+.chat-window__footer > * {
+  pointer-events: auto; /* Re-enable clicks for the input box and buttons */
 }
 
 /* Empty state when no chat selected */
@@ -933,22 +942,47 @@ body {
   transform: translateY(0);
 }
 
-/* New-messages pill */
-.new-messages-pill {
-  position: sticky;
-  bottom: 12px;
-  align-self: center;
-  padding: 6px 16px;
-  border-radius: 24px;
-  background: var(--surface);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-menu);
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 600;
+/* Scroll to bottom button (Liquid Glass) */
+.scroll-bottom-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  animation: pill-in 0.22s ease;
-  z-index: 8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  pointer-events: auto;
+}
+
+.scroll-bottom-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.scroll-bottom-btn:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.scroll-bottom-btn__badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #3390ec;
+  border: 2px solid #0e1621;
+}
+
+.scroll-bottom-btn.has-new {
+  box-shadow: 0 0 15px rgba(51, 144, 236, 0.4);
 }
 
 /* Action bar (bulk selection) */
@@ -1217,28 +1251,17 @@ body {
    ══════════════════════════════════════════════════════════════════════════ */
 
 .input-wrapper {
-  position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: calc(12px + env(safe-area-inset-bottom, 12px));
+  position: relative;
+  width: 100%;
+  padding: 0 16px;
   display: flex;
   justify-content: center;
-  z-index: 1000;
+  z-index: 100; /* Lower z-index since it's inside footer now */
   pointer-events: none;
 }
 
-/* Offset for desktop sidebar width to keep floating bar centered in chat area */
-@media (min-width: 1025px) {
-  .input-wrapper {
-    left: calc(var(--sidebar-width, 320px) + 12px) !important;
-  }
-}
+/* No more hardcoded desktop offsets needed! Centering is now automatic */
 
-@media (min-width: 768px) and (max-width: 1024px) {
-  .input-wrapper {
-    left: calc(300px + 12px) !important;
-  }
-}
 
 .input-box {
   width: 100%;
@@ -1246,7 +1269,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 16px;
+  padding: 8px 14px;
   pointer-events: auto;
 
   border-radius: 32px;
@@ -1310,26 +1333,28 @@ body {
 
 /* Send Button (Glow Effect) */
 .send-btn {
-  background: rgba(0, 150, 255, 0.15);
+  background: rgba(0, 150, 255, 0.25);
   border: none;
   border-radius: 50%;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.8);
+  color: #fff;
   backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 10px rgba(0, 150, 255, 0.4);
+  box-shadow: 0 0 12px rgba(0, 150, 255, 0.25);
   flex-shrink: 0;
 }
 
 .send-btn.is-active {
-  background: #0088cc;
+  background: #0096ff;
   color: #fff;
-  box-shadow: 0 0 20px rgba(0, 150, 255, 0.6);
+  box-shadow: 
+    0 0 20px rgba(0, 150, 255, 0.6),
+    0 0 40px rgba(0, 150, 255, 0.2);
   transform: scale(1.05);
 }
 
@@ -2883,10 +2908,7 @@ body {
 .chat-window__identity p  { font-size: 13px; line-height: 1.2; margin-top: 1px; }
 
 /* Messages area padding: 12px sides, 8px top, 4px bottom */
-.chat-window__messages {
-  padding: 12px 16px 8px;
-  gap: 2px; /* Telegram uses very tight message grouping */
-}
+/* Removed conflicting padding block */
 
 /* Message bubble: Telegram-exact padding and radius */
 .message__bubble {
@@ -3010,6 +3032,24 @@ body {
   display: grid;
   place-items: center;
   padding: 16px;
+}
+
+.mobile-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  /* Glassmorphism Dock */
+  background: rgba(15, 23, 33, 0.45) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 1000;
 }
 
 .ncm-card {
@@ -4991,14 +5031,58 @@ body {
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
-    height: 320px !important;
+    height: 350px !important;
     z-index: 10000 !important;
     display: flex !important;
-    background: var(--surface-sidebar) !important;
+    background: rgba(13, 20, 27, 0.95) !important; /* Much more opaque for readability */
+    backdrop-filter: blur(25px) !important;
+    -webkit-backdrop-filter: blur(25px) !important;
     border-radius: 20px 20px 0 0 !important;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 -15px 50px rgba(0, 0, 0, 0.6) !important;
     transform: translateY(0);
     transition: transform 0.3s ease;
+  }
+
+  @media (min-width: 1025px) {
+    .emoji-picker-container-wrapper {
+      bottom: 85px !important; /* Float above the desktop input bar */
+      left: 50% !important;
+      right: auto !important;
+      width: 400px !important;
+      margin-left: calc(-200px + (var(--sidebar-width, 400px) / 2)) !important;
+      border-radius: 20px !important;
+      height: 450px !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+  }
+
+  /* Emoji Picker Search Alignment Fixes */
+  .EmojiPickerReact {
+    --epr-bg-color: transparent !important;
+    --epr-category-label-bg-color: rgba(23, 33, 43, 0.9) !important;
+    --epr-hover-bg-color: rgba(255,255,255,0.05) !important;
+    --epr-focus-bg-color: rgba(255,255,255,0.1) !important;
+    --epr-text-color: #fff !important;
+    --epr-search-input-bg-color: rgba(0,0,0,0.2) !important;
+    border: none !important;
+  }
+
+  .EmojiPickerReact .epr-search-container {
+    padding: 12px 16px !important;
+  }
+
+  .EmojiPickerReact .epr-search {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 10px !important;
+    padding: 10px 10px 10px 42px !important; /* Corrected padding for search icon */
+    color: white !important;
+  }
+
+  .EmojiPickerReact .epr-icn-search {
+    left: 30px !important; /* Centered in the left padding */
+    opacity: 0.6 !important;
   }
 
   .emoji-picker-container {
@@ -5006,7 +5090,7 @@ body {
     max-width: 100% !important;
     height: 100% !important;
     border: none !important;
-    padding: 10px 0 !important;
+    padding: 0 !important;
   }
 
   .emoji-picker__header {
@@ -5117,6 +5201,9 @@ body {
   color: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   user-select: none;
+}
+
+@media (max-width: 767px) {
   .emoji-picker-container-wrapper {
     left: 8px !important;
     right: 8px !important;

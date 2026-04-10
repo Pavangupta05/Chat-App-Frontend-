@@ -437,20 +437,28 @@ function ChatLayout() {
 
       {/* SCREEN 2: DETAIL (Chat / Settings / Profile) */}
       <div className="app-screen app-screen--detail">
-        <AnimatePresence>
+        <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
             key={location.pathname.split('/')[1] || 'empty'}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
+            initial={isMobileView ? { x: "100%", opacity: 0.5 } : { opacity: 0, scale: 0.98 }}
+            animate={{ x: 0, opacity: 1, scale: 1 }}
+            exit={isMobileView ? { x: "100%", opacity: 0.5 } : { opacity: 0, scale: 1.02 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 300, 
+              damping: 32,
+              mass: 1,
+              opacity: { duration: 0.2 },
+              scale: { duration: 0.3 }
+            }}
             style={{ 
               position: 'absolute', 
               top: 0, 
               left: 0, 
               width: '100%', 
               height: '100%',
-              zIndex: 1
+              zIndex: 1,
+              willChange: "transform, opacity"
             }}
           >
             <Outlet context={{

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, MoreVertical, Phone, Video, ChevronLeft, Trash2, Forward, X, MessageSquare } from "lucide-react";
+import { Search, MoreVertical, Phone, Video, ChevronLeft, Trash2, Forward, X, MessageSquare, ChevronDown } from "lucide-react";
 
 import MessageBubble from "./MessageBubble";
 import InputBox from "./InputBox";
@@ -73,6 +73,7 @@ function ChatWindow({
   const [previewMessage, setPreviewMessage] = useState(null);
   const [selectedMessageIds, setSelectedMessageIds] = useState(new Set());
   const [showNewPill, setShowNewPill] = useState(false);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
   const isNearBottomRef = useRef(true);
 
   const hasSelection = selectedMessageIds.size > 0;
@@ -108,8 +109,15 @@ function ChatWindow({
     const el = messagesContainerRef.current;
     if (!el) return;
     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    isNearBottomRef.current = distFromBottom < 120;
-    if (isNearBottomRef.current) setShowNewPill(false);
+    
+    isNearBottomRef.current = distFromBottom < 100;
+    
+    if (isNearBottomRef.current) {
+      setShowNewPill(false);
+      setShowScrollBottom(false);
+    } else {
+      setShowScrollBottom(distFromBottom > 200); // Lower threshold for better UX
+    }
   }, []);
 
   useEffect(() => {
@@ -391,30 +399,40 @@ function ChatWindow({
         {/* Extra space at the bottom so messages aren't hidden by the floating input box */}
         <div 
           ref={messagesEndRef} 
-          style={{ height: isMobileView ? "100px" : "120px" }} 
+          style={{ height: isMobileView ? "85px" : "90px" }} 
         />
-
-        <AnimatePresence>
-          {showNewPill && (
-            <motion.button
-              key="new-pill"
-              className="new-messages-pill"
-              initial={{ opacity: 0, y: 12, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 12, scale: 0.9 }}
-              type="button"
-              onClick={() => {
-                isNearBottomRef.current = true;
-                messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-                setShowNewPill(false);
-              }}
-            >
-              ↓ New messages
-            </motion.button>
-          )}
-        </AnimatePresence>
+ 
       </div>
-
+ 
+      {/* ── Floating Scroll Button ───────────────────────────────────────── */}
+      <AnimatePresence>
+        {(showScrollBottom || showNewPill) && (
+          <motion.button
+            key="scroll-bottom"
+            className={`scroll-bottom-btn ${showNewPill ? 'has-new' : ''}`}
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            onClick={() => {
+              isNearBottomRef.current = true;
+              messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+              setShowNewPill(false);
+              setShowScrollBottom(false);
+            }}
+            style={{
+              position: "absolute",
+              right: "20px",
+              bottom: isMobileView ? "75px" : "80px", // Adjusted to sit exactly above the sleeker glass input bar
+              zIndex: 100,
+            }}
+          >
+            {showNewPill && <span className="scroll-bottom-btn__badge" />}
+            <ChevronDown size={24} />
+          </motion.button>
+        )}
+      </AnimatePresence>
+ 
       {/* ── Footer / input bar ──────────────────────────────────────────── */}
       <footer className="chat-window__footer">
         <InputBox
