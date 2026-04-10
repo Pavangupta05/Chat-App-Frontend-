@@ -67,7 +67,7 @@ function useChatController() {
   const { notify } = useNotifications();
 
   const createChatRecord = useCallback(
-    ({ id, name, accent = "#69b2ff", avatar, createdAt, messages = [] }) => {
+    ({ id, name, accent = "#69b2ff", avatar, createdAt, messages = [], peerId = null }) => {
       const nameParts = name.trim().split(/\s+/);
       const resolvedAvatar =
         avatar ||
@@ -76,13 +76,14 @@ function useChatController() {
           .map((part) => part[0]?.toUpperCase() ?? "")
           .join("") ||
         "NC";
-
+  
       return buildChat({
         accent,
         avatar: resolvedAvatar,
         id,
         messages,
         name,
+        peerId: peerId || (isPeerMongoId(String(id)) ? String(id) : null),
         updatedAt: createdAt,
       });
     },
@@ -119,28 +120,39 @@ function useChatController() {
 
             if (existingIndex !== -1) {
               const existing = next[existingIndex];
-              // Update ID to the real backend ID if it was currently using a peerUserId
-              if (String(existing.id) !== realChatId) {
-                console.log(`[SmartSync] Merging local chat ${existing.id} -> ${realChatId}`);
-                next[existingIndex] = { ...existing, id: realChatId, updatedAt: apiChat.updatedAt ? new Date(apiChat.updatedAt).getTime() : existing.updatedAt };
+              const isIdMismatch = String(existing.id) !== realChatId;
+              // Synchronize profile details in case peer changed them, or if cache is corrupted
+              const isProfileStale = (existing.name !== peer.username && peer.username) || (existing.avatar !== peer.profilePic && peer.profilePic);
+
+              if (isIdMismatch || isProfileStale) {
+                if (isIdMismatch) {
+                  console.log(`[SmartSync] Merging local chat ${existing.id} -> ${realChatId}`);
+                  // FIX: Use functional updater to read current activeChatId without stale closure
+                  setActiveChatId((currentId) => {
+                    if (String(currentId) === String(existing.id)) {
+                      console.log(`[SmartSync] Updating activeChatId ${existing.id} -> ${realChatId}`);
+                      return realChatId;
+                    }
+                    return currentId;
+                  });
+                }
+
+                next[existingIndex] = { 
+                  ...existing, 
+                  id: realChatId, 
+                  peerId: peerUserId, // ENSURE peerId is correctly set to the User ID
+                  name: peer.username || existing.name,
+                  avatar: peer.profilePic || existing.avatar,
+                  updatedAt: isIdMismatch && apiChat.updatedAt ? new Date(apiChat.updatedAt).getTime() : existing.updatedAt 
+                };
                 updated = true;
-                
-                // FIX: Use functional updater to read current activeChatId without stale closure.
-                // This prevents the case where the effect reads an old activeChatId value
-                // and incorrectly reassigns it when the server syncs a peer ID to a real Mongo ID.
-                setActiveChatId((currentId) => {
-                  if (String(currentId) === String(existing.id)) {
-                    console.log(`[SmartSync] Updating activeChatId ${existing.id} -> ${realChatId}`);
-                    return realChatId;
-                  }
-                  return currentId;
-                });
               }
             } else {
               // New chat from backend
               updated = true;
               next.push(createChatRecord({
                 id: realChatId,
+                peerId: peerUserId,
                 name: peer.username,
                 avatar: peer.profilePic,
                 createdAt: apiChat.updatedAt ? new Date(apiChat.updatedAt).getTime() : Date.now(),
@@ -253,6 +265,7 @@ function useChatController() {
               senderSocketId: payload.senderSocketId ?? "",
               senderUserId: payload.senderUserId ?? "",
               time: formatTime(payload.time ?? receivedAt),
+              createdAt: payload.createdAt || payload.time || receivedAt,
               username: payload.username ?? "Guest",
               chatId: payload.chatId,
             })
@@ -265,38 +278,61 @@ function useChatController() {
               senderUserId: payload.senderUserId ?? "",
               text: payload.text ?? "",
               time: formatTime(payload.time ?? receivedAt),
+              createdAt: payload.createdAt || payload.time || receivedAt,
               username: payload.username ?? "Guest",
               chatId: payload.chatId,
             });
 
-      setChats((currentChats) =>
-        currentChats.some((chat) => String(chat.id) === String(payload.chatId))
-          ? currentChats.map((chat) =>
-              String(chat.id) === String(payload.chatId)
-                ? {
-                    ...chat,
-                    isTyping: false,
-                    updatedAt: receivedAt,
-                    unreadCount:
-                      String(payload.chatId) === String(activeChatId)
-                        ? 0
-                        : chat.unreadCount + 1,
-                    messages: [...chat.messages, nextMessage],
-                  }
-                : chat,
-            )
-          : [
-              createChatRecord({
-                accent: payload.chatAccent,
-                avatar: payload.chatAvatar,
-                createdAt: receivedAt,
-                id: payload.chatId,
-                messages: [nextMessage],
-                name: payload.chatName || payload.username || "New chat",
-              }),
-              ...currentChats,
-            ],
-      );
+      setChats((currentChats) => {
+        // 🧩 SMART MATCH: Try matching by chatId OR by peerId (the sender)
+        const chatIndex = currentChats.findIndex(
+          (chat) => 
+            String(chat.id) === String(payload.chatId) || 
+            String(chat.peerId) === String(payload.senderUserId)
+        );
+
+        if (chatIndex !== -1) {
+          return currentChats.map((chat, idx) => {
+            if (idx !== chatIndex) return chat;
+
+            // IDENTITY SYNC: If we matched by peerId, but the chat ID is different (Room ID vs User ID), 
+            // we update the local ID to the server's Room ID to ensure perfect future sync.
+            const updatedId = String(payload.chatId);
+            if (String(chat.id) !== updatedId) {
+              console.log(`[IdentitySync] Updating chat ID: ${chat.id} -> ${updatedId}`);
+              
+              // Handle activeChatId redirection if the synced chat was active
+              setActiveChatId(currentId => String(currentId) === String(chat.id) ? updatedId : currentId);
+            }
+
+            return {
+              ...chat,
+              id: updatedId,
+              isTyping: false,
+              updatedAt: receivedAt,
+              unreadCount:
+                String(updatedId) === String(activeChatId)
+                  ? 0
+                  : chat.unreadCount + 1,
+              messages: [...chat.messages, nextMessage],
+            };
+          });
+        }
+
+        // New chat record if no match found
+        return [
+          createChatRecord({
+            peerId: payload.senderUserId,
+            accent: payload.chatAccent,
+            avatar: payload.chatAvatar,
+            createdAt: receivedAt,
+            id: payload.chatId,
+            messages: [nextMessage],
+            name: payload.chatName || payload.username || "New chat",
+          }),
+          ...currentChats,
+        ];
+      });
 
       // Browser notification when tab is hidden
       notify({
@@ -320,6 +356,7 @@ function useChatController() {
 
         return [
           createChatRecord({
+            peerId: payload.peerUserId || payload.id, 
             accent: payload.accent,
             avatar: payload.avatar,
             createdAt: payload.createdAt,
@@ -417,6 +454,23 @@ function useChatController() {
     socketId,
     subscribe,
   ]);
+
+  // 🚪 JOIN/LEAVE ROOM logic — Essential for real-time delivery
+  useEffect(() => {
+    if (!socketId || !activeChatId) return;
+    
+    // Peer IDs (local) vs Mongo IDs (backend). 
+    // Usually, we only join rooms for synced backend chats.
+    if (isPeerMongoId(String(activeChatId))) {
+      console.log(`🔌 [socket] Joining room: ${activeChatId}`);
+      emit("join_chat", { chatId: activeChatId });
+      
+      return () => {
+        console.log(`🔌 [socket] Leaving room: ${activeChatId}`);
+        emit("leave_chat", { chatId: activeChatId });
+      };
+    }
+  }, [activeChatId, socketId, emit]);
 
   const selectChat = useCallback(
     (chatId) => {
@@ -527,6 +581,7 @@ function useChatController() {
         avatar: avatarOverride ?? undefined,
         createdAt,
         id: chatId,
+        peerId: peerUserId || null,
         messages: peerUserId ? [] : [welcomeMessage],
         name: trimmedName,
       });
@@ -704,8 +759,10 @@ function useChatController() {
       chatAvatar: activeChat.avatar,
       chatId: activeChat.id,
       chatName: activeChat.name,
+      createdAt: sentAt,
       id: messageId,
-      receiverId: String(activeChat.id),
+      receiverId: activeChat.peerId || String(activeChat.id),
+      receiverUserId: activeChat.peerId || String(activeChat.id), // Aligned with working call logic
       replyTo,
       text,
       time: new Date(sentAt).toISOString(),
@@ -732,6 +789,7 @@ function useChatController() {
                   senderUserId: currentUserId,
                   text: payload.text,
                   time: formatTime(payload.time),
+                  createdAt: sentAt, // FIX: Ensure instant rendering works
                   username: currentUsername,
                   forwarded: false,
                 }),
@@ -775,9 +833,11 @@ function useChatController() {
       chatName: activeChat.name,
       file: filePayload.fileUrl,
       fileName: filePayload.fileName,
+      createdAt: sentAt,
       id: `file-${sentAt}`,
       mimeType: filePayload.mimeType,
-      receiverId: String(activeChat.id),
+      receiverId: activeChat.peerId || String(activeChat.id),
+      receiverUserId: activeChat.peerId || String(activeChat.id), // Aligned with working call logic
       time: new Date(sentAt).toISOString(),
       type: "file",
       username: currentUsername,
@@ -801,8 +861,10 @@ function useChatController() {
                   sender: "me",
                   senderUserId: currentUserId,
                   time: formatTime(payload.time),
+                  createdAt: sentAt, // FIX: Ensure instant rendering works
                   username: currentUsername,
                   forwarded: false,
+                  chatId: activeChat.id,
                 }),
               ],
             }

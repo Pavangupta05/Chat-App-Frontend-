@@ -243,18 +243,18 @@ function AudioCallModal({
           {incomingCall && audioStatus !== "calling" ? (
             <>
               <button 
-                className="call-button call-button--accept" 
+                className="call-button call-button--accept call-button--text-pill" 
                 type="button" 
                 onClick={onAcceptCall}
-                style={{ backgroundColor: "#22c55e", color: "white", padding: "10px 24px", borderRadius: "12px", border: "none", fontWeight: "600" }}
+                style={{ backgroundColor: "#22c55e", color: "white", border: "none" }}
               >
                 ✓ Accept
               </button>
               <button 
-                className="call-button call-button--end" 
+                className="call-button call-button--end call-button--text-pill" 
                 type="button" 
                 onClick={onEndCall}
-                style={{ backgroundColor: "#ef4444", color: "white", padding: "10px 24px", borderRadius: "12px", border: "none", fontWeight: "600" }}
+                style={{ border: "none" }}
               >
                 ✕ Reject
               </button>
@@ -262,13 +262,13 @@ function AudioCallModal({
           ) : permissionRetryable && callError && !localStream ? (
             <>
               <button
-                className="call-button call-button--secondary"
+                className="call-button call-button--secondary call-button--text-pill"
                 type="button"
                 onClick={onRetryPermission}
               >
                 🔄 Retry Permission
               </button>
-              <button className="call-button call-button--end" type="button" onClick={onEndCall}>
+              <button className="call-button call-button--end call-button--text-pill" type="button" onClick={onEndCall}>
                 Cancel
               </button>
             </>
@@ -285,7 +285,7 @@ function AudioCallModal({
                 </button>
               ) : null}
 
-              <button className="call-button call-button--end" type="button" onClick={onEndCall}>
+              <button className="call-button call-button--end call-button--text-pill" type="button" onClick={onEndCall}>
                 ✕ {audioStatus === "calling" ? "Cancel" : "End Call"}
               </button>
             </>

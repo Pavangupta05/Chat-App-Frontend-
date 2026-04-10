@@ -107,7 +107,7 @@ function InputBox({
       </AnimatePresence>
 
       <div className="input-box-container">
-        <div className="input-box__actions-left" style={{ display: "flex", alignItems: "center", gap: "2px", marginBottom: "2px" }}>
+        <div className="input-box__actions-left" style={{ display: "flex", alignItems: "center", gap: "2px" }}>
           <div className="emoji-picker-anchor" ref={emojiPickerRef}>
             <motion.button
               whileTap={{ scale: 0.9 }}
@@ -135,15 +135,26 @@ function InputBox({
                     zIndex: 3000 
                   }}
                 >
-                  <EmojiPicker 
-                    onEmojiClick={handleEmojiInsert} 
-                    theme="dark"
-                    lazyLoadEmojis={true}
-                    skinTonesDisabled
-                    searchDisabled={isMobile} // Disable internal search for mobile to save space
-                    width={isMobile ? "calc(100vw - 32px)" : 320}
-                    height={isMobile ? 320 : 400}
-                  />
+                  <div style={{ position: "relative" }}>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="emoji-picker-close-btn"
+                      onClick={() => setIsEmojiPickerOpen(false)}
+                      title="Close"
+                    >
+                      <X size={14} />
+                    </motion.button>
+                    <EmojiPicker 
+                      onEmojiClick={handleEmojiInsert} 
+                      theme="dark"
+                      lazyLoadEmojis={true}
+                      skinTonesDisabled
+                      searchDisabled={isMobile} // Disable internal search for mobile to save space
+                      width={isMobile ? "calc(100vw - 32px)" : 320}
+                      height={isMobile ? 320 : 400}
+                    />
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

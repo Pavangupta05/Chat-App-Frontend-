@@ -33,7 +33,6 @@ function Sidebar({
 }) {
   const menuRef = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [sidebarMenuOpen, setSidebarMenuOpen] = useState(false);
 
 
   const isMobile = viewport === "mobile";
@@ -135,61 +134,15 @@ function Sidebar({
           {/* RIGHT: Consolidated Action Menu + Theme switch */}
           {!isMobile && (
             <div className="sidebar__section-right" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                <AnimatePresence>
-                  {sidebarMenuOpen && (
-                    <div style={{ display: "flex", gap: "8px", marginRight: "8px" }}>
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.8, x: 20 }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, x: 20 }}
-                        whileHover={{ scale: 1.1 }}
-                        className="sidebar__action"
-                        type="button"
-                        onClick={() => { onNewGroup(); setSidebarMenuOpen(false); }}
-                        title="New Group"
-                      >
-                        <Users size={18} />
-                      </motion.button>
-                      
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.8, x: 10 }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, x: 10 }}
-                        whileHover={{ scale: 1.1 }}
-                        transition={{ delay: 0.05 }}
-                        className="sidebar__action"
-                        type="button"
-                        onClick={() => { onNewChat(); setSidebarMenuOpen(false); }}
-                        title="New Chat"
-                      >
-                        <UserPlus size={18} />
-                      </motion.button>
-                    </div>
-                  )}
-                </AnimatePresence>
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.9 }}
-                  className={`sidebar__action sidebar__action--main ${sidebarMenuOpen ? "is-active" : ""}`}
-                  type="button"
-                  onClick={() => setSidebarMenuOpen(!sidebarMenuOpen)}
-                  aria-label="Toggle actions"
-                >
-                  {sidebarMenuOpen ? <X size={20} /> : <Plus size={20} />}
-                </motion.button>
-              </div>
-
               <motion.button
-                whileHover={{ scale: 1.08 }}
+                whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="theme-switch"
+                className="sidebar__action"
                 type="button"
                 onClick={onThemeToggle}
-                aria-label="Toggle theme"
+                title="Toggle Theme"
               >
-                {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+                {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
               </motion.button>
             </div>
           )}

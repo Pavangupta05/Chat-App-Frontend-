@@ -84,6 +84,7 @@ function App() {
                 </ProtectedRoute>
               }
             >
+              <Route index element={<ChatView />} />
               <Route path="chat/:id" element={<ChatView />} />
               <Route path="settings" element={<SettingsView />} />
               <Route path="profile" element={<ProfileView />} />

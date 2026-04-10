@@ -63,6 +63,11 @@
   /* Shadows */
   --shadow-soft: 0 2px 8px rgba(0,0,0,0.3);
   --shadow-menu: 0 8px 32px rgba(0,0,0,0.45);
+
+  /* RGB versions for Glassmorphism */
+  --sidebar-surface-rgb: 23, 33, 43;
+  --surface-rgb: 30, 44, 57;
+  --accent-rgb: 51, 144, 236;
 }
 
 /* ── Light Mode ─────────────────────────────────────────────────────────── */
@@ -98,6 +103,11 @@
 
   --shadow-soft: 0 1px 4px rgba(0,0,0,0.12);
   --shadow-menu: 0 8px 32px rgba(0,0,0,0.18);
+
+  /* RGB versions for Glassmorphism */
+  --sidebar-surface-rgb: 255, 255, 255;
+  --surface-rgb: 255, 255, 255;
+  --accent-rgb: 51, 144, 236;
 }
 
 /* ── Preset Theme Colors ──────────────────────────────────────────────── */

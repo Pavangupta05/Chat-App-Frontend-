@@ -65,6 +65,11 @@ body {
   --input-bg: #121212;
   --surface-background: var(--app-background);
   --surface-header: rgba(10, 10, 10, 0.8);
+  
+  /* RGB versions for Glassmorphism */
+  --sidebar-surface-rgb: 10, 10, 10;
+  --border-color-rgb: 31, 31, 31;
+  --accent-rgb: 51, 144, 236;
 }
 
 .app {
@@ -131,7 +136,9 @@ body {
 /* Header */
 .sidebar__navbar {
   flex: 0 0 auto;
-  background: var(--sidebar-surface);
+  background: rgba(var(--sidebar-surface-rgb), 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-color);
   z-index: 15;
   padding-top: env(safe-area-inset-top, 0px);
@@ -342,6 +349,7 @@ body {
   display: flex;
   flex-direction: column;
   padding-bottom: 80px;  /* space for FAB */
+  background: transparent;
 }
 
 .chat-list__item {
@@ -556,28 +564,36 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: var(--app-background);
+  background: transparent; /* Background image is handled by layer below */
   color: var(--text-primary);
   position: relative;
   overflow: hidden;
+  height: 100%;
 }
 
 /* Header */
+/* Header - Glassmorphism */
 .chat-window__header {
-  flex: 0 0 auto;
-  min-height: 56px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 8px 0 12px;
+  padding: 0 12px 0 16px;
   gap: 8px;
-  background: var(--sidebar-surface);
-  border-bottom: 1px solid var(--border-color);
-  z-index: 10;
+  background: rgba(var(--sidebar-surface-rgb), 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 100;
 }
 
 .chat-window__header--selection {
-  background: var(--surface-active);
+  background: rgba(69, 142, 255, 0.4);
+  backdrop-filter: blur(30px);
 }
 
 .chat-window__identity {
@@ -585,7 +601,7 @@ body {
   align-items: center;
   flex: 1;
   min-width: 0;
-  gap: 10px;
+  gap: 4px; /* Tightened gap - UI Fix */
 }
 
 .chat-window__avatar {
@@ -625,7 +641,7 @@ body {
 .chat-window__back {
   display: inline-grid;
   place-items: center;
-  margin-right: 4px;
+  margin-right: 0px; /* Reduced margin for tighter alignment */
 }
 
 @media (max-width: 767px) {
@@ -716,7 +732,8 @@ body {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 16px 12px 8px;
+  /* Top padding ensures first message starts below header. Bottom padding for input box. */
+  padding: 72px 12px 110px 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -841,17 +858,18 @@ body {
   font-size: 13px;
 }
 
-/* Footer / input bar - Sticky Bottom */
 .chat-window__footer {
   flex: 0 0 auto;
   display: flex;
   align-items: flex-end;
-  padding: 0 0 env(safe-area-inset-bottom); /* Fix for mobile bottom notch/gap */
-  background: var(--sidebar-surface) !important;
-  border-top: 1px solid var(--border-color) !important;
-  z-index: 10;
+  padding: 0 0 env(safe-area-inset-bottom);
+  background: transparent !important;
+  border: none !important;
+  z-index: 100;
   width: 100%;
-  position: relative; /* Ensure it stays in flow or pinned correctly */
+  position: absolute;
+  bottom: 0;
+  left: 0;
 }
 
 /* Empty state when no chat selected */
@@ -1203,18 +1221,24 @@ body {
   flex-direction: column;
   gap: 6px;
   width: 100%;
+  padding: 8px 12px 14px 12px;
+  background: rgba(var(--sidebar-surface-rgb, 22, 33, 46), 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255,255,255,0.05);
 }
 
 .input-box {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--input-bg);
-  border-radius: 24px;
-  padding: 6px 12px 6px 16px;
-  min-height: 52px;
+  align-items: center; /* Ensures icons and center are aligned */
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 4px 8px 4px 14px;
+  min-height: 48px;
   width: 100%;
-  transition: background var(--transition-normal);
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: all var(--transition-normal);
 }
 
 .input-box:focus-within {
@@ -2057,6 +2081,21 @@ body {
   min-width: 56px;
   min-height: 56px;
 }
+
+.call-button--text-pill {
+  width: auto !important;
+  height: auto !important;
+  min-width: 120px !important;
+  min-height: 48px !important;
+  padding: 0 24px !important;
+  border-radius: 24px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
 
 /* Audio call modal */
 .audio-call-modal {
@@ -4689,16 +4728,58 @@ body {
   border: 2px solid #17212B;
 }
 
-/* 🧪 Unified FAB System (Stacked above Dock) */
+/* 🧪 Premium Unified FAB System */
 .fab-group {
   position: fixed;
-  right: 20px;
-  bottom: 110px; /* Base bottom above the dock */
+  bottom: 24px;
+  right: 24px;
+  z-index: 10001;
   display: flex;
   flex-direction: column-reverse;
   align-items: flex-end;
-  gap: 12px;
-  z-index: 10001;
+  gap: 16px;
+  transition: all 0.3s var(--transition-bounce);
+}
+
+/* Position for Desktop: Inside Sidebar container (Relative) */
+@media (min-width: 768px) {
+  .fab-group--desktop {
+    position: absolute !important;
+    bottom: 32px !important;
+    right: 24px !important;
+    z-index: 100 !important;
+  }
+}
+
+.fab-items {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.fab-item-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  pointer-events: auto;
+}
+
+.fab-label {
+  background: rgba(23, 33, 43, 0.85); /* Slightly darker for contrast */
+  backdrop-filter: blur(12px);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+  opacity: 0.9;
 }
 
 .fab-item {
@@ -4710,8 +4791,8 @@ body {
   justify-content: center;
   border: none;
   cursor: pointer;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   color: #ffffff;
   position: relative;
 }
@@ -4719,53 +4800,51 @@ body {
 .fab-item--main {
   background: linear-gradient(135deg, #3390EC, #2070cc);
   z-index: 2;
+  box-shadow: 0 8px 32px rgba(51, 144, 236, 0.4);
 }
 
 .fab-item--main.is-active {
   background: linear-gradient(135deg, #ef4444, #b91c1c);
-  transform: rotate(180deg);
+  transform: rotate(135deg); /* Professional X rotation */
+  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.4);
 }
 
 .fab-item--sub {
   width: 48px;
   height: 48px;
   border-radius: 24px;
+  background: var(--sidebar-surface);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .fab-item--camera {
-  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  background: linear-gradient(135deg, #00d2ff, #3a7bd5); /* Deep Cyan */
+  box-shadow: 0 6px 20px rgba(0, 210, 255, 0.3);
 }
 
-.fab-item--add-group {
-  background: linear-gradient(135deg, #f093fb, #f5576c);
+.fab-item--group {
+  background: linear-gradient(135deg, #a18cd1, #8bc6ec); /* Soft Purple */
+  box-shadow: 0 6px 20px rgba(161, 140, 209, 0.3);
 }
 
-.fab-item--add-user {
-  background: linear-gradient(135deg, #14b8a6, #22c55e);
+.fab-item--user {
+  background: linear-gradient(135deg, #4facfe, #00f2fe); /* Bright Teal */
+  box-shadow: 0 6px 20px rgba(79, 172, 254, 0.3);
 }
 
-.fab-label {
-  position: absolute;
-  right: 60px;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
-  padding: 4px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  pointer-events: none;
-  color: #fff;
+.fab-item:hover {
+  transform: scale(1.1) translateY(-4px);
+  filter: brightness(1.1);
 }
 
-.fab-item:hover { transform: scale(1.1); }
-.fab-item:active { transform: scale(0.9); }
+.fab-item:active {
+  transform: scale(0.9);
+}
 
 .is-mobile-chat .fab-group {
   opacity: 0;
   pointer-events: none;
-  transform: translateY(20px) scale(0.95);
-  transition: all 0.2s ease;
+  transform: translateY(20px) scale(0.9);
 }
 
 .fab-group {
@@ -4805,7 +4884,13 @@ body {
   }
 }
 
-/* Custom Background Styles */
+@media (max-width: 768px) {
+  .fab-group {
+    bottom: 110px; /* Position above the mobile dock */
+    right: 16px;
+  }
+}
+
 .chat-bg-custom-container {
   position: absolute;
   top: 0;
@@ -4815,6 +4900,24 @@ body {
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
+  background: var(--app-background);
+}
+
+.chat-bg-custom-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  opacity: var(--custom-bg-scrim, 0); /* Theme-specific scrim */
+  z-index: 1;
+}
+
+[data-theme="light"] .chat-bg-custom-container::after {
+  background: white;
+  opacity: 0.2;
 }
 
 .chat-bg-custom-img {
@@ -4822,7 +4925,6 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
-  /* Image opacity is handled via inline style from React state */
 }
 
 /* Glassmorphism Utilities */
@@ -4985,6 +5087,80 @@ body {
   color: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   user-select: none;
+  .emoji-picker-container-wrapper {
+    left: 8px !important;
+    right: 8px !important;
+    width: calc(100% - 16px) !important;
+  }
+}
+
+/* Emoji Picker Close Button */
+.emoji-picker-container-wrapper .emoji-picker-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s;
+}
+
+.emoji-picker-container-wrapper .emoji-picker-close-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+  transform: scale(1.1);
+}
+
+/* Policy & Help Content Styles */
+.policy-content {
+  padding: 24px;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.policy-section {
+  margin-bottom: 32px;
+}
+
+.policy-section h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--accent);
+}
+
+.policy-section p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.policy-list {
+  list-style: none;
+  padding: 0;
+}
+
+.policy-list li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  padding-left: 20px;
+  position: relative;
+}
+
+.policy-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
 }
 
 .chat-bg-option.is-active .chat-bg-preview {
@@ -5008,17 +5184,19 @@ body {
 
 .input-box-container {
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
+  align-items: center; /* Better vertical balance - UI Fix */
+  gap: 12px;
   background: var(--sidebar-surface);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 8px 12px 8px 16px;
-  border-radius: 28px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-  max-width: 100%;
+  padding: 10px 16px; /* Balanced padding */
+  border-radius: 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  max-width: 900px; /* Wider desktop pill */
+  margin: 0 auto;
 }
 
 .input-box-container:focus-within {
@@ -5032,13 +5210,14 @@ body {
   border: none;
   color: var(--text-primary);
   font-size: 16px;
-  line-height: 22px;
-  padding: 8px 0;
+  line-height: 1.5; /* Consistent line height to prevent clipping */
+  padding: 12px 14px; /* Added horizontal padding to prevent clip near edges */
   max-height: 180px;
   resize: none;
   outline: none;
   font-family: inherit;
   margin: 0;
+  align-self: center; /* Vertical center alignment for text area */
 }
 
 .chat-input-area::placeholder {
@@ -5205,7 +5384,6 @@ body {
     flex-direction: column;
   }
 
-  /* Message input bar (Footer) */
   /* Message input bar (Footer): Stuck to bottom, outside scrollable area */
   .chat-window__footer {
     position: absolute !important;
@@ -5213,16 +5391,14 @@ body {
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
-    background: #17212B !important; /* Solid background for clarity */
-    border-top: 1px solid var(--border-color) !important;
-    padding: 2px 0 !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 8px 0 !important;
     margin: 0 !important;
     z-index: 100 !important;
     /* Use fixed padding for docking reliability */
-    padding-bottom: env(safe-area-inset-bottom, 8px) !important;
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
-    margin-bottom: constant(safe-area-inset-bottom) !important; 
-    margin-bottom: env(safe-area-inset-bottom) !important;
+    padding-bottom: calc(env(safe-area-inset-bottom, 8px) + 8px) !important;
+    box-shadow: none !important;
   }
 
   .is-mobile {
@@ -5303,4 +5479,174 @@ body {
   pointer-events: none !important;
 }
 
+/* ── Camera Modal Styles ───────────────────────────────────────── */
+.camera-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
+.camera-modal-container {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  height: 100%;
+  max-height: 800px;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (max-width: 500px) {
+  .camera-modal-container {
+    max-height: 100vh;
+  }
+}
+
+.camera-modal__header {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.camera-modal__close {
+  background: rgba(0,0,0,0.5);
+  border: none;
+  color: #fff;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+
+.camera-modal__viewfinder {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.camera-modal__video,
+.camera-modal__preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-modal__video.is-flipped {
+  transform: scaleX(-1);
+}
+
+.camera-modal__footer {
+  padding: 30px 20px 40px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.camera-modal__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.camera-modal__btn {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.camera-modal__btn--flip {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.camera-modal__btn--capture {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  background: transparent;
+  padding: 4px;
+}
+
+.capture-inner {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.1s ease;
+}
+
+.camera-modal__btn--capture:active .capture-inner {
+  transform: scale(0.9);
+}
+
+.camera-modal__confirm {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.camera-modal__btn--retake,
+.camera-modal__btn--send {
+  padding: 12px 24px;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.camera-modal__btn--retake {
+  background: rgba(255,255,255,0.1);
+}
+
+.camera-modal__btn--send {
+  background: var(--accent);
+  color: #fff;
+}
+
+.camera-modal__error {
+  text-align: center;
+  color: #fff;
+  padding: 20px;
+}
+
+.camera-modal__error button {
+  margin-top: 12px;
+  padding: 8px 20px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+}

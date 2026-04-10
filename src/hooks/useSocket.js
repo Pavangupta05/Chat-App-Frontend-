@@ -101,11 +101,11 @@ function useSocket() {
     };
   }, [token]);
 
-  const emit = useCallback((eventName, payload) => {
+  const emit = useCallback((...args) => {
     if (socketRef.current?.connected) {
-      socketRef.current.emit(eventName, payload);
+      socketRef.current.emit(...args);
     } else {
-      console.warn("❌ Cannot emit event - socket not connected:", eventName);
+      console.warn("❌ Cannot emit event - socket not connected:", args[0]);
     }
   }, []);
 

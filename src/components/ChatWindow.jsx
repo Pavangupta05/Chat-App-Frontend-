@@ -189,7 +189,10 @@ function ChatWindow({
     <section className="chat-window" style={{ background: "transparent" }}>
       {/* ── Background Layer ───────────────────────────────────────────── */}
       {backgroundDoodle?.type === 'custom' && backgroundDoodle?.customUrl ? (
-        <div className="chat-bg-custom-container" style={{ opacity: backgroundDoodle.opacity }}>
+        <div 
+          className="chat-bg-custom-container" 
+          style={{ "--custom-bg-scrim": backgroundDoodle.opacity > 0.5 ? 0.3 : 0 }}
+        >
           <img src={backgroundDoodle.customUrl} className="chat-bg-custom-img" alt="" />
         </div>
       ) : (
@@ -272,10 +275,10 @@ function ChatWindow({
               </div>
 
               <div style={{ minWidth: 0 }}>
-                <h2>{chat.name}</h2>
+                <h2>{chat.name || "Unknown User"}</h2>
                 <p className={chat.status === "online" || chat.isTyping ? "is-online" : ""}>
                   {chat.isTyping
-                    ? `${chat.name.split(" ")[0]} is typing…`
+                    ? `${(chat.name || "Unknown").split(" ")[0]} is typing…`
                     : chat.lastSeen ?? ""}
                 </p>
               </div>
@@ -385,8 +388,11 @@ function ChatWindow({
         })}
 
         <TypingIndicator text={typingText} />
-        {/* Extra space at the bottom so messages aren't hidden by the fixed footer */}
-        <div style={{ height: isMobileView ? "100px" : "40px" }} />
+        {/* Extra space at the bottom so messages aren't hidden by the floating input box */}
+        <div 
+          ref={messagesEndRef} 
+          style={{ height: isMobileView ? "100px" : "120px" }} 
+        />
 
         <AnimatePresence>
           {showNewPill && (

@@ -198,20 +198,20 @@ function VideoCallModal({
         {/* Footer Controls */}
         <div className="video-call-modal__footer">
           {incomingCall && callStatus !== "calling" ? (
-            <div className="video-call-modal__actions">
+            <div className="video-call-modal__actions" style={{ display: "flex", justifyContent: "center", gap: "24px", marginTop: "32px", width: "100%" }}>
               <button 
                 onClick={onAcceptCall} 
                 className="v-btn v-btn--accept"
-                style={{ backgroundColor: "#22c55e", color: "white", padding: "10px 24px", borderRadius: "12px", display: "flex", alignItems: "center", gap: "8px", fontWeight: "600", border: "none" }}
+                style={{ backgroundColor: "#22c55e", color: "white", padding: "14px 34px", borderRadius: "99px", display: "flex", alignItems: "center", gap: "10px", fontWeight: "600", border: "none" }}
               >
-                <Video size={18} /> Accept
+                <Video size={20} /> Accept
               </button>
               <button 
                 onClick={onEndCall} 
                 className="v-btn v-btn--decline"
-                style={{ backgroundColor: "#ef4444", color: "white", padding: "10px 24px", borderRadius: "12px", display: "flex", alignItems: "center", gap: "8px", fontWeight: "600", border: "none" }}
+                style={{ backgroundColor: "#ef4444", color: "white", padding: "14px 34px", borderRadius: "99px", display: "flex", alignItems: "center", gap: "10px", fontWeight: "600", border: "none" }}
               >
-                <PhoneOff size={18} /> Reject
+                <PhoneOff size={20} /> Reject
               </button>
             </div>
           ) : (

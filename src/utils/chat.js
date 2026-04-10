@@ -42,9 +42,11 @@ export const buildTextMessage = ({
   status = sender === "me" ? "sent" : "delivered",
   text,
   time,
+  createdAt,
   username,
 }) => ({
   chatId,
+  createdAt: createdAt || Date.now(),
   deleted,
   forwarded,
   id,
@@ -73,9 +75,11 @@ export const buildFileMessage = ({
   senderUserId = "",
   status = sender === "me" ? "sent" : "delivered",
   time,
+  createdAt,
   username,
 }) => ({
   chatId,
+  createdAt: createdAt || Date.now(),
   deleted,
   id,
   file,
@@ -130,6 +134,7 @@ export const normalizeMessage = (message, chatId) => {
   if (message.type === "file" || message.file) {
     return buildFileMessage({
       ...baseMessage,
+      createdAt: message.createdAt ?? message.time ?? Date.now(),
       file: message.file ?? "",
       fileName: message.fileName ?? "",
       mimeType: message.mimeType ?? "",
@@ -138,6 +143,7 @@ export const normalizeMessage = (message, chatId) => {
 
   return buildTextMessage({
     ...baseMessage,
+    createdAt: message.createdAt ?? message.time ?? Date.now(),
     text: message.text ?? message.message ?? "",
   });
 };
@@ -162,6 +168,7 @@ export const buildChat = ({
   lastSeen = "Last seen recently",
   messages = [],
   name,
+  peerId = null,
   status = "offline",
   unreadCount = 0,
   updatedAt,
@@ -173,6 +180,7 @@ export const buildChat = ({
   lastSeen,
   messages,
   name,
+  peerId,
   status,
   unreadCount,
   updatedAt,

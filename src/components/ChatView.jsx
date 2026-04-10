@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useOutletContext, useParams, useNavigate } from "react-router-dom";
 import ChatWindow from "./ChatWindow";
+import ChatLanding from "./ChatLanding";
 
 function ChatView() {
   const { id } = useParams();
@@ -16,13 +17,9 @@ function ChatView() {
     console.log("[ChatView] loadMessagesError:", context.loadMessagesError);
   });
 
-  // ── Safety: if no id in URL, show placeholder ────────────────────────────
+  // ── Index route: show landing page ──────────────────────────────────────
   if (!id) {
-    return (
-      <div className="chat-window chat-window--empty">
-        <p>Select a chat to start messaging</p>
-      </div>
-    );
+    return <ChatLanding />;
   }
 
   // ── Error state: access denied or failed fetch ───────────────────────────
@@ -65,7 +62,7 @@ function ChatView() {
   // ── Render chat ──────────────────────────────────────────────────────────
   return (
     <div
-      className={`chat-main-area ${context.backgroundDoodle?.type ? `chat-bg-doodle-${context.backgroundDoodle.type}` : ""}`}
+      className="chat-main-area"
       style={{ "--bg-overlay-opacity": context.backgroundDoodle?.opacity ?? 0.3 }}
     >
       <ChatWindow

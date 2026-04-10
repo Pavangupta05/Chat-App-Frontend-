@@ -84,30 +84,30 @@ function Call({
         <div className="call-panel__controls">
           {incomingCall && callStatus !== "calling" ? (
             <>
-              <button className="call-button call-button--accept" type="button" onClick={onAcceptCall}>
+              <button className="call-button call-button--accept call-button--text-pill" type="button" onClick={onAcceptCall} style={{ backgroundColor: "#22c55e", color: "white", border: "none" }}>
                 ✓ Accept
               </button>
-              <button className="call-button call-button--end" type="button" onClick={onEndCall}>
+              <button className="call-button call-button--end call-button--text-pill" type="button" onClick={onEndCall} style={{ border: "none" }}>
                 ✕ Reject
               </button>
             </>
           ) : permissionRetryable && callError && !localStream ? (
             <>
               <button
-                className="call-button call-button--secondary"
+                className="call-button call-button--secondary call-button--text-pill"
                 type="button"
                 onClick={onRetryPermission}
               >
                 🔄 Retry Permission
               </button>
-              <button className="call-button call-button--end" type="button" onClick={onEndCall}>
+              <button className="call-button call-button--end call-button--text-pill" type="button" onClick={onEndCall}>
                 Cancel
               </button>
             </>
           ) : (incomingCall || callStatus === "calling" || callStatus === "in-call") ? (
-            <button className="call-button call-button--end" type="button" onClick={onEndCall}>
-              ✕ {callStatus === "calling" ? "Cancel" : "End Call"}
-            </button>
+            <button className="call-button call-button--end call-button--text-pill" type="button" onClick={onEndCall}>
+                ✕ {callStatus === "calling" ? "Cancel" : "End Call"}
+              </button>
           ) : null}
         </div>
       </div>

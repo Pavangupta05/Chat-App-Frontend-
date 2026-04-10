@@ -11,9 +11,114 @@ import Sidebar from "./Sidebar";
 import ChatWindow from "./ChatWindow";
 import VideoCallModal from "./VideoCallModal";
 import AudioCallModal from "./AudioCallModal";
+import CameraModal from "./CameraModal";
 import useChatController from "../hooks/useChatController";
 import { useAuth } from "../context/AuthContext";
 
+
+const UniversalFAB = ({ 
+  isExpanded, 
+  setIsExpanded, 
+  setModalMode, 
+  onCameraClick, 
+  isDesktop = false 
+}) => {
+  const listVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08,
+        delayChildren: 0.05,
+      }
+    },
+    exit: {
+      opacity: 0,
+      transition: {
+        staggerChildren: 0.05,
+        staggerDirection: -1,
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, scale: 0.6, y: 20 },
+    visible: { 
+      opacity: 1, 
+      scale: 1, 
+      y: 0,
+      transition: { type: "spring", stiffness: 300, damping: 20 }
+    },
+    exit: { 
+      opacity: 0, 
+      scale: 0.6, 
+      y: 15,
+      transition: { duration: 0.15 }
+    }
+  };
+
+  return (
+    <div className={`fab-group ${isDesktop ? 'fab-group--desktop' : ''} ${isExpanded ? 'is-expanded' : ''}`}>
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div 
+            className="fab-items"
+            variants={listVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            {/* Action 1: Camera */}
+            <motion.div className="fab-item-wrapper" variants={itemVariants}>
+              <span className="fab-label">Camera</span>
+              <button 
+                className="fab-item fab-item--sub fab-item--camera" 
+                onClick={() => { onCameraClick(); setIsExpanded(false); }}
+              >
+                <Camera size={22} />
+              </button>
+            </motion.div>
+
+            {/* Action 2: New Group */}
+            <motion.div className="fab-item-wrapper" variants={itemVariants}>
+              <span className="fab-label">New Group</span>
+              <button 
+                className="fab-item fab-item--sub fab-item--group" 
+                onClick={() => { setModalMode("group"); setIsExpanded(false); }}
+              >
+                <Users size={22} />
+              </button>
+            </motion.div>
+
+            {/* Action 3: New Chat */}
+            <motion.div className="fab-item-wrapper" variants={itemVariants}>
+              <span className="fab-label">New Chat</span>
+              <button 
+                className="fab-item fab-item--sub fab-item--user" 
+                onClick={() => { setModalMode("chat"); setIsExpanded(false); }}
+              >
+                <UserPlus size={22} />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <button 
+        className={`fab-item fab-item--main ${isExpanded ? "is-active" : ""}`}
+        onClick={() => setIsExpanded(!isExpanded)}
+        aria-label="Toggle Actions"
+      >
+        <motion.div
+          animate={{ rotate: isExpanded ? 0 : 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {isExpanded ? <X size={28} /> : <Plus size={28} />}
+        </motion.div>
+      </button>
+    </div>
+  );
+};
 
 function ChatLayout() {
   const navigate = useNavigate();
@@ -81,9 +186,8 @@ function ChatLayout() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [chatModalMode, setChatModalMode] = useState(null); // null | "chat" | "group"
   const [isFabExpanded, setIsFabExpanded] = useState(false);
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
   const { logout } = useAuth();
-  
-  const cameraInputRef = useRef(null);
 
 
 
@@ -239,7 +343,7 @@ function ChatLayout() {
               zIndex: 1,
               display: 'flex',
               flexDirection: 'column',
-              background: 'var(--sidebar-surface)' /* Solid background to prevent ghosting */
+              background: 'transparent' /* Changed from solid to transparent for glass effect */
             }}
           >
             <Sidebar
@@ -270,6 +374,17 @@ function ChatLayout() {
               username={username}
               viewport={viewport}
             />
+
+            {/* ── DESKTOP FAB (Sidebar) ─────────────────────────────────── */}
+            {!isMobileView && (
+              <UniversalFAB 
+                isExpanded={isFabExpanded}
+                setIsExpanded={setIsFabExpanded}
+                setModalMode={setChatModalMode}
+                onCameraClick={() => setIsCameraModalOpen(true)}
+                isDesktop
+              />
+            )}
           </motion.div>
         </AnimatePresence>
 
@@ -373,75 +488,14 @@ function ChatLayout() {
       </div>
       </div>
 
-      {/* 🟢 Mobile UI FAB Toggle System */}
-      {isMobileView && !currentChat && (
-        <div className={`fab-group ${isFabExpanded ? "is-expanded" : ""}`}>
-          <input
-            type="file"
-            accept="image/*"
-            style={{ display: "none" }}
-            ref={cameraInputRef}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                setChatModalMode("chat");
-                setIsFabExpanded(false);
-              }
-            }}
-          />
-          
-          <AnimatePresence>
-            {isFabExpanded && (
-              <>
-                <motion.button 
-                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 20, scale: 0.8 }}
-                  className="fab-item fab-item--sub fab-item--camera" 
-                  aria-label="Camera"
-                  onClick={() => { cameraInputRef.current?.click(); setIsFabExpanded(false); }}
-                >
-                  <Camera size={22} />
-                  <span className="fab-label">Camera</span>
-                </motion.button>
-
-                <motion.button 
-                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 20, scale: 0.8 }}
-                  transition={{ delay: 0.05 }}
-                  className="fab-item fab-item--sub fab-item--add-group" 
-                  aria-label="New Group"
-                  onClick={() => { setChatModalMode("group"); setIsFabExpanded(false); }}
-                >
-                  <Users size={22} />
-                  <span className="fab-label">New Group</span>
-                </motion.button>
-
-                <motion.button 
-                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 20, scale: 0.8 }}
-                  transition={{ delay: 0.1 }}
-                  className="fab-item fab-item--sub fab-item--add-user" 
-                  aria-label="New Chat"
-                  onClick={() => { setChatModalMode("chat"); setIsFabExpanded(false); }}
-                >
-                  <UserPlus size={22} />
-                  <span className="fab-label">New Chat</span>
-                </motion.button>
-              </>
-            )}
-          </AnimatePresence>
-
-          <button 
-            className={`fab-item fab-item--main ${isFabExpanded ? "is-active" : ""}`}
-            aria-label="Toggle Actions"
-            onClick={() => setIsFabExpanded(!isFabExpanded)}
-          >
-            {isFabExpanded ? <X size={28} /> : <Plus size={28} />}
-          </button>
-        </div>
+      {/* ── MOBILE FAB ─────────────────────────────────────────────────── */}
+      {isMobileView && activeScreen === "chatList" && (
+        <UniversalFAB 
+          isExpanded={isFabExpanded}
+          setIsExpanded={setIsFabExpanded}
+          setModalMode={setChatModalMode}
+          onCameraClick={() => setIsCameraModalOpen(true)}
+        />
       )}
 
       <ForwardModal
@@ -512,7 +566,17 @@ function ChatLayout() {
         secureContext={call.secureContext}
       />
       {/* MODALS & PANELS managed by React Router child routes or specific modals above */}
-
+      <CameraModal 
+        isOpen={isCameraModalOpen}
+        onClose={() => setIsCameraModalOpen(false)}
+        onCapture={(dataUrl) => {
+          sendFileMessage({
+            fileUrl: dataUrl,
+            fileName: `camera_${Date.now()}.jpg`,
+            mimeType: "image/jpeg"
+          });
+        }}
+      />
     </main>
   );
 }

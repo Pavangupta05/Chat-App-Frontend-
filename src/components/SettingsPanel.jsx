@@ -4,7 +4,7 @@ import { deleteCurrentUser } from "../services/userService";
 import ConfirmModal from "./ConfirmModal";
 import { useAuth } from "../context/AuthContext";
 import OverlayPage from "./OverlayPage";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const THEME_COLORS = [
   { name: "Blue", value: "blue", hue: 214, label: "Telegram Blue" },
@@ -48,11 +48,9 @@ function SettingsPanel({
     typeof Notification !== "undefined" ? Notification.permission : "denied";
   
   const [selectedColor, setSelectedColor] = useState(() => {
-    const stored = typeof window !== "undefined" 
-      ? window.localStorage.getItem("chat-color-theme") 
-      : null;
-    return stored || "blue";
+    return window.localStorage.getItem("chat-color-theme") || "blue";
   });
+  const [activeOverlay, setActiveOverlay] = useState(null);
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -286,17 +284,17 @@ function SettingsPanel({
 
         {/* Legal & About */}
         <div className="ios-list-group">
-          <div className="settings-row" onClick={() => window.location.hash = "/settings/privacy"} style={{ cursor: 'pointer' }}>
+          <div className="settings-row" onClick={() => setActiveOverlay('privacy')} style={{ cursor: 'pointer' }}>
             <div className="settings-row__info">
               <Shield size={22} />
               <div>
                 <strong>Privacy Policy</strong>
-                <p>How we protect your data</p>
+                <p>Security and data usage</p>
               </div>
             </div>
           </div>
           
-          <div className="settings-row" onClick={() => window.location.hash = "/settings/terms"} style={{ cursor: 'pointer' }}>
+          <div className="settings-row" onClick={() => setActiveOverlay('terms')} style={{ cursor: 'pointer' }}>
             <div className="settings-row__info">
               <FileText size={22} />
               <div>
@@ -306,7 +304,7 @@ function SettingsPanel({
             </div>
           </div>
 
-          <div className="settings-row" onClick={() => window.location.hash = "/settings/help"} style={{ cursor: 'pointer' }}>
+          <div className="settings-row" onClick={() => setActiveOverlay('help')} style={{ cursor: 'pointer' }}>
             <div className="settings-row__info">
               <HelpCircle size={22} />
               <div>
@@ -316,7 +314,7 @@ function SettingsPanel({
             </div>
           </div>
 
-          <div className="settings-row" onClick={() => window.location.hash = "/settings/about"} style={{ cursor: 'pointer', borderBottom: 'none' }}>
+          <div className="settings-row" onClick={() => setActiveOverlay('about')} style={{ cursor: 'pointer', borderBottom: 'none' }}>
             <div className="settings-row__info">
               <Info size={22} />
               <div>
@@ -364,6 +362,79 @@ function SettingsPanel({
           </div>
         </div>
       </div>
+
+      {/* ── Sub-Pages (Overlays) ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {activeOverlay === 'privacy' && (
+          <OverlayPage onClose={() => setActiveOverlay(null)} title="Privacy Policy">
+            <div className="policy-content">
+              <div className="policy-section">
+                <h2>Privacy Matter</h2>
+                <p>We respect your privacy. All your personal messages are end-to-end encrypted, meaning only you and the recipient can read them.</p>
+              </div>
+              <div className="policy-section">
+                <h2>Data Collection</h2>
+                <p>We collect minimal data required to provide the service:</p>
+                <ul className="policy-list">
+                  <li>Your phone number for identity</li>
+                  <li>Your profile name and photo (shared with contacts)</li>
+                  <li>Basic technical info for app stability</li>
+                </ul>
+              </div>
+              <p>We never sell your data to advertisers.</p>
+            </div>
+          </OverlayPage>
+        )}
+
+        {activeOverlay === 'terms' && (
+          <OverlayPage onClose={() => setActiveOverlay(null)} title="Terms of Service">
+            <div className="policy-content">
+              <div className="policy-section">
+                <h2>Acceptable Use</h2>
+                <p>By using this app, you agree not to engage in illegal activities, harassment, or spamming. We reserve the right to suspend accounts that violate these rules.</p>
+              </div>
+              <div className="policy-section">
+                <h2>Our Service</h2>
+                <p>Chat is provided "as is". While we strive for 100% uptime, we are not liable for communication delays or temporary outages.</p>
+              </div>
+            </div>
+          </OverlayPage>
+        )}
+
+        {activeOverlay === 'help' && (
+          <OverlayPage onClose={() => setActiveOverlay(null)} title="Help Center">
+            <div className="policy-content">
+              <div className="policy-section">
+                <h2>FAQ</h2>
+                <p><strong>How to link a device?</strong> Go to Settings Linked Devices and scan the QR code.</p>
+                <p><strong>How to change theme?</strong> Use the sun/moon icon in the sidebar header.</p>
+              </div>
+              <div className="policy-section">
+                <h2>Contact Support</h2>
+                <p>Email: help@chatapp.example.com</p>
+              </div>
+            </div>
+          </OverlayPage>
+        )}
+
+        {activeOverlay === 'about' && (
+          <OverlayPage onClose={() => setActiveOverlay(null)} title="About Chat">
+            <div className="policy-content" style={{ textAlign: 'center' }}>
+              <div style={{ marginBottom: '32px' }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
+                <h2 style={{ fontSize: '24px', margin: '0 0 8px' }}>Chat Desktop</h2>
+                <p style={{ color: 'var(--text-muted)' }}>Version 2.4.0 (Stable)</p>
+              </div>
+              <p style={{ fontSize: '14px', maxWidth: '300px', margin: '0 auto' }}>
+                A modern, secure messaging app designed for speed and reliability across multiple devices.
+              </p>
+              <p style={{ marginTop: '40px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                Handcrafted with ❤️ for your security.
+              </p>
+            </div>
+          </OverlayPage>
+        )}
+      </AnimatePresence>
     </div>
   );
 
