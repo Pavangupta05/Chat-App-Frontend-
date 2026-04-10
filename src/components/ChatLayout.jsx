@@ -80,6 +80,7 @@ function ChatLayout() {
 
   const [confirmAction, setConfirmAction] = useState(null);
   const [chatModalMode, setChatModalMode] = useState(null); // null | "chat" | "group"
+  const [isFabExpanded, setIsFabExpanded] = useState(false);
   const { logout } = useAuth();
   
   const cameraInputRef = useRef(null);
@@ -143,14 +144,15 @@ function ChatLayout() {
 
   const [backgroundDoodle, setBackgroundDoodle] = useState(() => {
     try {
-      return JSON.parse(window.localStorage.getItem("chat-bg-doodle")) || { type: "light", opacity: 0.3 };
+      const saved = window.localStorage.getItem("chat-bg-doodle");
+      return saved ? JSON.parse(saved) : { type: "light", opacity: 0.3 };
     } catch {
       return { type: "light", opacity: 0.3 };
     }
   });
 
-  const handleBackgroundChange = (type, opacity) => {
-    const newBg = { type, opacity };
+  const handleBackgroundChange = (type, opacity, customUrl = null) => {
+    const newBg = { type, opacity, customUrl: customUrl || backgroundDoodle.customUrl };
     setBackgroundDoodle(newBg);
     window.localStorage.setItem("chat-bg-doodle", JSON.stringify(newBg));
   };
@@ -199,8 +201,8 @@ function ChatLayout() {
           : "is-mobile-sidebar chat-layout--mobile"
     : "";
 
-  const isMobileMainScreen = activeScreen === "chatList";
-  const isMobileDetailScreen = activeScreen !== "chatList";
+  const isMobileMainScreen = activeScreen === "chatList" || activeScreen === "contacts";
+  const isMobileDetailScreen = activeScreen === "chat" || activeScreen === "settings" || activeScreen === "profile";
 
   const showEmptyState = !isMobileView && !currentChat;
 
@@ -215,34 +217,45 @@ function ChatLayout() {
       <div className="app-content-stack">
       {/* SCREEN 1: LIST / HOME */}
       <section className="app-screen app-screen--list">
-        <Sidebar
-          activeChatId={currentChat?.id}
-          activeTab={activeTab}
-          chats={chats}
-          connectionLabel={socketState.isConnected ? "Online" : (socketState.connectionError ?? "Connecting…")}
-          isOpen={isSidebarOpen}
-          isUserOnline={isUserOnline}
-          onLogout={logout}
-          onNewChat={() => setChatModalMode("chat")}
-          onNewGroup={() => setChatModalMode("group")}
-          onProfile={handleOpenProfile}
-          onSettings={handleOpenSettings}
-          onThemeToggle={() =>
-            setTheme((t) => (t === "dark" ? "light" : "dark"))
-          }
-          onSearchChange={setSearchTerm}
-          onSelectChat={handleSelectChat}
-          onDeleteChat={(id) => {
-            selectChat(id);
-            setConfirmAction("delete-chat");
-          }}
-          onTabChange={setActiveTab}
-          onToggleSidebar={() => setIsSidebarOpen((v) => !v)}
-          searchTerm={searchTerm}
-          theme={theme}
-          username={username}
-          viewport={viewport}
-        />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab === 'Contacts' ? 'contacts' : 'chats'}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.2 }}
+            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+          >
+            <Sidebar
+              activeChatId={currentChat?.id}
+              activeTab={activeTab}
+              chats={chats}
+              connectionLabel={socketState.isConnected ? "Online" : (socketState.connectionError ?? "Connecting…")}
+              isOpen={isSidebarOpen}
+              isUserOnline={isUserOnline}
+              onLogout={logout}
+              onNewChat={() => setChatModalMode("chat")}
+              onNewGroup={() => setChatModalMode("group")}
+              onProfile={handleOpenProfile}
+              onSettings={handleOpenSettings}
+              onThemeToggle={() =>
+                setTheme((t) => (t === "dark" ? "light" : "dark"))
+              }
+              onSearchChange={setSearchTerm}
+              onSelectChat={handleSelectChat}
+              onDeleteChat={(id) => {
+                selectChat(id);
+                setConfirmAction("delete-chat");
+              }}
+              onTabChange={setActiveTab}
+              onToggleSidebar={() => setIsSidebarOpen((v) => !v)}
+              searchTerm={searchTerm}
+              theme={theme}
+              username={username}
+              viewport={viewport}
+            />
+          </motion.div>
+        </AnimatePresence>
 
         {isMobileView && (
           <nav className="mobile-nav">
@@ -293,43 +306,53 @@ function ChatLayout() {
 
       {/* SCREEN 2: DETAIL (Chat / Settings / Profile) */}
       <div className="app-screen app-screen--detail">
-          <Outlet context={{
-            activeChatId,
-            backgroundDoodle,
-            call,
-            currentChat,
-            draftMessage,
-            isMobileView,
-            clearReply,
-            setConfirmAction,
-            deleteMessageForEveryone,
-            deleteMessageForMe,
-            setDraftMessage,
-            handleTypingInputChange,
-            sendFileMessage,
-            startForwardMessage,
-            handleMobileBack,
-            setReplyMessage,
-            sendMessage,
-            replyMessage,
-            socketState,
-            typing,
-            isLoadingMessages,
-            loadMessagesError,
-            retryLoadMessages,
-            theme,
-            onThemeToggle: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
-            onLogout: logout,
-            onBackgroundChange: handleBackgroundChange,
-            onClosePanel: handleClosePanel,
-         }} />
-
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname.split('/')[1] || 'empty'}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            style={{ height: '100%', width: '100%' }}
+          >
+            <Outlet context={{
+              activeChatId,
+              backgroundDoodle,
+              call,
+              currentChat,
+              draftMessage,
+              isMobileView,
+              clearReply,
+              setConfirmAction,
+              deleteMessageForEveryone,
+              deleteMessageForMe,
+              setDraftMessage,
+              handleTypingInputChange,
+              sendFileMessage,
+              startForwardMessage,
+              handleMobileBack,
+              setReplyMessage,
+              sendMessage,
+              replyMessage,
+              socketState,
+              typing,
+              isLoadingMessages,
+              loadMessagesError,
+              retryLoadMessages,
+              theme,
+              onThemeToggle: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
+              onLogout: logout,
+              onBackgroundChange: handleBackgroundChange,
+              onClosePanel: handleClosePanel,
+            }} />
+          </motion.div>
+        </AnimatePresence>
       </div>
       </div>
 
-      {/* FABs - Only visible on mobile list view to prevent desktop clashing */}
+      {/* 🟢 Mobile UI FAB Toggle System */}
       {isMobileView && !currentChat && (
-        <div className="fab-group">
+        <div className={`fab-group ${isFabExpanded ? "is-expanded" : ""}`}>
           <input
             type="file"
             accept="image/*"
@@ -339,32 +362,61 @@ function ChatLayout() {
               const file = e.target.files?.[0];
               if (file) {
                 setChatModalMode("chat");
+                setIsFabExpanded(false);
               }
             }}
           />
-          <button 
-            className="fab-item fab-item--add-user" 
-            aria-label="Add User or Group"
-            onClick={() => setChatModalMode("group")}
-            style={{ background: 'linear-gradient(135deg, #f59e0b, #ea580c)' }}
-          >
-            <UserPlus size={24} />
-          </button>
           
+          <AnimatePresence>
+            {isFabExpanded && (
+              <>
+                <motion.button 
+                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 20, scale: 0.8 }}
+                  className="fab-item fab-item--sub fab-item--camera" 
+                  aria-label="Camera"
+                  onClick={() => { cameraInputRef.current?.click(); setIsFabExpanded(false); }}
+                >
+                  <Camera size={22} />
+                  <span className="fab-label">Camera</span>
+                </motion.button>
+
+                <motion.button 
+                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 20, scale: 0.8 }}
+                  transition={{ delay: 0.05 }}
+                  className="fab-item fab-item--sub fab-item--add-group" 
+                  aria-label="New Group"
+                  onClick={() => { setChatModalMode("group"); setIsFabExpanded(false); }}
+                >
+                  <Users size={22} />
+                  <span className="fab-label">New Group</span>
+                </motion.button>
+
+                <motion.button 
+                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 20, scale: 0.8 }}
+                  transition={{ delay: 0.1 }}
+                  className="fab-item fab-item--sub fab-item--add-user" 
+                  aria-label="New Chat"
+                  onClick={() => { setChatModalMode("chat"); setIsFabExpanded(false); }}
+                >
+                  <UserPlus size={22} />
+                  <span className="fab-label">New Chat</span>
+                </motion.button>
+              </>
+            )}
+          </AnimatePresence>
+
           <button 
-            className="fab-item fab-item--camera" 
-            aria-label="Camera"
-            onClick={() => cameraInputRef.current?.click()}
+            className={`fab-item fab-item--main ${isFabExpanded ? "is-active" : ""}`}
+            aria-label="Toggle Actions"
+            onClick={() => setIsFabExpanded(!isFabExpanded)}
           >
-            <Camera size={26} />
-          </button>
-          
-          <button 
-            className="fab-item fab-item--plus" 
-            aria-label="New Chat"
-            onClick={() => setChatModalMode("chat")}
-          >
-            <Plus size={28} />
+            {isFabExpanded ? <X size={28} /> : <Plus size={28} />}
           </button>
         </div>
       )}

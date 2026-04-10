@@ -457,21 +457,27 @@ function useChatController() {
          setLoadMessagesError(null);
  
          fetchMessagesByChatId(token, idKey)
-           .then((msgs) => {
-             setChats((currentChats) =>
-               currentChats.map((chat) =>
-                 String(chat.id) === idKey
-                   ? {
-                       ...chat,
-                       messages: msgs,
-                       // Update timestamp only if messages were fetched for the first time
-                       updatedAt: chat.messages.length === 0 && msgs.length > 0 ? Date.now() : chat.updatedAt,
-                     }
-                   : chat,
-               ),
-             );
-             setIsLoadingMessages(false);
-           })
+            .then((msgs) => {
+              setChats((currentChats) =>
+                currentChats.map((chat) => {
+                  if (String(chat.id) !== idKey) return chat;
+
+                  // 🧩 Merge logic: Preserve optimistic messages that aren't in the server's list yet
+                  const serverMsgIds = new Set(msgs.map(m => String(m.id)));
+                  const optimisticMessages = chat.messages.filter(m => 
+                    !serverMsgIds.has(String(m.id)) && 
+                    (String(m.id).startsWith('message-') || String(m.id).startsWith('file-'))
+                  );
+
+                  return {
+                    ...chat,
+                    messages: [...msgs, ...optimisticMessages],
+                    updatedAt: chat.messages.length === 0 && msgs.length > 0 ? Date.now() : chat.updatedAt,
+                  };
+                }),
+              );
+              setIsLoadingMessages(false);
+            })
            .catch((err) => {
              console.error("[chat] Failed to load messages for chat:", idKey, err);
              // FIX: Only show error UI for genuine access-denied situations (typed error from messageService).

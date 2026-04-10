@@ -30,6 +30,7 @@ const BACKGROUND_DOODLES = [
   { name: "Obsidian", value: "obsidian", label: "Solid Obsidian" },
   { name: "Aura", value: "aura", label: "Aura Gradient" },
   { name: "Cosmos", value: "cosmos", label: "Cosmos Pattern" },
+  { name: "Custom", value: "custom", label: "Custom Photo" },
 ];
 
 function SettingsPanel({ 
@@ -92,11 +93,27 @@ function SettingsPanel({
   };
 
   const handleBackgroundDoodleChange = (doodleType) => {
-    onBackgroundChange(doodleType, backgroundDoodle.opacity);
+    if (doodleType === 'custom') {
+      document.getElementById('custom-bg-upload').click();
+    } else {
+      onBackgroundChange(doodleType, backgroundDoodle.opacity);
+    }
+  };
+
+  const handleCustomPhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target.result;
+      onBackgroundChange('custom', backgroundDoodle.opacity, dataUrl);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleOpacityChange = (newOpacity) => {
-    onBackgroundChange(backgroundDoodle.type, newOpacity);
+    onBackgroundChange(backgroundDoodle.type, newOpacity, backgroundDoodle.customUrl);
   };
 
   if (!isOpen) return null;
@@ -177,6 +194,13 @@ function SettingsPanel({
             </div>
           </div>
           <div className="chat-bg-selector">
+            <input 
+              type="file" 
+              id="custom-bg-upload" 
+              hidden 
+              accept="image/*" 
+              onChange={handleCustomPhotoUpload} 
+            />
             {BACKGROUND_DOODLES.map((bg) => (
               <motion.button
                 key={bg.value}
@@ -188,7 +212,17 @@ function SettingsPanel({
                 title={bg.label}
                 aria-label={`Select ${bg.label}`}
               >
-                <div className={`chat-bg-preview chat-bg-doodle-${bg.value}`} />
+                <div className={`chat-bg-preview chat-bg-doodle-${bg.value}${bg.value === 'custom' && backgroundDoodle.customUrl ? ' has-image' : ''}`}>
+                  {bg.value === 'custom' ? (
+                    backgroundDoodle.customUrl ? (
+                      <img src={backgroundDoodle.customUrl} alt="Custom" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div className="chat-bg-custom-placeholder">
+                        <Plus size={24} />
+                      </div>
+                    )
+                  ) : null}
+                </div>
                 <span>{bg.name}</span>
               </motion.button>
             ))}

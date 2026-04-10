@@ -183,8 +183,17 @@ function ChatWindow({
 
   return (
     <section className="chat-window" style={{ background: "transparent" }}>
-
-      {/* ── Header ──────────────────────────────────────────────────────── */}
+      {/* ── Background Layer ───────────────────────────────────────────── */}
+      {backgroundDoodle?.type === 'custom' && backgroundDoodle?.customUrl ? (
+        <div className="chat-bg-custom-container" style={{ opacity: backgroundDoodle.opacity }}>
+          <img src={backgroundDoodle.customUrl} className="chat-bg-custom-img" alt="" />
+        </div>
+      ) : (
+        <div 
+          className={`chat-window__bg chat-bg-doodle-${backgroundDoodle?.type || 'light'}`}
+          style={{ opacity: backgroundDoodle?.opacity || 0.3 }}
+        />
+      )}
       <header className={`chat-window__header${hasSelection ? " chat-window__header--selection" : ""}`}>
 
         {hasSelection ? (
@@ -372,7 +381,8 @@ function ChatWindow({
         })}
 
         <TypingIndicator text={typingText} />
-        <div ref={messagesEndRef} style={{ height: 4 }} />
+        {/* Extra space at the bottom so messages aren't hidden by the fixed footer */}
+        <div style={{ height: isMobileView ? "100px" : "40px" }} />
 
         <AnimatePresence>
           {showNewPill && (
