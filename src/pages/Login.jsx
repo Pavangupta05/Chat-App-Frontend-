@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
 import "../App.css";
 
 // Custom Social Icons
@@ -34,9 +35,25 @@ function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError("");
+    setLoading(true);
+    try {
+      if (credentialResponse.credential) {
+        await googleLogin(credentialResponse.credential);
+        navigate("/", { replace: true });
+      }
+    } catch (err) {
+      console.error("Google Login Error:", err);
+      setError(err.message || "Google authentication failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const prefill = location.state?.registeredEmail;
@@ -137,18 +154,20 @@ function Login() {
           <span>or continue with</span>
         </div>
 
-        <div className="social-buttons">
-          <button type="button" className="social-button" aria-label="Login with Google">
-            <GoogleIcon />
-            <span>Google</span>
-          </button>
-          <button type="button" className="social-button" aria-label="Login with Apple">
-            <AppleIcon />
-            <span>Apple</span>
-          </button>
-          <button type="button" className="social-button social-button--icon" aria-label="Login with Facebook">
-            <FacebookIcon />
-          </button>
+        <div className="social-buttons" style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => {
+              console.error("Google Login Failed");
+              setError("Login with Google failed. Please try again.");
+            }}
+            useOneTap
+            shape="pill"
+            theme="filled_blue"
+            text="continue_with"
+            size="large"
+            width="100%"
+          />
         </div>
 
         <div className="auth-footer">

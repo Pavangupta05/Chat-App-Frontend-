@@ -3,6 +3,7 @@ import { flushSync } from "react-dom";
 import {
   login as loginService,
   register as registerService,
+  googleLogin as googleLoginService,
   logout as logoutService,
 } from "../services/authService";
 import { registerAuthErrorHandler } from "../utils/retry";
@@ -137,6 +138,26 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("chat-user", JSON.stringify(updatedUser));
   };
 
+  const googleLogin = async (googleIdToken) => {
+    const data = await googleLoginService(googleIdToken);
+
+    const normalizedUser = {
+      ...data.user,
+      id: data.user?.id ? String(data.user.id) : "",
+    };
+
+    flushSync(() => {
+      setUser(normalizedUser);
+      setToken(data.token);
+    });
+
+    // Save session
+    localStorage.setItem("chat-user", JSON.stringify(normalizedUser));
+    localStorage.setItem("chat-token", data.token);
+
+    return data;
+  };
+
   // 🚪 LOGOUT
   const logout = () => {
     logoutService();
@@ -152,6 +173,7 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     login,
     register,
+    googleLogin,
     logout,
     updateUser,
   };

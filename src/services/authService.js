@@ -84,6 +84,45 @@ export const register = async ({ username, email, password }) => {
   return data;
 };
 
+export const googleLogin = async (token) => {
+  let response;
+  try {
+    response = await retryFetch(
+      () => fetch(`${API_URL}/api/auth/google`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token }),
+      }),
+      3
+    );
+  } catch {
+    throw new Error(`Cannot reach the server at ${API_URL}.`);
+  }
+
+  if (response.ok) {
+    ensureJsonContentType(response);
+  }
+
+  const data = await parseJsonResponse(response);
+
+  if (!response.ok) {
+    throw new Error(data.error || `Google Login failed (${response.status}).`);
+  }
+
+  if (!data.token || !data.user) {
+    throw new Error(data.error || "Login response was incomplete.");
+  }
+
+  data.user = normalizeUser(data.user);
+  
+  localStorage.setItem("chat-user", JSON.stringify(data.user));
+  localStorage.setItem("chat-token", data.token);
+
+  return data;
+};
+
 export const login = async ({ email, password }) => {
   const body = {
     email: String(email ?? "").trim().toLowerCase(),
