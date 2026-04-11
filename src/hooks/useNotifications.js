@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * useNotifications
@@ -6,23 +6,23 @@ import { useCallback, useEffect, useRef } from "react";
  * when a new message arrives while the tab is not focused.
  */
 function useNotifications() {
-  const permissionRef = useRef(
+  const [permission, setPermission] = useState(
     typeof Notification !== "undefined" ? Notification.permission : "denied",
   );
 
   useEffect(() => {
     if (typeof Notification === "undefined") return;
-    if (permissionRef.current === "default") {
+    if (permission === "default") {
       Notification.requestPermission().then((perm) => {
-        permissionRef.current = perm;
+        setPermission(perm);
       });
     }
-  }, []);
+  }, [permission]);
 
   const requestPermission = useCallback(async () => {
     if (typeof Notification === "undefined") return "denied";
     const perm = await Notification.requestPermission();
-    permissionRef.current = perm;
+    setPermission(perm);
     return perm;
   }, []);
 
@@ -33,7 +33,7 @@ function useNotifications() {
   const notify = useCallback(({ title, body, icon }) => {
     if (typeof Notification === "undefined") return;
     if (!document.hidden) return;               // tab is visible — skip
-    if (permissionRef.current !== "granted") return;
+    if (permission !== "granted") return;
 
     try {
       const n = new Notification(title, { body, icon: icon ?? "/favicon.ico" });
@@ -43,7 +43,7 @@ function useNotifications() {
     }
   }, []);
 
-  return { notify, requestPermission, permission: permissionRef.current };
+  return { notify, requestPermission, permission };
 }
 
 export default useNotifications;

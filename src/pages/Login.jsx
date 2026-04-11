@@ -128,7 +128,7 @@ function Login() {
             </div>
           </div>
 
-          <button type="submit" className="auth-button" disabled={loading}>
+          <button type="submit" className="auth-button" disabled={loading || !isSendable}>
             {loading ? <span className="auth-spinner"></span> : "Sign In"}
           </button>
         </form>

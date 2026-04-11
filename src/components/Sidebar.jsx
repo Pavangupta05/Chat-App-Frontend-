@@ -16,8 +16,6 @@ function Sidebar({
   isOpen,
   isUserOnline,
   onLogout,
-  onNewChat,
-  onNewGroup,
   onProfile,
   onSettings,
   onThemeToggle,
@@ -25,7 +23,6 @@ function Sidebar({
   onSelectChat,
   onDeleteChat,
   onTabChange,
-  onToggleSidebar,
   searchTerm,
   theme,
   username,
@@ -36,7 +33,6 @@ function Sidebar({
 
 
   const isMobile = viewport === "mobile";
-  const currentMode = activeTab === "Contacts" ? "contacts" : "chats";
 
   // Close hamburger dropdown on outside click
   useEffect(() => {

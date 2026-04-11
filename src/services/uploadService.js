@@ -119,7 +119,7 @@ function validateFile(file) {
 /**
  * Upload file to backend with proper timeout and error handling
  */
-export async function uploadChatFile(file, { signal, onProgress } = {}) {
+export async function uploadChatFile(file, { signal } = {}) {
   try {
     validateFile(file);
 

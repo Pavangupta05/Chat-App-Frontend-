@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useNavigate, useLocation, Outlet, useParams } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, Users, Settings, User, Camera, ArrowLeft, UserPlus, Plus, X } from "lucide-react";
 import ConfirmModal from "./ConfirmModal";
@@ -42,23 +42,47 @@ const UniversalFAB = ({
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, scale: 0.6, y: 20 },
+    hidden: { opacity: 0, scale: 0.2 },
     visible: { 
       opacity: 1, 
       scale: 1, 
-      y: 0,
-      transition: { type: "spring", stiffness: 300, damping: 20 }
+      transition: { 
+        type: "spring", 
+        stiffness: 450, 
+        damping: 25,
+        mass: 0.8
+      }
     },
     exit: { 
       opacity: 0, 
-      scale: 0.6, 
-      y: 15,
-      transition: { duration: 0.15 }
+      scale: 0.3, 
+      transition: { duration: 0.15, ease: "easeOut" }
     }
   };
 
   return (
     <div className={`fab-group ${isDesktop ? 'fab-group--desktop' : ''} ${isExpanded ? 'is-expanded' : ''}`}>
+      {/* Main toggle button first in DOM = Bottom position in column-reverse */}
+      <button 
+        className={`fab-item fab-item--main ${isExpanded ? "is-active" : ""}`}
+        onClick={() => setIsExpanded(!isExpanded)}
+        aria-label="Toggle Actions"
+      >
+        <motion.div
+          initial={false}
+          animate={{ rotate: isExpanded ? 45 : 0 }}
+          transition={{ 
+            type: "spring",
+            stiffness: 400,
+            damping: 28
+          }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <Plus size={isDesktop ? 24 : 28} />
+        </motion.div>
+      </button>
+
+      {/* Menu items last in DOM = Above position in column-reverse */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div 
@@ -103,19 +127,6 @@ const UniversalFAB = ({
           </motion.div>
         )}
       </AnimatePresence>
-
-      <button 
-        className={`fab-item fab-item--main ${isExpanded ? "is-active" : ""}`}
-        onClick={() => setIsExpanded(!isExpanded)}
-        aria-label="Toggle Actions"
-      >
-        <motion.div
-          animate={{ rotate: isExpanded ? 0 : 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          {isExpanded ? <X size={28} /> : <Plus size={28} />}
-        </motion.div>
-      </button>
     </div>
   );
 };
@@ -136,7 +147,6 @@ function ChatLayout() {
     deleteActiveChat,
     deleteMessageForEveryone,
     deleteMessageForMe,
-    drawerOpen,
     draftMessage,
     forwardingMessage,
     handleTypingInputChange,
@@ -311,10 +321,6 @@ function ChatLayout() {
           : "is-mobile-sidebar chat-layout--mobile"
     : "";
 
-  const isMobileMainScreen = activeScreen === "chatList" || activeScreen === "contacts";
-  const isMobileDetailScreen = activeScreen === "chat" || activeScreen === "settings" || activeScreen === "profile";
-
-  const showEmptyState = !isMobileView && !currentChat;
 
   // Calculate unread total
   const totalUnreadCount = chats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);

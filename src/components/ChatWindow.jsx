@@ -123,9 +123,9 @@ function ChatWindow({
   useEffect(() => {
     if (isNearBottomRef.current) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-      setShowNewPill(false);
+      setTimeout(() => setShowNewPill(false), 0);
     } else {
-      setShowNewPill(true);
+      setTimeout(() => setShowNewPill(true), 0);
     }
   }, [visibleMessages.length, typingText, callProps?.callStatus]);
 

@@ -131,12 +131,16 @@ export const normalizeMessage = (message, chatId) => {
     username: message.username ?? "",
   };
 
-  if (message.type === "file" || message.file) {
+  const text = message.text ?? message.message ?? "";
+  const looksLikeFile = text.startsWith("/uploads/") || text.startsWith("http") && text.includes("/uploads/");
+
+  if (message.type === "file" || message.file || looksLikeFile) {
+    const filePath = message.file || text;
     return buildFileMessage({
       ...baseMessage,
       createdAt: message.createdAt ?? message.time ?? Date.now(),
-      file: message.file ?? "",
-      fileName: message.fileName ?? "",
+      file: filePath,
+      fileName: message.fileName || filePath.split("/").pop().split("?")[0],
       mimeType: message.mimeType ?? "",
     });
   }
@@ -209,8 +213,14 @@ export const getChatPreview = (chat) => {
     return "This message was deleted";
   }
 
-  if (lastMessage?.type === "file") {
-    return lastMessage.fileName || "Shared a file";
+  const isFile = lastMessage?.type === "file" || lastMessage?.text?.startsWith("/uploads/");
+  if (isFile) {
+    const filePath = lastMessage.file || lastMessage.text || "";
+    const isImg = (lastMessage.mimeType?.startsWith("image/") || /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(filePath));
+    const isVid = (lastMessage.mimeType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(filePath));
+    if (isImg) return "📷 Photo";
+    if (isVid) return "🎥 Video";
+    return `📎 ${lastMessage.fileName || filePath.split("/").pop().split("?")[0] || "File"}`;
   }
 
   return lastMessage?.text ?? "";
