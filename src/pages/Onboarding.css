@@ -1,0 +1,596 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   Onboarding.css — Premium Dark Onboarding Flow
+   Mobile-first · Animated · Glassmorphism
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ──────────────────────────────────────────────────────────── */
+@keyframes ob-fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ob-fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes ob-scaleIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes ob-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(51, 144, 236, 0.4); }
+  50%      { box-shadow: 0 0 0 12px rgba(51, 144, 236, 0); }
+}
+
+@keyframes ob-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes ob-float {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-8px); }
+}
+
+@keyframes ob-gradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes ob-glow-ring {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%      { opacity: 0.6; transform: scale(1.1); }
+}
+
+@keyframes ob-slide-left {
+  from { opacity: 0; transform: translateX(60px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Page Wrapper ───────────────────────────────────────────────────────── */
+.ob-page {
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  padding: 20px 16px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Ambient background glow */
+.ob-page::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(51, 144, 236, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(115, 40, 220, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(51, 144, 236, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ob-page > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Navigation Bar (Top) ───────────────────────────────────────────────── */
+.ob-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ob-nav__brand {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  background: linear-gradient(135deg, #3390ec, #7b68ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ob-nav__skip {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+
+.ob-nav__skip:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Progress Dots ──────────────────────────────────────────────────────── */
+.ob-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.ob-progress__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ob-progress__dot.is-active {
+  width: 28px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #3390ec, #7b68ee);
+}
+
+.ob-progress__dot.is-done {
+  background: #3390ec;
+}
+
+/* ── Content Container ──────────────────────────────────────────────────── */
+.ob-content {
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 24px;
+  animation: ob-fadeUp 0.6s ease-out both;
+}
+
+.ob-content--left {
+  text-align: left;
+  align-items: flex-start;
+}
+
+/* ── Hero Icon / Brand ──────────────────────────────────────────────────── */
+.ob-hero-icon {
+  width: 88px;
+  height: 88px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #3390ec 0%, #7b68ee 100%);
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  box-shadow:
+    0 8px 32px rgba(51, 144, 236, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  animation: ob-float 3s ease-in-out infinite;
+  position: relative;
+}
+
+.ob-hero-icon::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 32px;
+  border: 1px solid rgba(51, 144, 236, 0.2);
+  animation: ob-glow-ring 3s ease-in-out infinite;
+}
+
+.ob-hero-icon svg {
+  width: 40px;
+  height: 40px;
+  color: #fff;
+}
+
+/* ── Typography ─────────────────────────────────────────────────────────── */
+.ob-title {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+  color: #fff;
+  margin: 0;
+}
+
+.ob-title span {
+  background: linear-gradient(135deg, #3390ec, #7b68ee, #3390ec);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: ob-gradient 4s ease infinite;
+}
+
+.ob-subtitle {
+  font-size: 17px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  max-width: 360px;
+}
+
+.ob-tagline {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #3390ec;
+  margin: 0;
+}
+
+/* ── CTA Button ─────────────────────────────────────────────────────────── */
+.ob-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 200px;
+  height: 52px;
+  padding: 0 32px;
+  border: none;
+  border-radius: 26px;
+  background: linear-gradient(135deg, #3390ec 0%, #5f7dee 50%, #7b68ee 100%);
+  background-size: 200% 100%;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow:
+    0 4px 20px rgba(51, 144, 236, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  animation: ob-pulse 2.5s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.ob-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  background-size: 200% 100%;
+  animation: ob-shimmer 3s ease-in-out infinite;
+}
+
+.ob-cta:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 8px 32px rgba(51, 144, 236, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  background-position: 100% 0;
+}
+
+.ob-cta:active {
+  transform: translateY(0px) scale(0.98);
+  box-shadow: 0 2px 12px rgba(51, 144, 236, 0.3);
+}
+
+.ob-cta svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s ease;
+}
+
+.ob-cta:hover svg {
+  transform: translateX(3px);
+}
+
+/* Secondary CTA */
+.ob-cta--secondary {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  animation: none;
+}
+
+.ob-cta--secondary::before {
+  display: none;
+}
+
+.ob-cta--secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
+/* ── Feature Cards ──────────────────────────────────────────────────────── */
+.ob-features {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 440px;
+}
+
+.ob-feature-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: ob-slide-left 0.5s ease-out both;
+  cursor: default;
+}
+
+.ob-feature-card:nth-child(1) { animation-delay: 0.1s; }
+.ob-feature-card:nth-child(2) { animation-delay: 0.2s; }
+.ob-feature-card:nth-child(3) { animation-delay: 0.3s; }
+.ob-feature-card:nth-child(4) { animation-delay: 0.4s; }
+
+.ob-feature-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(51, 144, 236, 0.2);
+  transform: translateX(4px);
+}
+
+.ob-feature-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 22px;
+}
+
+.ob-feature-card__icon--blue   { background: rgba(51, 144, 236, 0.15); color: #3390ec; }
+.ob-feature-card__icon--purple { background: rgba(123, 104, 238, 0.15); color: #7b68ee; }
+.ob-feature-card__icon--green  { background: rgba(52, 211, 153, 0.15); color: #34d399; }
+.ob-feature-card__icon--amber  { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+
+.ob-feature-card__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.ob-feature-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.ob-feature-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.ob-feature-card__desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+}
+
+/* ── Steps / Timeline ───────────────────────────────────────────────────── */
+.ob-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  max-width: 440px;
+  position: relative;
+}
+
+.ob-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  position: relative;
+  padding-bottom: 32px;
+  animation: ob-fadeUp 0.5s ease-out both;
+}
+
+.ob-step:nth-child(1) { animation-delay: 0.15s; }
+.ob-step:nth-child(2) { animation-delay: 0.3s; }
+.ob-step:nth-child(3) { animation-delay: 0.45s; }
+
+.ob-step:last-child { padding-bottom: 0; }
+
+/* Timeline connector line */
+.ob-step::before {
+  content: '';
+  position: absolute;
+  left: 23px;
+  top: 52px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, rgba(51, 144, 236, 0.3), rgba(123, 104, 238, 0.1));
+}
+
+.ob-step:last-child::before {
+  display: none;
+}
+
+.ob-step__number {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, #3390ec, #7b68ee);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(51, 144, 236, 0.25);
+}
+
+.ob-step__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
+  text-align: left;
+}
+
+.ob-step__title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.ob-step__desc {
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+}
+
+/* ── Footer / Bottom Actions ────────────────────────────────────────────── */
+.ob-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 16px 20px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 60%, transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.ob-footer .ob-cta {
+  width: 100%;
+  max-width: 440px;
+}
+
+.ob-footer__hint {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0;
+}
+
+/* ── Page Transition ────────────────────────────────────────────────────── */
+.ob-page-enter {
+  animation: ob-fadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Decorative Elements ────────────────────────────────────────────────── */
+.ob-glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ob-glow-orb--1 {
+  width: 300px;
+  height: 300px;
+  background: rgba(51, 144, 236, 0.12);
+  top: -100px;
+  right: -80px;
+}
+
+.ob-glow-orb--2 {
+  width: 250px;
+  height: 250px;
+  background: rgba(123, 104, 238, 0.08);
+  bottom: -60px;
+  left: -60px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 380px) {
+  .ob-title {
+    font-size: 26px;
+  }
+
+  .ob-subtitle {
+    font-size: 15px;
+  }
+
+  .ob-hero-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 22px;
+    font-size: 32px;
+  }
+
+  .ob-hero-icon svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .ob-feature-card {
+    padding: 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  .ob-title {
+    font-size: 40px;
+  }
+
+  .ob-subtitle {
+    font-size: 18px;
+    max-width: 420px;
+  }
+
+  .ob-hero-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 32px;
+  }
+
+  .ob-hero-icon svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .ob-features {
+    max-width: 500px;
+  }
+}
+
+/* ── Accessibility: Reduced Motion ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ob-hero-icon,
+  .ob-cta,
+  .ob-feature-card,
+  .ob-step,
+  .ob-content,
+  .ob-glow-orb {
+    animation: none !important;
+  }
+
+  .ob-cta::before {
+    animation: none !important;
+  }
+}

@@ -39,7 +39,7 @@ function ChatView() {
             </button>
             <button
               className="btn-back"
-              onClick={() => navigate("/", { replace: true })}
+              onClick={() => navigate("/chat", { replace: true })}
             >
               ← Back to chats
             </button>

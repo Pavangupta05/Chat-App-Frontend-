@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../App.css";
-
+import { Mail, ChevronLeft, Shield } from "lucide-react";
 import { API_URL } from "../config/app";
+import "./Auth.css";
 
 function ForgotPassword() {
-  const [email, setEmail]       = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
-  const [success, setSuccess]   = useState(false);
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   const navigate = useNavigate();
 
@@ -19,9 +19,9 @@ function ForgotPassword() {
 
     try {
       const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
-        method:  "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ email: email.trim().toLowerCase() }),
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
 
       const data = await res.json();
@@ -39,41 +39,40 @@ function ForgotPassword() {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-page">
+      <button
+        type="button"
+        className="auth-page__back"
+        onClick={() => navigate("/login")}
+        aria-label="Back to login"
+      >
+        <ChevronLeft size={20} />
+      </button>
+
       <div className="auth-card">
-        {/* Header */}
-        <div className="auth-header">
-          <div className="auth-logo">
-            <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
-              <path
-                d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
-                stroke="var(--accent-strong)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+        <div className="auth-card__header">
+          <div className="auth-card__icon">
+            <Shield />
           </div>
-          <h1>Forgot Password</h1>
-          <p>Enter your email and we'll send a reset link</p>
+          <h1 className="auth-card__title">Forgot Password</h1>
+          <p className="auth-card__subtitle">Enter your email and we'll send a reset link</p>
         </div>
 
-        {/* Success State */}
         {success ? (
           <div style={{ textAlign: "center" }}>
             <div
               style={{
-                background: "rgba(52, 211, 153, 0.12)",
-                border: "1px solid rgba(52, 211, 153, 0.35)",
-                borderRadius: "12px",
-                padding: "1.25rem 1rem",
-                marginBottom: "1.5rem",
+                background: "rgba(52, 211, 153, 0.08)",
+                border: "1px solid rgba(52, 211, 153, 0.2)",
+                borderRadius: "14px",
+                padding: "20px 16px",
+                marginBottom: "20px",
                 color: "#34d399",
-                fontSize: "0.9rem",
+                fontSize: "14px",
                 lineHeight: 1.6,
               }}
             >
-              <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>✅</div>
+              <div style={{ fontSize: "2rem", marginBottom: "8px" }}>✅</div>
               <strong>Check your server console!</strong>
               <br />
               A password reset link has been logged. Open your terminal and copy
@@ -82,7 +81,7 @@ function ForgotPassword() {
 
             <button
               type="button"
-              className="auth-button auth-button--secondary"
+              className="auth-btn-primary"
               onClick={() => navigate("/login")}
             >
               Back to Login
@@ -90,19 +89,17 @@ function ForgotPassword() {
           </div>
         ) : (
           <>
-            {/* Error Alert */}
             {error && <div className="auth-error">{error}</div>}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="auth-form">
-              <div className="form-group">
-                <label htmlFor="fp-email">Email Address</label>
+              <div className="auth-input-group">
+                <Mail className="auth-input-group__icon" size={18} />
                 <input
                   type="email"
                   id="fp-email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder="Email address"
                   autoComplete="email"
                   required
                   disabled={loading}
@@ -111,22 +108,18 @@ function ForgotPassword() {
 
               <button
                 type="submit"
-                className="auth-button"
+                className="auth-btn-primary"
                 disabled={loading || !email.trim()}
               >
                 {loading ? <span className="auth-spinner" /> : "Send Reset Link"}
               </button>
             </form>
 
-            {/* Footer */}
-            <div
-              className="auth-footer"
-              style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "8px" }}
-            >
-              <span className="auth-footer-hint">Remember your password?</span>
+            <div className="auth-card__footer">
+              Remember your password?
               <button
                 type="button"
-                className="auth-button auth-button--secondary"
+                className="auth-card__footer-link"
                 onClick={() => navigate("/login")}
               >
                 Back to Login

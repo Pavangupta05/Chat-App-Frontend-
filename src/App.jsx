@@ -11,6 +11,9 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import LandingPage from "./pages/LandingPage";
+import FeaturesPage from "./pages/FeaturesPage";
+import HowItWorksPage from "./pages/HowItWorksPage";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import "./App.css";
 import "./Theme.css";
@@ -36,7 +39,21 @@ const ProtectedRoute = ({ children }) => {
 const AuthRoute = ({ children }) => {
   const { isLoading, user } = useAuth();
   if (isLoading) return authLoadingFallback;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/chat" replace />;
+  return children;
+};
+
+/**
+ * OnboardingRoute — Shows onboarding pages to unauthenticated users.
+ * Logged-in users are redirected to chat.
+ * Note: The ob-seen check only applies to the root "/" redirect (RootRedirect),
+ * NOT to direct navigation to /welcome, /features, /how-it-works.
+ */
+const OnboardingRoute = ({ children }) => {
+  const { isLoading, user } = useAuth();
+  if (isLoading) return authLoadingFallback;
+  if (user) return <Navigate to="/chat" replace />;
+
   return children;
 };
 
@@ -58,6 +75,32 @@ function App() {
             <NetworkStatus />
             {/* ... other code matches exactly below ... */}
             <Routes>
+              {/* ── Onboarding pages (new users only) ─────────────────────────── */}
+              <Route
+                path="/welcome"
+                element={
+                  <OnboardingRoute>
+                    <LandingPage />
+                  </OnboardingRoute>
+                }
+              />
+              <Route
+                path="/features"
+                element={
+                  <OnboardingRoute>
+                    <FeaturesPage />
+                  </OnboardingRoute>
+                }
+              />
+              <Route
+                path="/how-it-works"
+                element={
+                  <OnboardingRoute>
+                    <HowItWorksPage />
+                  </OnboardingRoute>
+                }
+              />
+
               {/* ── Auth pages (redirect to chat if already logged in) ─────────── */}
               <Route
                 path="/login"
@@ -82,7 +125,7 @@ function App() {
 
               {/* ── Protected chat & Main App Shell ─────────────────────────────────── */}
               <Route
-                path="/"
+                path="/chat"
                 element={
                   <ProtectedRoute>
                     <ChatLayout />
@@ -90,11 +133,32 @@ function App() {
                 }
               >
                 <Route index element={<ChatView />} />
-                <Route path="chat/:id" element={<ChatView />} />
-                <Route path="settings" element={<SettingsView />} />
-                <Route path="profile" element={<ProfileView />} />
+                <Route path=":id" element={<ChatView />} />
               </Route>
-              
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <ChatLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<SettingsView />} />
+              </Route>
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ChatLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<ProfileView />} />
+              </Route>
+
+              {/* ── Root redirect logic ─────────────────────────────────────────── */}
+              <Route path="/" element={<RootRedirect />} />
+
               {/* Fallback for any other route */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
@@ -104,5 +168,21 @@ function App() {
     </ErrorBoundary>
   );
 }
+
+/**
+ * Smart root redirect:
+ *  - Logged in      → /chat
+ *  - Seen onboarding → /login
+ *  - First time     → /welcome (onboarding)
+ */
+const RootRedirect = () => {
+  const { isLoading, user } = useAuth();
+  if (isLoading) return authLoadingFallback;
+  if (user) return <Navigate to="/chat" replace />;
+
+  const hasSeen = localStorage.getItem("ob-seen");
+  if (hasSeen) return <Navigate to="/login" replace />;
+  return <Navigate to="/welcome" replace />;
+};
 
 export default App;

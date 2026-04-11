@@ -182,8 +182,8 @@ function ChatLayout() {
   const isMobileView = viewport === "mobile";
   
   // DRIVER: Derive activeScreen from URL
-  const activeScreen = location.pathname === "/" ? "chatList"
-                     : location.pathname.startsWith("/chat") ? "chat"
+  const activeScreen = (location.pathname === "/chat" || location.pathname === "/") ? "chatList"
+                     : location.pathname.startsWith("/chat/") ? "chat"
                      : location.pathname.startsWith("/settings") ? "settings"
                      : location.pathname.startsWith("/profile") ? "profile"
                      : "chatList";
@@ -292,13 +292,13 @@ function ChatLayout() {
   };
 
   const handleClosePanel = () => {
-    navigate("/");
+    navigate("/chat");
   };
 
 
   const handleMobileBack = useCallback((e) => {
     if (e && e.preventDefault) e.preventDefault();
-    navigate("/", { replace: true });
+    navigate("/chat", { replace: true });
   }, [navigate]);
 
   const closeConfirmModal = () => setConfirmAction(null);

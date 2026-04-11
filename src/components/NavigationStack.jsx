@@ -21,12 +21,12 @@ const NavigationStack = ({ theme, onThemeToggle, onLogout, backgroundDoodle, onB
     if (path.startsWith("/profile/edit")) {
       navigate("/profile");
     } else if (path === "/profile" || path === "/settings") {
-      navigate("/");
+      navigate("/chat");
     } else if (path.startsWith("/settings/")) {
       // Swipe back from Privacy/Terms goes back to Settings
       navigate("/settings");
     } else {
-      navigate("/");
+      navigate("/chat");
     }
   };
 
