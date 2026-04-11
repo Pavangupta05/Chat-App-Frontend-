@@ -21,7 +21,7 @@ const CHAT_STATE_VERSION = 2;
 const loadStoredChatState = (userId) => {
   try {
     const key = getChatStorageKey(userId);
-    const rawValue = window.sessionStorage.getItem(key);
+    const rawValue = window.localStorage.getItem(key);
 
     if (!rawValue) {
       return null;
@@ -172,9 +172,9 @@ function useChatController() {
   useEffect(() => {
     if (!currentUserId) return;
 
-    // Debounce sessionStorage update to avoid infinite update loop
+    // Debounce localStorage update to avoid infinite update loop
     const handler = setTimeout(() => {
-      window.sessionStorage.setItem(
+      window.localStorage.setItem(
         getChatStorageKey(currentUserId),
         JSON.stringify({
           activeChatId,

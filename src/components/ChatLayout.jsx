@@ -190,7 +190,7 @@ function ChatLayout() {
 
 
   const [theme, setTheme] = useState(
-    () => window.sessionStorage.getItem("chat-theme") || "dark",
+    () => window.localStorage.getItem("chat-theme") || "dark",
   );
 
   const [confirmAction, setConfirmAction] = useState(null);

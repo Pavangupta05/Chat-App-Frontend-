@@ -128,13 +128,13 @@ export const login = async ({ email, password }) => {
     throw new Error("Login response contained an invalid user profile.");
   }
 
-  sessionStorage.setItem("chat-user", JSON.stringify(data.user));
-  sessionStorage.setItem("chat-token", data.token);
+  localStorage.setItem("chat-user", JSON.stringify(data.user));
+  localStorage.setItem("chat-token", data.token);
 
   return data;
 };
 
 export const logout = () => {
-  sessionStorage.removeItem("chat-user");
-  sessionStorage.removeItem("chat-token");
+  localStorage.removeItem("chat-user");
+  localStorage.removeItem("chat-token");
 };

@@ -54,8 +54,8 @@ export const AuthProvider = ({ children }) => {
     }, 5000);
 
     try {
-      const storedUser = sessionStorage.getItem("chat-user");
-      const storedToken = sessionStorage.getItem("chat-token");
+      const storedUser = localStorage.getItem("chat-user");
+      const storedToken = localStorage.getItem("chat-token");
 
       if (storedUser && storedToken) {
         const parsedUser = JSON.parse(storedUser);
@@ -68,7 +68,8 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Session restore failed:", error);
       logoutService();
-      sessionStorage.clear();
+      localStorage.removeItem("chat-user");
+      localStorage.removeItem("chat-token");
       setUser(null);
       setToken(null);
     } finally {
@@ -92,8 +93,8 @@ export const AuthProvider = ({ children }) => {
     });
 
     // ✅ Save session
-    sessionStorage.setItem("chat-user", JSON.stringify(normalizedUser));
-    sessionStorage.setItem("chat-token", data.token);
+    localStorage.setItem("chat-user", JSON.stringify(normalizedUser));
+    localStorage.setItem("chat-token", data.token);
 
     return data;
   };
@@ -112,8 +113,8 @@ export const AuthProvider = ({ children }) => {
       setToken(data.token);
     });
 
-    sessionStorage.setItem("chat-user", JSON.stringify(normalizedUser));
-    sessionStorage.setItem("chat-token", data.token);
+    localStorage.setItem("chat-user", JSON.stringify(normalizedUser));
+    localStorage.setItem("chat-token", data.token);
 
     return data;
   };
@@ -133,13 +134,14 @@ export const AuthProvider = ({ children }) => {
     });
 
     // Sync to storage
-    sessionStorage.setItem("chat-user", JSON.stringify(updatedUser));
+    localStorage.setItem("chat-user", JSON.stringify(updatedUser));
   };
 
   // 🚪 LOGOUT
   const logout = () => {
     logoutService();
-    sessionStorage.clear();
+    localStorage.removeItem("chat-user");
+    localStorage.removeItem("chat-token");
     setUser(null);
     setToken(null);
   };
