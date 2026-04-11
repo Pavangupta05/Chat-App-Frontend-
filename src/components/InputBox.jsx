@@ -13,6 +13,7 @@ function InputBox({
   onSend,
   replyMessage,
   onClearReply,
+  theme,
   value,
 }) {
   const emojiPickerRef = useRef(null);
@@ -124,7 +125,7 @@ function InputBox({
                   </motion.button>
                   <EmojiPicker 
                     onEmojiClick={handleEmojiInsert} 
-                    theme="dark"
+                    theme={theme === "light" ? "light" : "dark"}
                     lazyLoadEmojis={true}
                     skinTonesDisabled
                     searchDisabled={isMobile}

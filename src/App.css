@@ -136,10 +136,10 @@ body {
 /* Header */
 .sidebar__navbar {
   flex: 0 0 auto;
-  background: rgba(var(--sidebar-surface-rgb), 0.75);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--glass-border);
   z-index: 15;
   padding-top: env(safe-area-inset-top, 0px);
 }
@@ -584,11 +584,11 @@ body {
   justify-content: space-between;
   padding: 0 12px 0 16px;
   gap: 8px;
-  /* Glassmorphism Header */
-  background: rgba(15, 23, 33, 0.4) !important;
+  /* Stable Glassmorphism Header */
+  background: var(--glass-bg) !important;
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--glass-border);
   z-index: 1000;
 }
 
@@ -942,7 +942,7 @@ body {
   transform: translateY(0);
 }
 
-/* Scroll to bottom button (Liquid Glass) */
+/* Scroll to bottom button (Stable Glass) */
 .scroll-bottom-btn {
   width: 44px;
   height: 44px;
@@ -1246,9 +1246,7 @@ body {
    5. INPUT BOX
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* ══════════════════════════════════════════════════════════════════════════
-   5. LIQUID GLASS INPUT (TELEGRAM STYLE)
-   ══════════════════════════════════════════════════════════════════════════ */
+/* 5. STABLE GLASS INPUT (TELEGRAM STYLE) */
 
 .input-wrapper {
   position: relative;
@@ -1273,15 +1271,13 @@ body {
   pointer-events: auto;
 
   border-radius: 32px;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--glass-border);
 
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: var(--glass-shadow);
   
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -5105,8 +5101,12 @@ body {
   }
 
   .mobile-nav {
-    border-top: 1px solid var(--border-subtle);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--glass-border);
     padding-bottom: env(safe-area-inset-bottom, 12px) !important;
+    z-index: 1000;
   }
 
   .mobile-nav .nav-item.is-active {
@@ -5503,11 +5503,11 @@ body {
     flex: none !important;
     z-index: 1000;
     
-    /* Liquid Glass Mobile Header */
-    background: rgba(15, 23, 33, 0.45) !important;
+    /* Stable Glassmorphism Mobile Header */
+    background: var(--glass-bg) !important;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-bottom: 1px solid var(--glass-border) !important;
   }
 
   /* Prevent FAB/Dock overlap when in chat */

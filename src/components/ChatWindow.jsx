@@ -61,6 +61,7 @@ function ChatWindow({
   onStartVideoCall,
   replyMessage,
   onClearReply,
+  theme,
   typingText,
 }) {
   const messagesEndRef = useRef(null);
@@ -445,6 +446,7 @@ function ChatWindow({
           onFileUpload={onFileUpload}
           onSend={onSendMessage}
           replyMessage={replyMessage}
+          theme={theme}
         />
       </footer>
 
