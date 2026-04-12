@@ -38,8 +38,8 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Ambient background glow */
-.auth-page::before {
+/* Ambient background glow - REMOVED for pure black theme */
+/*.auth-page::before {
   content: '';
   position: absolute;
   width: 160%;
@@ -52,7 +52,7 @@
   pointer-events: none;
   z-index: 0;
   animation: auth-glow-pulse 6s ease-in-out infinite;
-}
+}*/
 
 /* ── Back Button ────────────────────────────────────────────────────────── */
 .auth-page__back {
@@ -63,10 +63,8 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border: none;
+  background: #0a0a0a;
   color: rgba(255, 255, 255, 0.6);
   display: grid;
   place-items: center;
@@ -76,8 +74,7 @@
 }
 
 .auth-page__back:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(51, 144, 236, 0.4);
+  background: #111;
   color: #3390ec;
   transform: translateX(-3px);
 }
@@ -90,13 +87,9 @@
   max-width: 420px;
   padding: 40px 32px;
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.025);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.8),
-    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  background: #0a0a0a;
+  border: none;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   animation: auth-fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1);
@@ -131,7 +124,7 @@
   display: grid;
   place-items: center;
   margin: 0 auto 16px;
-  box-shadow: 0 6px 20px rgba(51, 144, 236, 0.25);
+  box-shadow: none;
 }
 
 .auth-card__icon svg {
@@ -186,12 +179,13 @@
   width: 100%;
   padding: 15px 16px 15px 46px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #111;
+  border: none;
   color: #fff;
   font-size: 15px;
   transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   outline: none;
+  box-shadow: none;
 }
 
 .auth-input-group input::placeholder {
@@ -199,9 +193,9 @@
 }
 
 .auth-input-group input:focus {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(51, 144, 236, 0.5);
-  box-shadow: 0 0 0 3px rgba(51, 144, 236, 0.1);
+  background: #151515;
+  border: none;
+  box-shadow: none;
 }
 
 .auth-input-group__toggle {
@@ -257,7 +251,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-  box-shadow: 0 6px 20px rgba(51, 144, 236, 0.3);
+  box-shadow: none;
   position: relative;
   overflow: hidden;
   margin-top: 4px;
@@ -265,13 +259,13 @@
 
 .auth-btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(51, 144, 236, 0.4);
+  box-shadow: none;
   background-position: 100% 0;
 }
 
 .auth-btn-primary:active:not(:disabled) {
   transform: translateY(0) scale(0.98);
-  box-shadow: 0 4px 12px rgba(51, 144, 236, 0.25);
+  box-shadow: none;
 }
 
 .auth-btn-primary:disabled {
@@ -308,7 +302,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .auth-divider span {
@@ -346,7 +340,7 @@
   margin-bottom: 8px;
   font-size: 13px;
   text-align: center;
-  border: 1px solid rgba(239, 68, 68, 0.15);
+  border: none;
   animation: auth-shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
   line-height: 1.45;
 }
@@ -380,10 +374,10 @@
 
 /* ── Password Strength ──────────────────────────────────────────────────── */
 .auth-pwd-strength {
-  background: rgba(255, 255, 255, 0.02);
+  background: #0d0d0d;
   padding: 16px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: none;
   animation: auth-fadeUp 0.3s ease;
 }
 
@@ -440,13 +434,13 @@
 .auth-pwd-match.is-match {
   background: rgba(52, 211, 153, 0.08);
   color: #34d399;
-  border: 1px solid rgba(52, 211, 153, 0.15);
+  border: none;
 }
 
 .auth-pwd-match.is-mismatch {
   background: rgba(248, 113, 113, 0.08);
   color: #f87171;
-  border: 1px solid rgba(248, 113, 113, 0.15);
+  border: none;
 }
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */

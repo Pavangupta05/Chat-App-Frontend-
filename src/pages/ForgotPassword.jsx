@@ -63,7 +63,7 @@ function ForgotPassword() {
             <div
               style={{
                 background: "rgba(52, 211, 153, 0.08)",
-                border: "1px solid rgba(52, 211, 153, 0.2)",
+                border: "none",
                 borderRadius: "14px",
                 padding: "20px 16px",
                 marginBottom: "20px",
