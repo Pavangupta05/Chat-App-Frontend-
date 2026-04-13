@@ -18,6 +18,7 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
   const [permissionRetryable, setPermissionRetryable] = useState(false);
   const peerRef = useRef(null);
   const callDurationIntervalRef = useRef(null);
+  const callTimeoutRef = useRef(null);
 
   const stopLocalMedia = useCallback(() => {
     setLocalStream((currentStream) => {
@@ -38,6 +39,9 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
   const resetCallState = useCallback(() => {
     peerRef.current?.destroy();
     peerRef.current = null;
+    // Clear the unanswered-call auto-hangup timer
+    window.clearTimeout(callTimeoutRef.current);
+    callTimeoutRef.current = null;
     setIncomingCall(null);
     setRemoteStream(null);
     setCallStatus("idle");
@@ -177,6 +181,12 @@ function useCall({ activeChatId, currentUserId, emit, socketId, subscribe, usern
       setIncomingCall(null);
       setCallStatus("calling");
       setCallMode(mode);
+
+      // Auto-cancel unanswered call after 45 seconds
+      callTimeoutRef.current = window.setTimeout(() => {
+        console.warn("[useCall] No answer — auto-cancelling call after 45s");
+        endCall();
+      }, 45000);
 
       const stream = await ensureMediaStream(mode);
       const peer = new Peer({

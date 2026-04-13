@@ -62,7 +62,7 @@ function Sidebar({
     <aside className={`sidebar${isOpen ? "" : " sidebar--closed"}`}>
 
       {/* ── 1. HEADER ─────────────────────────────────────────────────── */}
-      <header className="sidebar__navbar" style={{ padding: "8px 16px", borderBottom: "1px solid var(--border-color)" }}>
+      <header className="sidebar__navbar">
         <div className="sidebar__top" style={{ height: "auto", minHeight: "48px", padding: 0 }}>
 
           {/* LEFT: Hamburger + Avatar + Name */}
@@ -189,7 +189,7 @@ function Sidebar({
           (() => {
             const contacts = Array.from(new Set(chats.map(c => c.name))).map(name => {
               return chats.find(c => c.name === name);
-            }).sort((a, b) => a.name.localeCompare(b.name));
+            }).sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
 
             if (contacts.length === 0) {
               return (

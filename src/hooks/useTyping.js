@@ -18,7 +18,8 @@ function useTyping({ activeChatId, currentUsername, emit, setChats, subscribe })
   );
 
   useEffect(() => {
-    const unsubscribeTyping = subscribe("typing", (payload) => {
+    // Server emits "typing_update" for both start and stop, with payload.isTyping flag
+    const unsubscribeTyping = subscribe("typing_update", (payload) => {
       const chatKey = payload?.chatId != null ? String(payload.chatId) : "";
       if (!chatKey || payload.username === currentUsername) {
         return;
@@ -27,24 +28,12 @@ function useTyping({ activeChatId, currentUsername, emit, setChats, subscribe })
       setTypingUsers((currentUsers) => {
         const nextUsers = { ...currentUsers };
         const usersInChat = new Set(nextUsers[chatKey] ?? []);
-        usersInChat.add(payload.username);
+        if (payload.isTyping) {
+          usersInChat.add(payload.username);
+        } else {
+          usersInChat.delete(payload.username);
+        }
         nextUsers[chatKey] = [...usersInChat];
-        syncChatTypingState(nextUsers);
-        return nextUsers;
-      });
-    });
-
-    const unsubscribeStopTyping = subscribe("stop_typing", (payload) => {
-      const chatKey = payload?.chatId != null ? String(payload.chatId) : "";
-      if (!chatKey) {
-        return;
-      }
-
-      setTypingUsers((currentUsers) => {
-        const nextUsers = { ...currentUsers };
-        nextUsers[chatKey] = (nextUsers[chatKey] ?? []).filter(
-          (username) => username !== payload.username,
-        );
         syncChatTypingState(nextUsers);
         return nextUsers;
       });
@@ -52,7 +41,6 @@ function useTyping({ activeChatId, currentUsername, emit, setChats, subscribe })
 
     return () => {
       unsubscribeTyping();
-      unsubscribeStopTyping();
     };
   }, [currentUsername, subscribe, syncChatTypingState]);
 
@@ -68,9 +56,8 @@ function useTyping({ activeChatId, currentUsername, emit, setChats, subscribe })
     }
 
     window.clearTimeout(stopTypingTimeoutRef.current);
-    emit("stop_typing", {
+    emit("typing_stop", {
       chatId: activeChatId,
-      receiverId: activeChatId,
       username: currentUsername,
     });
   }, [activeChatId, currentUsername, emit]);
@@ -80,20 +67,18 @@ function useTyping({ activeChatId, currentUsername, emit, setChats, subscribe })
       return;
     }
 
-    emit("typing", {
+    emit("typing_start", {
       chatId: activeChatId,
-      receiverId: activeChatId,
       username: currentUsername,
     });
 
     window.clearTimeout(stopTypingTimeoutRef.current);
     stopTypingTimeoutRef.current = window.setTimeout(() => {
-      emit("stop_typing", {
+      emit("typing_stop", {
         chatId: activeChatId,
-        receiverId: activeChatId,
         username: currentUsername,
       });
-    }, 400);
+    }, 2000);
   }, [activeChatId, currentUsername, emit]);
 
   const handleInputChange = useCallback(

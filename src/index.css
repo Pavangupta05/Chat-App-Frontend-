@@ -9,14 +9,14 @@
   padding: 0;
 }
 
-/* ── Scrollbar ─────────────────────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
+/* ── Scrollbar — theme-aware ────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track  { background: transparent; }
-::-webkit-scrollbar-thumb  { background: rgba(255,255,255,0.12); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+::-webkit-scrollbar-thumb  { background: var(--scrollbar-thumb, rgba(255,255,255,0.1)); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover, rgba(255,255,255,0.2)); }
+
+/* Firefox scrollbar */
+* { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb, rgba(255,255,255,0.1)) transparent; }
 
 /* ── Base ──────────────────────────────────────────────────────────────── */
 html,
@@ -33,8 +33,9 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--app-background, #0E1621);
-  color: var(--text-primary, #E9EDF0);
+  background: var(--app-background, #000000);
+  color: var(--text-primary, #f1f1f1);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 button,

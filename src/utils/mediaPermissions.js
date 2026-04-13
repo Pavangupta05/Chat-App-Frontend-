@@ -81,7 +81,7 @@ export async function requestMediaStream(constraints = { video: true, audio: tru
             autoGainControl: true,
           }
         : false,
-    });
+    })
 
     return stream;
   } catch (error) {

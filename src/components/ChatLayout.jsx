@@ -443,19 +443,15 @@ function ChatLayout() {
 
       {/* SCREEN 2: DETAIL (Chat / Settings / Profile) */}
       <div className="app-screen app-screen--detail">
-        <AnimatePresence mode="popLayout" initial={false}>
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname.split('/')[1] || 'empty'}
-            initial={isMobileView ? { x: "100%", opacity: 0.5 } : { opacity: 0, scale: 0.98 }}
-            animate={{ x: 0, opacity: 1, scale: 1 }}
-            exit={isMobileView ? { x: "100%", opacity: 0.5 } : { opacity: 0, scale: 1.02 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ 
-              type: "spring", 
-              stiffness: 300, 
-              damping: 32,
-              mass: 1,
-              opacity: { duration: 0.2 },
-              scale: { duration: 0.3 }
+              duration: 0.2, 
+              ease: "easeInOut"
             }}
             style={{ 
               position: 'absolute', 
@@ -534,8 +530,8 @@ function ChatLayout() {
         isOpen={Boolean(chatModalMode)}
         mode={chatModalMode ?? "chat"}
         onClose={() => setChatModalMode(null)}
-        onCreate={({ name, accent, avatar, peerUserId }) => {
-          const newId = createChat({ name, accent, avatar, peerUserId });
+        onCreate={async ({ name, accent, avatar, peerUserId }) => {
+          const newId = await createChat({ name, accent, avatar, peerUserId });
           setChatModalMode(null);
           if (newId) {
             navigate(`/chat/${newId}`);
@@ -565,7 +561,7 @@ function ChatLayout() {
       <AudioCallModal
         callError={call.callError}
         callMode={call.callMode}
-        audioStatus={call.callMode === "audio" ? call.callStatus : "idle"}
+        callStatus={call.callMode === "audio" ? call.callStatus : "idle"}
         callDuration={call.callDuration ?? 0}
         chatName={call.incomingCall?.username ?? currentChat?.name ?? "Unknown Caller"}
         incomingCall={call.callMode === "audio" ? call.incomingCall : null}

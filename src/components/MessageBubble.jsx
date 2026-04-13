@@ -118,17 +118,8 @@ function MessageBubble({
         "message",
         isOutgoing ? "message--outgoing" : "message--incoming",
         isSelected ? "message--selected" : "",
+        isSelectionMode ? "message--selectable" : ""
       ].join(" ").trim()}
-      style={{
-        padding: "2px 0",
-        backgroundColor: isSelected
-          ? "rgba(51, 144, 236, 0.15)"
-          : "transparent",
-        transition: "background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-        cursor: isSelectionMode ? "pointer" : "default",
-        userSelect: "none",
-        position: "relative"
-      }}
       onContextMenu={handleContextMenu}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

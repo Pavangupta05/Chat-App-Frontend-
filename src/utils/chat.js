@@ -20,14 +20,29 @@ export const formatTime = (value) => {
 };
 
 export const formatListTime = (value) => {
+  if (!value) return "";
   const messageDate = new Date(value);
   const now = new Date();
 
-  if (messageDate.toDateString() !== now.toDateString()) {
+  // Same day → show time
+  if (messageDate.toDateString() === now.toDateString()) {
+    return formatTime(value);
+  }
+
+  // Yesterday
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (messageDate.toDateString() === yesterday.toDateString()) {
     return "Yesterday";
   }
 
-  return formatTime(value);
+  // Same year → show "Apr 10"
+  if (messageDate.getFullYear() === now.getFullYear()) {
+    return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(messageDate);
+  }
+
+  // Older → show "4/10/24"
+  return new Intl.DateTimeFormat("en-US", { year: "2-digit", month: "numeric", day: "numeric" }).format(messageDate);
 };
 
 export const buildTextMessage = ({
@@ -206,21 +221,30 @@ export const getChatPreview = (chat) => {
   const lastMessage = chat.messages.at(-1);
 
   if (chat.isTyping) {
-    return `${chat.name.split(" ")[0]} is typing...`;
+    return `${(chat.name || "").split(" ")[0]} is typing...`;
   }
 
   if (lastMessage?.deleted) {
     return "This message was deleted";
   }
 
-  const isFile = lastMessage?.type === "file" || lastMessage?.text?.startsWith("/uploads/");
+  if (!lastMessage) return "";
+
+  // Detect file messages: explicit type, /uploads/ path, or any http URL in text
+  const textVal = lastMessage.file || lastMessage.text || "";
+  const isFile =
+    lastMessage.type === "file" ||
+    !!lastMessage.file ||
+    textVal.startsWith("/uploads/") ||
+    (typeof textVal === "string" && /^https?:\/\//i.test(textVal) && /\/uploads\//i.test(textVal));
+
   if (isFile) {
     const filePath = lastMessage.file || lastMessage.text || "";
     const isImg = (lastMessage.mimeType?.startsWith("image/") || /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(filePath));
     const isVid = (lastMessage.mimeType?.startsWith("video/") || /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(filePath));
-    if (isImg) return "📷 Photo";
-    if (isVid) return "🎥 Video";
-    return `📎 ${lastMessage.fileName || filePath.split("/").pop().split("?")[0] || "File"}`;
+    if (isImg) return "\uD83D\uDCF7 Photo";
+    if (isVid) return "\uD83C\uDFA5 Video";
+    return `\uD83D\uDCCE ${lastMessage.fileName || filePath.split("/").pop().split("?")[0] || "File"}`;
   }
 
   return lastMessage?.text ?? "";

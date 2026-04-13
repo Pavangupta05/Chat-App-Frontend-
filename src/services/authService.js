@@ -177,3 +177,27 @@ export const logout = () => {
   localStorage.removeItem("chat-user");
   localStorage.removeItem("chat-token");
 };
+
+export const fetchUsers = async (token, query = "") => {
+  const url = query 
+    ? `${API_URL}/api/users?search=${encodeURIComponent(query)}&t=${Date.now()}` 
+    : `${API_URL}/api/users?t=${Date.now()}`;
+  
+  const response = await retryFetch(
+    () => fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }),
+    2
+  );
+  
+  if (!response.ok) {
+    const data = await parseJsonResponse(response);
+    throw new Error(data.error || "Failed to fetch users.");
+  }
+  
+  return response.json();
+};

@@ -10,7 +10,7 @@ function formatDuration(seconds) {
 function AudioCallModal({
   callError,
   callMode,
-  audioStatus,
+  callStatus,
   callDuration,
   chatName,
   incomingCall,
@@ -45,10 +45,12 @@ function AudioCallModal({
     setIsDragging(true);
     const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
     const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
-    
+
+    // Use bounding rect so there's no jump when re-dragging after a previous drag
+    const rect = modalRef.current?.getBoundingClientRect();
     setDragOffset({
-      x: clientX - position.x,
-      y: clientY - position.y,
+      x: clientX - (rect?.left ?? position.x),
+      y: clientY - (rect?.top  ?? position.y),
     });
   };
 
@@ -94,23 +96,23 @@ function AudioCallModal({
     return null;
   }
 
-  if (audioStatus === "idle" && !incomingCall && !localStream && !remoteStream && !callError) {
+  if (callStatus === "idle" && !incomingCall && !localStream && !remoteStream && !callError) {
     return null;
   }
 
   const title = incomingCall?.username || chatName || "Audio call";
   const statusLabel = callError
     ? callError
-    : audioStatus === "calling"
+    : callStatus === "calling"
       ? "Calling..."
-      : audioStatus === "in-call"
+      : callStatus === "in-call"
         ? "In Call"
         : incomingCall
           ? "Incoming audio call"
           : "Preparing microphone...";
 
   // Minimized state: show compact bar
-  if (isMinimized && audioStatus === "in-call") {
+  if (isMinimized && callStatus === "in-call") {
     return (
       <div 
         className="audio-call-modal audio-call-modal--minimized" 
@@ -194,7 +196,7 @@ function AudioCallModal({
         >
           <div></div> {/* Spacer for alignment */}
           <div className="audio-call-modal__window-controls">
-            {audioStatus === "in-call" && (
+            {callStatus === "in-call" && (
               <button
                 type="button"
                 className="audio-call-modal__window-btn"
@@ -227,7 +229,7 @@ function AudioCallModal({
         <p className="audio-call-modal__status">{statusLabel}</p>
 
         {/* Call duration */}
-        {audioStatus === "in-call" && (
+        {callStatus === "in-call" && (
           <span className="audio-call-modal__duration">{formatDuration(callDuration)}</span>
         )}
 
@@ -240,7 +242,7 @@ function AudioCallModal({
 
         {/* Control buttons */}
         <div className="audio-call-modal__controls">
-          {incomingCall && audioStatus !== "calling" ? (
+          {incomingCall && callStatus !== "calling" ? (
             <>
               <button 
                 className="call-button call-button--accept call-button--text-pill" 
@@ -274,7 +276,7 @@ function AudioCallModal({
             </>
           ) : (
             <>
-              {audioStatus === "in-call" ? (
+              {callStatus === "in-call" ? (
                 <button
                   className={`call-button ${isMuted ? "call-button--muted" : "call-button--secondary"}`}
                   type="button"
@@ -286,7 +288,7 @@ function AudioCallModal({
               ) : null}
 
               <button className="call-button call-button--end call-button--text-pill" type="button" onClick={onEndCall}>
-                ✕ {audioStatus === "calling" ? "Cancel" : "End Call"}
+                ✕ {callStatus === "calling" ? "Cancel" : "End Call"}
               </button>
             </>
           )}

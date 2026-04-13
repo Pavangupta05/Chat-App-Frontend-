@@ -18,7 +18,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import "./App.css";
 import "./Theme.css";
 
-const GOOGLE_CLIENT_ID = "618267599250-5crnmlpitemupuqoctu06q8pl6govrqi.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 const authLoadingFallback = (
   <div className="auth-container" role="status" aria-live="polite">

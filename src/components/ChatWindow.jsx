@@ -124,9 +124,9 @@ function ChatWindow({
   useEffect(() => {
     if (isNearBottomRef.current) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-      setTimeout(() => setShowNewPill(false), 0);
+      setShowNewPill(false);
     } else {
-      setTimeout(() => setShowNewPill(true), 0);
+      setShowNewPill(true);
     }
   }, [visibleMessages.length, typingText, callProps?.callStatus]);
 
@@ -266,14 +266,16 @@ function ChatWindow({
           /* Normal header */
           <>
             <div className="chat-window__identity">
-              <button
-                type="button"
-                className="chat-window__back icon-button"
-                onClick={onMobileBack}
-                aria-label="Back"
-              >
-                <ChevronLeft size={26} />
-              </button>
+              {isMobileView && (
+                <button
+                  type="button"
+                  className="chat-window__back icon-button"
+                  onClick={onMobileBack}
+                  aria-label="Back"
+                >
+                  <ChevronLeft size={26} />
+                </button>
+              )}
 
               <div
                 className="chat-window__avatar"
@@ -379,7 +381,7 @@ function ChatWindow({
           const showSeparator = currentDate !== prevDate;
 
           return (
-            <div key={message.id || index}>
+            <div key={message.id ?? `msg-${index}`}>
               {showSeparator && (
                 <DateSeparator date={formatDateSeparator(message.createdAt)} />
               )}
@@ -478,6 +480,7 @@ function ChatWindow({
                   src={previewMessage.file}
                   controls
                   autoPlay
+                  muted
                   playsInline
                   style={{ maxWidth: "90%", maxHeight: "85vh", borderRadius: 14 }}
                 />

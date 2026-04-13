@@ -1,206 +1,181 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   Theme.css — Telegram Design System Tokens
-   Supports dynamic theme customization with CSS variables
+   Theme.css — Design System Tokens
+   Pure Black Dark Mode + Clean White Light Mode
+   All colors reference these variables — no hardcoded values anywhere
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Default Color Palette (Changeable) ────────────────────────────── */
-/* These CSS custom properties can be overridden at runtime */
+/* ── Shared transition speeds ───────────────────────────────────────────── */
 :root {
-  /* Primary accent colors for customization (HSL format for easy manipulation) */
-  --primary-hue: 214;      /* 0-360: Change the hue (Blue = 214) */
-  --primary-sat: 100%;     /* Saturation: 0-100% */
-  --primary-light: 56%;    /* Lightness: 0-100% */
-  
-  /* Derived primary colors from HSL */
-  --primary-color: hsl(var(--primary-hue), var(--primary-sat), var(--primary-light));
-  --primary-dark: hsl(var(--primary-hue), var(--primary-sat), calc(var(--primary-light) - 8%));
-  --primary-light-bg: hsl(var(--primary-hue), var(--primary-sat), calc(var(--primary-light) + 20%));
-  --primary-very-light-bg: hsl(var(--primary-hue), var(--primary-sat), calc(var(--primary-light) + 40%));
-  
-  /* Transition speeds */
-  --transition-fast: 0.15s ease;
+  --transition-fast:   0.15s ease;
   --transition-normal: 0.3s ease;
   --transition-smooth: 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Accent hue palette (changeable per color theme) */
+  --primary-hue:   214;
+  --primary-sat:   100%;
+  --primary-light: 56%;
+
+  /* Derived accent colors */
+  --primary-color:        hsl(var(--primary-hue), var(--primary-sat), var(--primary-light));
+  --primary-dark:         hsl(var(--primary-hue), var(--primary-sat), calc(var(--primary-light) - 8%));
+  --primary-light-bg:     hsl(var(--primary-hue), var(--primary-sat), calc(var(--primary-light) + 20%));
+  --primary-very-light-bg:hsl(var(--primary-hue), var(--primary-sat), calc(var(--primary-light) + 40%));
+
+  /* Sidebar width */
+  --sidebar-width: 360px;
+  --header-height: 60px;
 }
 
-/* ── Dark Mode (default / primary) ────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════
+   DARK MODE (default) — Pure Black
+   ════════════════════════════════════════════════════════════════════════ */
 :root {
   color-scheme: dark;
 
-  /* Backgrounds */
-  --app-background:   #0E1621;
-  --sidebar-surface:  #17212B;
-  --surface:          #1E2C39;
-  --surface-alt:      #243340;
-  --surface-hover:    #2B3A4A;
-  --surface-active:   #2B5278;
+  /* ── Backgrounds ─────────────────────────────────────────────────────── */
+  --app-background:    #000000;   /* pure black app bg */
+  --sidebar-surface:   #0a0a0a;   /* sidebar panel */
+  --surface:           #111111;   /* cards, modals */
+  --surface-alt:       #181818;   /* secondary card / list items */
+  --surface-hover:     #1e1e1e;   /* hover state */
+  --surface-active:    #1c2b3a;   /* selected item */
+  --surface-header:    rgba(0, 0, 0, 0.85);
 
-  /* Borders */
-  --border-color: rgba(255,255,255,0.08);
+  /* ── Borders ─────────────────────────────────────────────────────────── */
+  --border-color:  rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(255, 255, 255, 0.04);
 
-  /* Text */
-  --text-primary:   #E9EDF0;
-  --text-secondary: #8696A0;
-  --text-muted:     #617380;
+  /* ── Text ────────────────────────────────────────────────────────────── */
+  --text-primary:   #f1f1f1;
+  --text-secondary: #888888;
+  --text-muted:     #555555;
 
-  /* Accent (Dynamic primary color) */
-  --accent:          var(--primary-color);
-  --accent-strong:   var(--primary-dark);
-  --accent-solid:    var(--primary-color);
-  --accent-gradient: var(--primary-color);
-  --badge-bg:        var(--primary-color);
-  --danger:          #E53935;
+  /* ── Accent ──────────────────────────────────────────────────────────── */
+  --accent:         var(--primary-color);
+  --accent-strong:  var(--primary-dark);
+  --accent-solid:   var(--primary-color);
+  --accent-gradient:var(--primary-color);
+  --badge-bg:       var(--primary-color);
+  --danger:         #ff4444;
 
-  /* Message bubbles */
-  --bubble-sent:              var(--primary-color);
-  --bubble-received:          #1E2C39;
-  --bubble-text-sent:         #ffffff;
-  --bubble-text-received:     #E9EDF0;
+  /* ── Message bubbles ─────────────────────────────────────────────────── */
+  --bubble-sent:          var(--primary-color);
+  --bubble-received:      #1a1a1a;
+  --bubble-text-sent:     #ffffff;
+  --bubble-text-received: #f1f1f1;
 
-  /* Input */
-  --input-bg: #242F3D;
+  /* ── Inputs ──────────────────────────────────────────────────────────── */
+  --input-bg:     #111111;
+  --input-border: rgba(255, 255, 255, 0.08);
 
-  /* Shadows */
-  --shadow-soft: 0 2px 8px rgba(0,0,0,0.3);
-  --shadow-menu: 0 8px 32px rgba(0,0,0,0.45);
+  /* ── Shadows ─────────────────────────────────────────────────────────── */
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.6);
+  --shadow-menu: 0 8px 32px rgba(0, 0, 0, 0.7);
 
-  /* RGB versions for Glassmorphism */
-  --sidebar-surface-rgb: 23, 33, 43;
-  --surface-rgb: 30, 44, 57;
-  --accent-rgb: 51, 144, 236;
+  /* ── Glass / Blur ────────────────────────────────────────────────────── */
+  --sidebar-surface-rgb: 10, 10, 10;
+  --surface-rgb:         17, 17, 17;
+  --accent-rgb:          51, 144, 236;
+  --border-color-rgb:    255, 255, 255;
 
-  /* Glassmorphism Tokens */
-  --glass-bg: rgba(var(--sidebar-surface-rgb), 0.75);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-bg:     rgba(0, 0, 0, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+
+  /* ── Scrollbar ───────────────────────────────────────────────────────── */
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
+
+  /* ── Dock / Nav ──────────────────────────────────────────────────────── */
+  --nav-bg:     rgba(0, 0, 0, 0.92);
+  --nav-border: rgba(255, 255, 255, 0.06);
 }
 
-/* ── Light Mode ─────────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════
+   LIGHT MODE — Clean White
+   ════════════════════════════════════════════════════════════════════════ */
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --app-background:  #dae5ed;
-  --sidebar-surface: #ffffff;
-  --surface:         #ffffff;
-  --surface-alt:     #f4f4f5;
-  --surface-hover:   #e8f4ff;
-  --surface-active:  #cde8ff;
+  /* ── Backgrounds ─────────────────────────────────────────────────────── */
+  --app-background:    #f5f5f5;   /* clean light grey */
+  --sidebar-surface:   #ffffff;   /* white sidebar */
+  --surface:           #ffffff;   /* white cards */
+  --surface-alt:       #f0f0f0;   /* secondary surface */
+  --surface-hover:     #e8e8e8;   /* hover */
+  --surface-active:    #ddeeff;   /* selected item */
+  --surface-header:    rgba(255, 255, 255, 0.9);
 
-  --border-color: rgba(0,0,0,0.1);
+  /* ── Borders ─────────────────────────────────────────────────────────── */
+  --border-color:  rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.04);
 
-  --text-primary:   #1c2b36;
-  --text-secondary: #6b7c87;
-  --text-muted:     #a0adb5;
+  /* ── Text ────────────────────────────────────────────────────────────── */
+  --text-primary:   #111111;
+  --text-secondary: #555555;
+  --text-muted:     #999999;
 
+  /* ── Accent ──────────────────────────────────────────────────────────── */
   --accent:          var(--primary-color);
   --accent-strong:   var(--primary-dark);
   --accent-solid:    var(--primary-color);
   --accent-gradient: var(--primary-color);
   --badge-bg:        var(--primary-color);
-  --danger:          #D32F2F;
+  --danger:          #cc0000;
 
+  /* ── Message bubbles ─────────────────────────────────────────────────── */
   --bubble-sent:          var(--primary-color);
   --bubble-received:      #ffffff;
   --bubble-text-sent:     #ffffff;
-  --bubble-text-received: #1c2b36;
+  --bubble-text-received: #111111;
 
-  --input-bg: #f4f4f5;
+  /* ── Inputs ──────────────────────────────────────────────────────────── */
+  --input-bg:     #f0f0f0;
+  --input-border: rgba(0, 0, 0, 0.1);
 
-  --shadow-soft: 0 1px 4px rgba(0,0,0,0.12);
-  --shadow-menu: 0 8px 32px rgba(0,0,0,0.18);
+  /* ── Shadows ─────────────────────────────────────────────────────────── */
+  --shadow-soft: 0 1px 4px rgba(0, 0, 0, 0.1);
+  --shadow-menu: 0 8px 32px rgba(0, 0, 0, 0.15);
 
-  /* RGB versions for Glassmorphism */
+  /* ── Glass / Blur ────────────────────────────────────────────────────── */
   --sidebar-surface-rgb: 255, 255, 255;
-  --surface-rgb: 255, 255, 255;
-  --accent-rgb: 51, 144, 236;
+  --surface-rgb:         255, 255, 255;
+  --accent-rgb:          51, 144, 236;
+  --border-color-rgb:    0, 0, 0;
 
-  /* Glassmorphism Tokens */
-  --glass-bg: rgba(var(--sidebar-surface-rgb), 0.8);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --glass-bg:     rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+
+  /* ── Scrollbar ───────────────────────────────────────────────────────── */
+  --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
+
+  /* ── Dock / Nav ──────────────────────────────────────────────────────── */
+  --nav-bg:     rgba(255, 255, 255, 0.95);
+  --nav-border: rgba(0, 0, 0, 0.08);
 }
 
-/* ── Preset Theme Colors ──────────────────────────────────────────────── */
-/* Telegram Blue (default) */
-:root.theme-blue {
-  --primary-hue: 214;
-  --primary-sat: 100%;
-  --primary-light: 56%;
-}
+/* ════════════════════════════════════════════════════════════════════════
+   SCROLLBAR — Theme-aware
+   ════════════════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 
-/* Telegram Purple */
-:root.theme-purple {
-  --primary-hue: 290;
-  --primary-sat: 100%;
-  --primary-light: 55%;
-}
-
-/* Telegram Green */
-:root.theme-green {
-  --primary-hue: 152;
-  --primary-sat: 100%;
-  --primary-light: 42%;
-}
-
-/* Telegram Red */
-:root.theme-red {
-  --primary-hue: 0;
-  --primary-sat: 100%;
-  --primary-light: 50%;
-}
-
-/* Telegram Orange */
-:root.theme-orange {
-  --primary-hue: 33;
-  --primary-sat: 100%;
-  --primary-light: 50%;
-}
-
-/* Telegram Pink */
-:root.theme-pink {
-  --primary-hue: 338;
-  --primary-sat: 100%;
-  --primary-light: 60%;
-}
-
-/* Teal Theme */
-:root.theme-teal {
-  --primary-hue: 175;
-  --primary-sat: 100%;
-  --primary-light: 35%;
-}
-
-/* Rose Theme */
-:root.theme-rose {
-  --primary-hue: 350;
-  --primary-sat: 90%;
-  --primary-light: 60%;
-}
-
-/* Cyan Theme */
-:root.theme-cyan {
-  --primary-hue: 190;
-  --primary-sat: 100%;
-  --primary-light: 45%;
-}
-
-/* Indigo Theme */
-:root.theme-indigo {
-  --primary-hue: 240;
-  --primary-sat: 60%;
-  --primary-light: 65%;
-}
-
-/* Yellow Theme */
-:root.theme-yellow {
-  --primary-hue: 48;
-  --primary-sat: 100%;
-  --primary-light: 50%;
-}
-
-/* Amber Theme */
-:root.theme-amber {
-  --primary-hue: 38;
-  --primary-sat: 100%;
-  --primary-light: 55%;
-}
+/* ════════════════════════════════════════════════════════════════════════
+   PRESET COLOR THEMES (accent only — backgrounds unchanged)
+   ════════════════════════════════════════════════════════════════════════ */
+:root.theme-blue   { --primary-hue: 214; --primary-sat: 100%; --primary-light: 56%; }
+:root.theme-purple { --primary-hue: 290; --primary-sat: 100%; --primary-light: 55%; }
+:root.theme-green  { --primary-hue: 152; --primary-sat: 100%; --primary-light: 42%; }
+:root.theme-red    { --primary-hue:   0; --primary-sat: 100%; --primary-light: 50%; }
+:root.theme-orange { --primary-hue:  33; --primary-sat: 100%; --primary-light: 50%; }
+:root.theme-pink   { --primary-hue: 338; --primary-sat: 100%; --primary-light: 60%; }
+:root.theme-teal   { --primary-hue: 175; --primary-sat: 100%; --primary-light: 35%; }
+:root.theme-rose   { --primary-hue: 350; --primary-sat:  90%; --primary-light: 60%; }
+:root.theme-cyan   { --primary-hue: 190; --primary-sat: 100%; --primary-light: 45%; }
+:root.theme-indigo { --primary-hue: 240; --primary-sat:  60%; --primary-light: 65%; }
+:root.theme-yellow { --primary-hue:  48; --primary-sat: 100%; --primary-light: 50%; }
+:root.theme-amber  { --primary-hue:  38; --primary-sat: 100%; --primary-light: 55%; }

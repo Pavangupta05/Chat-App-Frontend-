@@ -342,8 +342,8 @@ function SettingsPanel({
         </div>
 
         {/* Delete Account */}
-        <div className="ios-list-group" style={{ marginBottom: '120px' }}>
-          <div className="settings-row settings-row--danger">
+        <div className="ios-list-group" style={{ paddingBottom: '60px' }}>
+          <div className="settings-row settings-row--danger" style={{ borderBottom: 'none' }}>
             <div className="settings-row__info">
               <Trash2 size={22} />
               <div>

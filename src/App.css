@@ -45,37 +45,21 @@
 /* Prevent background scroll when settings panel is open */
 body {
   overflow-y: scroll;
+  overflow-x: hidden;
 }
 
+/* ── App-level layout tokens (non-theme, stable) ─────────────────────── */
 :root {
-  --sidebar-width: 400px;
+  --sidebar-width: 360px;
   --header-height: 60px;
   --tg-blue: #3390ec;
   --tg-blue-hover: #2c81d6;
-  --app-background: #000000;
-  --sidebar-surface: #0a0a0a;
-  --surface-hover: #1a1a1a;
-  --border-color: #1f1f1f;
-  --border-subtle: #1a1a1a;
-  --text-primary: #ffffff;
-  --text-secondary: #999999;
-  --text-muted: #666666;
-  --accent: #3390ec;
-  --danger: #ff595a;
-  --input-bg: #121212;
-  --surface-background: var(--app-background);
-  --surface-header: rgba(10, 10, 10, 0.8);
-  
-  /* RGB versions for Glassmorphism */
-  --sidebar-surface-rgb: 10, 10, 10;
-  --border-color-rgb: 31, 31, 31;
-  --accent-rgb: 51, 144, 236;
+  /* Theme color tokens are defined in Theme.css — do NOT duplicate here */
 }
 
 .app {
   width: 100%;
-  height: 100dvh;
-  height: 100dvh;
+  min-height: 100dvh;
   overflow: hidden;
   position: relative;
   background: var(--app-background);
@@ -83,8 +67,7 @@ body {
 
 .telegram-layout {
   width: 100%;
-  height: 100dvh;
-  height: 100dvh;
+  min-height: 100dvh;
   display: flex;
   background: var(--app-background);
   overflow: hidden;
@@ -708,7 +691,7 @@ body {
   background: var(--app-background);
 }
 
-/* Background overlay for transparency control (scoped to main area) */
+/* Background overlay for doodle transparency (scoped to main area) */
 .chat-main-area::before {
   content: "";
   position: absolute;
@@ -716,7 +699,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(14, 22, 33, var(--bg-overlay-opacity, 0.5));
+  background: rgba(0, 0, 0, var(--bg-overlay-opacity, 0.0));
   pointer-events: none;
   z-index: 0;
   transition: background 0.3s ease;
@@ -734,7 +717,7 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   /* Top padding for header, optimized bottom padding to clear the floating liquid bar without excessive gap */
-  padding: 72px 12px 100px 12px;
+  padding: 72px 12px 90px 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1682,9 +1665,9 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
   display: grid;
   place-items: center;
+  background: rgba(0, 0, 0, 0.6);
   z-index: 2000;
   padding: 16px;
   overflow-y: auto;
@@ -1692,16 +1675,22 @@ body {
 }
 
 .modal-card {
-  background: var(--surface);
-  border-radius: 18px;
-  box-shadow: var(--shadow-menu);
+  background: rgba(20, 20, 20, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   width: 100%;
   max-width: 420px;
-  overflow: hidden;
-  animation: fadeSlideUp 0.22s ease;
-  max-height: 85vh;
+  border-radius: 18px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  overflow: hidden;
+  animation: fadeSlideUp 0.22s ease;
+  max-height: 85dvh;
 }
 
 .modal-card__header {
@@ -2754,16 +2743,19 @@ body {
 }
 
 .ncm-card {
-  background: var(--surface);
+  background: rgba(20, 20, 20, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   width: 100%;
   max-width: 400px;
   border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.6);
   display: flex;
   flex-direction: column;
   gap: 20px;
-  color: var(--text-primary);
+  color: #ffffff;
 }
 
 .ncm-header {
@@ -4079,26 +4071,24 @@ body {
 
 /* -- Mobile Dock Navigation --------------------------------------------- */
 .mobile-nav {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 420px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-width: none;
   height: 64px;
-  background: rgba(23, 33, 43, 0.75);
+  background: var(--nav-bg);
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
-  border-radius: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  border-top: 1px solid var(--nav-border);
   display: flex;
   align-items: center;
   justify-content: space-around;
   padding: 0 8px;
-  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.4);
-  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 100;
   animation: slideUpNav 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
   pointer-events: auto;
 }
 
@@ -4121,8 +4111,8 @@ body {
 }
 
 @keyframes slideUpNav {
-  from { transform: translate(-50%, 100px); opacity: 0; }
-  to { transform: translate(-50%, 0); opacity: 1; }
+  from { transform: translateY(100px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .mobile-nav__highlight {
@@ -4143,7 +4133,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  color: #8696A0;
+  color: var(--text-secondary);
   background: none;
   border: none;
   padding: 8px 0;
@@ -4157,7 +4147,7 @@ body {
 }
 
 .mobile-nav__item.is-active {
-  color: #ffffff !important;
+  color: var(--accent) !important;
 }
 
 .mobile-nav__item span {
@@ -4181,7 +4171,7 @@ body {
   position: absolute;
   top: 4px;
   right: 15%;
-  background: #E53935;
+  background: var(--danger);
   color: #fff;
   font-size: 10px;
   font-weight: 700;
@@ -4192,7 +4182,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 0 4px;
-  border: 2px solid #17212B;
+  border: 2px solid var(--sidebar-surface);
 }
 
 /* 🧪 Premium Unified FAB System */
@@ -4235,16 +4225,16 @@ body {
 }
 
 .fab-label {
-  background: rgba(23, 33, 43, 0.85); /* Slightly darker for contrast */
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
-  color: #ffffff;
+  color: var(--text-primary);
   padding: 6px 14px;
   border-radius: 12px;
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-menu);
+  border: 1px solid var(--glass-border);
   pointer-events: none;
   opacity: 0.9;
 }
@@ -4321,6 +4311,7 @@ body {
   position: relative;
   overflow: hidden;
   z-index: 1;
+  min-height: 100dvh;
 }
 
 .chat-window__bg {
@@ -4777,7 +4768,7 @@ body {
 @media (max-width: 767px) {
   .telegram-layout {
     width: 100vw !important;
-    height: 100dvh !important;
+    min-height: 100dvh !important;
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
@@ -4790,7 +4781,7 @@ body {
   /* -- Sliding Stack Layout Engine -- */
   .app-container {
     width: 100vw;
-    height: 100dvh;
+    min-height: 100dvh;
     overflow: hidden;
     position: relative;
   }
@@ -4831,7 +4822,7 @@ body {
 
   .sidebar {
     background: var(--sidebar-surface) !important;
-    height: 100dvh !important;
+    min-height: 100dvh !important;
     padding-bottom: 90px !important; /* Space for dock */
   }
   
@@ -5106,4 +5097,247 @@ body {
   border: none;
   border-radius: 8px;
   color: #fff;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LIGHT MODE OVERRIDES
+   All components that have hardcoded dark colors are corrected here.
+   Uses [data-theme="light"] selector to match Theme.css.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Body + Root ─────────────────────────────────────────────────────────── */
+[data-theme="light"] body {
+  background: var(--app-background);
+  color: var(--text-primary);
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+[data-theme="light"] .sidebar {
+  background: var(--sidebar-surface);
+  border-right: 1px solid var(--border-color);
+}
+
+[data-theme="light"] .sidebar__navbar {
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="light"] .sidebar__title { color: var(--text-primary); }
+[data-theme="light"] .sidebar__status { color: var(--text-secondary); }
+[data-theme="light"] .sidebar__action,
+[data-theme="light"] .icon-button { color: var(--text-secondary); }
+[data-theme="light"] .sidebar__action:hover,
+[data-theme="light"] .icon-button:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .sidebar__searchbar {
+  background: var(--input-bg);
+  border-color: transparent;
+}
+
+[data-theme="light"] .sidebar__tab { color: var(--text-secondary); }
+[data-theme="light"] .sidebar__tab.is-active { color: var(--accent); }
+
+[data-theme="light"] .sidebar__menu {
+  background: var(--surface);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-menu);
+}
+[data-theme="light"] .sidebar__menu button { color: var(--text-primary); }
+[data-theme="light"] .sidebar__menu button:hover { background: var(--surface-hover); }
+
+/* ── Chat List ───────────────────────────────────────────────────────────── */
+[data-theme="light"] .chat-list { background: transparent; }
+[data-theme="light"] .chat-list__item { color: var(--text-primary); }
+[data-theme="light"] .chat-list__item:hover { background: var(--surface-hover); }
+[data-theme="light"] .chat-list__item.is-active { background: var(--surface-active); }
+[data-theme="light"] .chat-list__row h2 { color: var(--text-primary); }
+[data-theme="light"] .chat-list__row span { color: var(--text-secondary); }
+[data-theme="light"] .chat-list__row--secondary p { color: var(--text-secondary); }
+
+/* ── Chat Window ─────────────────────────────────────────────────────────── */
+[data-theme="light"] .chat-window {
+  background: var(--app-background);
+  color: var(--text-primary);
+}
+[data-theme="light"] .chat-main-area { background: var(--app-background); }
+
+[data-theme="light"] .chat-window__header {
+  background: var(--glass-bg) !important;
+  border-bottom: 1px solid var(--border-color);
+}
+[data-theme="light"] .chat-window__identity h2 { color: var(--text-primary); }
+[data-theme="light"] .chat-window__identity p { color: var(--text-secondary); }
+
+[data-theme="light"] .chat-window__menu {
+  background: var(--surface);
+  border-color: var(--border-color);
+}
+[data-theme="light"] .chat-window__menu button { color: var(--text-primary); }
+[data-theme="light"] .chat-window__menu button:hover { background: var(--surface-hover); }
+
+/* ── Messages ────────────────────────────────────────────────────────────── */
+[data-theme="light"] .message__bubble--incoming {
+  background: var(--bubble-received);
+  color: var(--bubble-text-received);
+  border: 1px solid var(--border-color);
+}
+[data-theme="light"] .message__bubble--outgoing {
+  background: var(--bubble-sent);
+  color: var(--bubble-text-sent);
+}
+[data-theme="light"] .message__meta { color: rgba(100, 100, 100, 0.8); }
+[data-theme="light"] .message__bubble--incoming .message__meta { color: rgba(50,50,50,0.6); }
+
+/* ── Input Bar ───────────────────────────────────────────────────────────── */
+[data-theme="light"] .input-bar-wrapper,
+[data-theme="light"] .input-area-glass {
+  background: var(--glass-bg);
+  border-top: 1px solid var(--border-color);
+}
+[data-theme="light"] .input-area__field {
+  background: var(--input-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+[data-theme="light"] .input-area__field::placeholder { color: var(--text-muted); }
+
+/* ── Panels / Modals ─────────────────────────────────────────────────────── */
+[data-theme="light"] .side-panel,
+[data-theme="light"] .overlay-page,
+[data-theme="light"] .modal-card,
+[data-theme="light"] .ncm-card {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+[data-theme="light"] .side-panel__header,
+[data-theme="light"] .overlay-page__header {
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+[data-theme="light"] .side-panel__body { background: var(--surface-alt); }
+
+[data-theme="light"] .ios-list-group {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+}
+[data-theme="light"] .settings-row { border-bottom-color: var(--border-color); }
+[data-theme="light"] .settings-row strong { color: var(--text-primary); }
+[data-theme="light"] .settings-row p { color: var(--text-secondary); }
+
+/* ── Settings Toggle (dark/light switch) ─────────────────────────────────── */
+[data-theme="light"] .settings-toggle__track { background: rgba(0,0,0,0.1); }
+[data-theme="light"] .settings-toggle__track.is-active { background: rgba(51,144,236,0.25); }
+
+/* ── Profile Panel ───────────────────────────────────────────────────────── */
+[data-theme="light"] .profile-input {
+  background: var(--input-bg);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+[data-theme="light"] .profile-label { border-bottom-color: var(--border-color); }
+
+/* ── Confirm Modal ───────────────────────────────────────────────────────── */
+[data-theme="light"] .confirm-modal__card {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+/* ── Date Separator ──────────────────────────────────────────────────────── */
+[data-theme="light"] .date-separator span {
+  background: var(--surface-alt);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+[data-theme="light"] .date-separator::before {
+  background: var(--border-color);
+}
+
+/* ── New Chat Modal ──────────────────────────────────────────────────────── */
+[data-theme="light"] .ncm-card {
+  background: var(--surface);
+  box-shadow: var(--shadow-menu);
+}
+[data-theme="light"] .ncm-title,
+[data-theme="light"] .ncm-label { color: var(--text-primary); }
+[data-theme="light"] .ncm-subtitle { color: var(--text-secondary); }
+[data-theme="light"] .ncm-input {
+  background: var(--input-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+[data-theme="light"] .ncm-btn--ghost {
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+[data-theme="light"] .ncm-btn--ghost:hover { background: var(--surface-hover); }
+
+/* ── Mobile Dock ─────────────────────────────────────────────────────────── */
+[data-theme="light"] .mobile-nav {
+  background: var(--nav-bg);
+  border-top: 1px solid var(--nav-border);
+}
+[data-theme="light"] .mobile-nav__item { color: var(--text-secondary); }
+[data-theme="light"] .mobile-nav__item.is-active { color: var(--accent) !important; }
+
+/* ── FAB Label ───────────────────────────────────────────────────────────── */
+[data-theme="light"] .fab-label {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-menu);
+}
+
+/* ── Network Status bar ──────────────────────────────────────────────────── */
+[data-theme="light"] .network-status {
+  background: var(--surface);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* ── Typing Indicator ────────────────────────────────────────────────────── */
+[data-theme="light"] .typing-indicator { color: var(--text-secondary); }
+
+/* ── Reply Preview ───────────────────────────────────────────────────────── */
+[data-theme="light"] .reply-preview {
+  background: var(--surface-alt);
+  border-left: 3px solid var(--accent);
+  color: var(--text-primary);
+}
+
+/* ── Message Action Menu ─────────────────────────────────────────────────── */
+[data-theme="light"] .message-action-menu,
+[data-theme="light"] .context-menu {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-menu);
+  color: var(--text-primary);
+}
+[data-theme="light"] .context-menu__item:hover { background: var(--surface-hover); }
+
+/* ── Error Boundary ──────────────────────────────────────────────────────── */
+[data-theme="light"] .error-boundary {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+/* ── Forward Modal ───────────────────────────────────────────────────────── */
+[data-theme="light"] .forward-modal__card {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+[data-theme="light"] .forward-list__item:hover { background: var(--surface-hover); }
+
+/* ── MessageBubble Inline Replacement ───────────────────────────────────── */
+.message {
+  padding: 2px 0;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  user-select: none;
+}
+.message--selectable { cursor: pointer; }
+.message--selected {
+  background-color: rgba(51, 144, 236, 0.15);
 }

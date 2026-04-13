@@ -163,13 +163,16 @@ export async function deleteChat(token, chatId) {
  */
 export async function deleteSingleMessage(token, messageId) {
   if (!messageId) throw new Error("messageId is required.");
-  const response = await fetch(`${API_URL}/api/messages/${messageId}?t=${Date.now()}`, {
-    method: "DELETE",
-    headers: { 
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json"
-    },
-  });
+  const response = await retryFetch(
+    () => fetch(`${API_URL}/api/messages/${messageId}?t=${Date.now()}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }),
+    1 // minimal retries for DELETE
+  );
   if (!response.ok) throw new Error("Failed to delete message.");
   return response.json().catch(() => ({}));
 }
@@ -179,13 +182,64 @@ export async function deleteSingleMessage(token, messageId) {
  */
 export async function deleteMessageForEveryoneApi(token, messageId, chatId) {
   if (!messageId || !chatId) throw new Error("messageId and chatId are required.");
-  const response = await fetch(`${API_URL}/api/messages/${messageId}?everyone=true&chatId=${chatId}&t=${Date.now()}`, {
-    method: "DELETE",
-    headers: { 
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json"
-    },
-  });
+  const response = await retryFetch(
+    () => fetch(`${API_URL}/api/messages/${messageId}?everyone=true&chatId=${chatId}&t=${Date.now()}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }),
+    1 // minimal retries for DELETE
+  );
   if (!response.ok) throw new Error("Failed to delete message for everyone.");
+  return response.json().catch(() => ({}));
+}
+
+/**
+ * Create a new group chat
+ */
+export async function createGroupChatApi(token, payload) {
+  const response = await fetch(`${API_URL}/api/chat/group`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error("Failed to create group chat.");
+  return response.json().catch(() => ({}));
+}
+
+/**
+ * Add members to a group chat
+ */
+export async function addMembersToGroupApi(token, chatId, userIds) {
+  const response = await fetch(`${API_URL}/api/chat/${chatId}/members`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ userIds }),
+  });
+  if (!response.ok) throw new Error("Failed to add members to group.");
+  return response.json().catch(() => ({}));
+}
+
+/**
+ * Update group chat settings
+ */
+export async function updateGroupSettingsApi(token, chatId, settings) {
+  const response = await fetch(`${API_URL}/api/chat/${chatId}/settings`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(settings),
+  });
+  if (!response.ok) throw new Error("Failed to update group settings.");
   return response.json().catch(() => ({}));
 }

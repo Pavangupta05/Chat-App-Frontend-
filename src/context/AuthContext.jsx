@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
     return () => registerAuthErrorHandler(null);
   }, [navigate]);
 
-  // 🔄 Load user from sessionStorage on refresh
+  // 🔄 Load user from localStorage on refresh
   useEffect(() => {
     // Failsafe: Ensure loading stops after 5s no matter what
     const failsafe = setTimeout(() => {
@@ -54,21 +54,53 @@ export const AuthProvider = ({ children }) => {
       }
     }, 5000);
 
-    try {
-      const storedUser = localStorage.getItem("chat-user");
-      const storedToken = localStorage.getItem("chat-token");
+    /** Decode JWT payload and check if it is expired (client-side only) */
+    const isTokenExpired = (token) => {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        return payload.exp * 1000 < Date.now();
+      } catch {
+        return true; // Treat malformed tokens as expired
+      }
+    };
 
-      if (storedUser && storedToken) {
+    try {
+      // 1. Prioritize Tab-Specific Session Storage
+      let storedUser = sessionStorage.getItem("chat-user");
+      let storedToken = sessionStorage.getItem("chat-token");
+
+      // 2. Fallback to LocalStorage (Persist across browser restart)
+      if (!storedUser || !storedToken) {
+        storedUser = localStorage.getItem("chat-user");
+        storedToken = localStorage.getItem("chat-token");
+        
+        // If restoring from localStorage, bring it into this tab's sessionStorage
+        if (storedUser && storedToken && !isTokenExpired(storedToken)) {
+          sessionStorage.setItem("chat-user", storedUser);
+          sessionStorage.setItem("chat-token", storedToken);
+        }
+      }
+
+      if (storedUser && storedToken && !isTokenExpired(storedToken)) {
         const parsedUser = JSON.parse(storedUser);
         setUser({
           ...parsedUser,
           id: parsedUser?.id ? String(parsedUser.id) : "",
         });
         setToken(storedToken);
+      } else if (storedToken && isTokenExpired(storedToken)) {
+        // Token is expired — clear stale session gracefully
+        console.warn("⚠️ Auth: Session token expired. Clearing.");
+        sessionStorage.removeItem("chat-user");
+        sessionStorage.removeItem("chat-token");
+        localStorage.removeItem("chat-user");
+        localStorage.removeItem("chat-token");
       }
     } catch (error) {
       console.error("Session restore failed:", error);
       logoutService();
+      sessionStorage.removeItem("chat-user");
+      sessionStorage.removeItem("chat-token");
       localStorage.removeItem("chat-user");
       localStorage.removeItem("chat-token");
       setUser(null);
@@ -93,7 +125,9 @@ export const AuthProvider = ({ children }) => {
       setToken(data.token);
     });
 
-    // ✅ Save session
+    // ✅ Save session to BOTH (session for tab isolation, local for persistence)
+    sessionStorage.setItem("chat-user", JSON.stringify(normalizedUser));
+    sessionStorage.setItem("chat-token", data.token);
     localStorage.setItem("chat-user", JSON.stringify(normalizedUser));
     localStorage.setItem("chat-token", data.token);
 
@@ -114,6 +148,8 @@ export const AuthProvider = ({ children }) => {
       setToken(data.token);
     });
 
+    sessionStorage.setItem("chat-user", JSON.stringify(normalizedUser));
+    sessionStorage.setItem("chat-token", data.token);
     localStorage.setItem("chat-user", JSON.stringify(normalizedUser));
     localStorage.setItem("chat-token", data.token);
 
@@ -134,7 +170,8 @@ export const AuthProvider = ({ children }) => {
       setUser(updatedUser);
     });
 
-    // Sync to storage
+    // Sync to BOTH storage systems
+    sessionStorage.setItem("chat-user", JSON.stringify(updatedUser));
     localStorage.setItem("chat-user", JSON.stringify(updatedUser));
   };
 
@@ -152,6 +189,8 @@ export const AuthProvider = ({ children }) => {
     });
 
     // Save session
+    sessionStorage.setItem("chat-user", JSON.stringify(normalizedUser));
+    sessionStorage.setItem("chat-token", data.token);
     localStorage.setItem("chat-user", JSON.stringify(normalizedUser));
     localStorage.setItem("chat-token", data.token);
 
@@ -161,6 +200,8 @@ export const AuthProvider = ({ children }) => {
   // 🚪 LOGOUT
   const logout = () => {
     logoutService();
+    sessionStorage.removeItem("chat-user");
+    sessionStorage.removeItem("chat-token");
     localStorage.removeItem("chat-user");
     localStorage.removeItem("chat-token");
     setUser(null);

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { fetchMessagesByChatId, fetchMessagesBetween, fetchUserChats, isPeerMongoId, clearChatHistory, deleteChat, deleteSingleMessage, deleteMessageForEveryoneApi } from "../services/messageService";
+import { fetchMessagesByChatId, fetchMessagesBetween, fetchUserChats, isPeerMongoId, clearChatHistory, deleteChat, deleteSingleMessage, deleteMessageForEveryoneApi, createGroupChatApi, addMembersToGroupApi, updateGroupSettingsApi } from "../services/messageService";
 import useCall from "./useCall";
 import useMessageStatus from "./useMessageStatus";
 import useNotifications from "./useNotifications";
@@ -85,6 +85,7 @@ function useChatController() {
         name,
         peerId: peerId || (isPeerMongoId(String(id)) ? String(id) : null),
         updatedAt: createdAt,
+        isGroupChat: !!peerId ? false : true, // Heuristic: if no peerId, it's a group (will be corrected by sync)
       });
     },
     [],
@@ -108,56 +109,77 @@ function useChatController() {
           let updated = false;
 
           apiChats.forEach((apiChat) => {
-            if (!apiChat?.participants) return;
-            const peer = apiChat.participants.find(p => p && String(p._id) !== currentUserId);
-            if (!peer) return;
-
+            const isGroup = apiChat.isGroupChat;
             const realChatId = String(apiChat._id);
-            const peerUserId = String(peer._id);
+            
+            let name, avatar, peerUserId = null;
+
+            if (isGroup) {
+              name = apiChat.chatName || "Unknown Group";
+              avatar = apiChat.groupAvatar && !apiChat.groupAvatar.match(/^https?:\/\//) && !apiChat.groupAvatar.startsWith("/uploads") ? apiChat.groupAvatar : null;
+            } else {
+              const peer = apiChat.participants.find(p => p && String(p._id) !== currentUserId);
+              if (!peer) return;
+              
+              // CRITICAL FIX: If Google OAuth or broken backend previously saved a profile URL directly into peer.username, intercept it!
+              let cleanUsername = peer.username;
+              if (cleanUsername && (cleanUsername.match(/^https?:\/\//) || cleanUsername.startsWith("/uploads"))) {
+                cleanUsername = null; 
+              }
+
+              name = cleanUsername || peer.name || "Google User";
+              
+              // Don't use raw URLs as text avatars
+              avatar = peer.profilePic && !peer.profilePic.match(/^https?:\/\//) && !peer.profilePic.startsWith("/uploads") ? peer.profilePic : null;
+              peerUserId = String(peer._id);
+            }
 
             // SMART MERGE: Check if we have this chat by Real ID OR by Peer User ID
-            const existingIndex = next.findIndex(c => String(c.id) === realChatId || String(c.id) === peerUserId);
+            const existingIndex = next.findIndex(c => String(c.id) === realChatId || (peerUserId && String(c.id) === peerUserId));
 
             if (existingIndex !== -1) {
               const existing = next[existingIndex];
               const isIdMismatch = String(existing.id) !== realChatId;
-              // Synchronize profile details in case peer changed them, or if cache is corrupted
-              const isProfileStale = (existing.name !== peer.username && peer.username) || (existing.avatar !== peer.profilePic && peer.profilePic);
+              
+              // Synchronize profile details
+              const isProfileStale = (existing.name !== name && name) || (existing.avatar !== avatar && avatar);
+              const isGroupMetaStale = isGroup && (existing.groupAdmin !== apiChat.groupAdmin?._id || existing.anyoneCanAdd !== apiChat.anyoneCanAdd);
 
-              if (isIdMismatch || isProfileStale) {
+              if (isIdMismatch || isProfileStale || isGroupMetaStale) {
                 if (isIdMismatch) {
                   console.log(`[SmartSync] Merging local chat ${existing.id} -> ${realChatId}`);
-                  // FIX: Use functional updater to read current activeChatId without stale closure
-                  setActiveChatId((currentId) => {
-                    if (String(currentId) === String(existing.id)) {
-                      console.log(`[SmartSync] Updating activeChatId ${existing.id} -> ${realChatId}`);
-                      return realChatId;
-                    }
-                    return currentId;
-                  });
+                  setActiveChatId((currentId) => String(currentId) === String(existing.id) ? realChatId : currentId);
                 }
 
                 next[existingIndex] = { 
                   ...existing, 
                   id: realChatId, 
-                  peerId: peerUserId, // ENSURE peerId is correctly set to the User ID
-                  name: peer.username || existing.name,
-                  avatar: peer.profilePic || existing.avatar,
+                  peerId: peerUserId,
+                  name: name || existing.name || "Unknown User",
+                  avatar: avatar || existing.avatar || null,
+                  isGroupChat: isGroup,
+                  groupAdmin: isGroup ? String(apiChat.groupAdmin?._id || apiChat.groupAdmin || "") : null,
+                  anyoneCanAdd: apiChat.anyoneCanAdd ?? true,
+                  groupAccent: apiChat.groupAccent,
                   updatedAt: isIdMismatch && apiChat.updatedAt ? new Date(apiChat.updatedAt).getTime() : existing.updatedAt 
                 };
                 updated = true;
               }
             } else {
-              // New chat from backend
               updated = true;
               next.push(createChatRecord({
                 id: realChatId,
                 peerId: peerUserId,
-                name: peer.username,
-                avatar: peer.profilePic,
+                name: name,
+                avatar: avatar,
                 createdAt: apiChat.updatedAt ? new Date(apiChat.updatedAt).getTime() : Date.now(),
-                messages: [],
               }));
+              
+              const lastIdx = next.length - 1;
+              next[lastIdx].isGroupChat = isGroup;
+              next[lastIdx].groupAdmin = isGroup ? String(apiChat.groupAdmin?._id || apiChat.groupAdmin || "") : null;
+              next[lastIdx].anyoneCanAdd = apiChat.anyoneCanAdd ?? true;
+              next[lastIdx].groupAccent = apiChat.groupAccent;
             }
           });
 
@@ -190,15 +212,9 @@ function useChatController() {
 
   const filteredChats = useMemo(() => {
     const normalizedTerm = searchTerm.trim().toLowerCase();
-    const applyTabFilter = (chat) =>
-      activeTab === "All Chats" ||
-      (activeTab === "Groups" && /team|group|studio|design/i.test(chat.name)) ||
-      (activeTab === "Contacts" && !/team|group|studio|design/i.test(chat.name));
-
     return sortedChats.filter((chat) => {
-      if (!applyTabFilter(chat)) {
-        return false;
-      }
+      if (activeTab === "Groups" && !chat.isGroupChat) return false;
+      if (activeTab === "Contacts" && chat.isGroupChat) return false;
 
       if (!normalizedTerm) {
         return true;
@@ -214,7 +230,7 @@ function useChatController() {
     });
   }, [activeTab, searchTerm, sortedChats]);
 
-  // We resolve the ID strictly ONLY for the actual data lookup, 
+  // We resolve the ID strictly ONLY for the actual data lookup,
   // but we keep activeChatId for UI selection state persistence correctly.
   const activeChat =
     chats.find((chat) => String(chat.id) === String(activeChatId)) ?? null;
@@ -552,11 +568,11 @@ function useChatController() {
            });
        }
     },
-    [clearReply, clearTypingForChat, token],
+    [clearReply, clearTypingForChat, currentUserId, token],
   );
 
   const createChat = useCallback(
-    (chatInput) => {
+    async (chatInput) => {
       const isObj = chatInput && typeof chatInput === "object";
       const peerUserId = isObj && chatInput.peerUserId ? String(chatInput.peerUserId) : null;
       const trimmedName = (isObj ? chatInput.name : chatInput ?? newChatName).trim();
@@ -565,6 +581,24 @@ function useChatController() {
 
       if (!trimmedName) {
         return false;
+      }
+
+      // If peerUserId is missing, this is a Group Chat Creation request using the backend!
+      if (!peerUserId) {
+         try {
+           const { createGroupChatApi } = await import("../services/messageService.js");
+           const res = await createGroupChatApi(token, {
+              chatName: trimmedName,
+              groupAccent: accentOverride,
+              groupAvatar: avatarOverride,
+           });
+           if (res && res._id) {
+             return res._id; // Return the valid backend _id dynamically
+           }
+         } catch (e) {
+           console.error("Group creation failed:", e);
+           return false;
+         }
       }
 
       const createdAt = Date.now();
@@ -605,26 +639,56 @@ function useChatController() {
           inviterName: currentUsername,
           peerUserId,
         });
-      }
 
-      if (peerUserId && token) {
-        fetchMessagesBetween(token, peerUserId)
-          .then((rows) => {
-            setChats((currentChats) =>
-              currentChats.map((chat) =>
-                String(chat.id) === peerUserId
-                  ? {
-                      ...chat,
-                      messages: rows,
-                      updatedAt: rows.length ? Date.now() : chat.updatedAt,
-                    }
-                  : chat,
-              ),
-            );
-          })
-          .catch((err) => {
-            console.error("[chat] Failed to load messages for new chat:", err);
-          });
+        if (token) {
+          fetchMessagesBetween(token, peerUserId)
+            .then((rows) => {
+              setChats((currentChats) =>
+                currentChats.map((chat) =>
+                  String(chat.id) === peerUserId
+                    ? {
+                        ...chat,
+                        messages: rows,
+                        updatedAt: rows.length ? Date.now() : chat.updatedAt,
+                      }
+                    : chat,
+                ),
+              );
+            })
+            .catch((err) => {
+              console.error("[chat] Failed to load messages for new chat:", err);
+            });
+        }
+      } else if (isObj && chatInput.isGroup && token) {
+        // Real Backend Group Creation
+        createGroupChatApi(token, {
+          name: trimmedName,
+          users: chatInput.members || [],
+          accent: accentOverride,
+          avatar: avatarOverride
+        })
+        .then(fullGroup => {
+          const realGroupId = String(fullGroup._id);
+          setChats(current => current.map(c => 
+            String(c.id) === String(chatId) 
+              ? { 
+                  ...c, 
+                  id: realGroupId, 
+                  isGroupChat: true,
+                  groupAdmin: String(fullGroup.groupAdmin?._id || fullGroup.groupAdmin || ""),
+                  anyoneCanAdd: fullGroup.anyoneCanAdd ?? true,
+                  groupAccent: fullGroup.groupAccent
+                } 
+              : c
+          ));
+          setActiveChatId(realGroupId);
+          // Auto-join socket room for newly created group
+          emit("join_chat", { chatId: realGroupId });
+        })
+        .catch(err => {
+          console.error("[chat] Group creation failed:", err);
+          alert("Failed to create group on server.");
+        });
       }
 
       return chatId;
@@ -648,6 +712,9 @@ function useChatController() {
 
     console.log("🔄 Clearing chat history for:", activeChat.id);
 
+    // Capture messages before optimistic update for revert on error
+    const previousMessages = [...(activeChat.messages || [])];
+
     // Optimistic UI update
     setChats((currentChats) =>
       currentChats.map((chat) =>
@@ -669,15 +736,14 @@ function useChatController() {
       })
       .catch((error) => {
         console.error("❌ Failed to clear chat history:", error);
-        // Revert optimistic update on error
+        // Revert optimistic update on error using captured messages
         setChats((currentChats) =>
           currentChats.map((chat) =>
             String(chat.id) === String(activeChat.id)
-              ? { ...chat, messages: chat.messages }
+              ? { ...chat, messages: previousMessages }
               : chat,
           ),
         );
-        // Show error to user
         alert(`Failed to clear chat history: ${error.message}`);
       });
   }, [activeChat, token]);
@@ -991,7 +1057,7 @@ function useChatController() {
         forwarded: true,
         id: `forward-${sentAt}`,
         mimeType: forwardingMessage.mimeType,
-        receiverId: String(targetChat.id),
+        receiverId: targetChat.peerId || String(targetChat.id),
         text: forwardingMessage.text,
         time: formatTime(sentAt),
         type: forwardingMessage.type,
