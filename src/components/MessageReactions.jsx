@@ -16,7 +16,7 @@ function MessageReactions({ isOutgoing, longPressActive, onDismissLongPress, chi
   const [hoverOpen, setHoverOpen] = useState(false);
   const hideTimer = useRef(null);
 
-  const startHide = () => { hideTimer.current = setTimeout(() => setHoverOpen(false), 320); };
+  const startHide = () => { hideTimer.current = setTimeout(() => setHoverOpen(false), 600); };
   const cancelHide = () => clearTimeout(hideTimer.current);
 
   const isPickerVisible = hoverOpen || longPressActive;
@@ -48,19 +48,19 @@ function MessageReactions({ isOutgoing, longPressActive, onDismissLongPress, chi
 
   /* Picker animation variants */
   const containerVariants = {
-    hidden: { opacity: 0, scale: 0.5, y: 8 },
+    hidden: { opacity: 0, scale: 0.6, y: 10 },
     visible: {
       opacity: 1, scale: 1, y: 0,
-      transition: { type: "spring", stiffness: 500, damping: 28, staggerChildren: 0.04 },
+      transition: { type: "spring", stiffness: 400, damping: 25, staggerChildren: 0.04 },
     },
-    exit: { opacity: 0, scale: 0.5, y: 8, transition: { duration: 0.15 } },
+    exit: { opacity: 0, scale: 0.6, y: 10, transition: { duration: 0.15 } },
   };
 
   const emojiVariants = {
-    hidden: { opacity: 0, scale: 0.2, y: 6 },
+    hidden: { opacity: 0, scale: 0.4, y: 8 },
     visible: {
       opacity: 1, scale: 1, y: 0,
-      transition: { type: "spring", stiffness: 600, damping: 22 },
+      transition: { type: "spring", stiffness: 450, damping: 22 },
     },
   };
 
@@ -94,7 +94,7 @@ function MessageReactions({ isOutgoing, longPressActive, onDismissLongPress, chi
                 variants={emojiVariants}
                 whileHover={{ scale: 1.35, y: -4 }}
                 whileTap={{ scale: 0.9 }}
-                transition={{ type: "spring", stiffness: 600, damping: 20 }}
+                transition={{ type: "spring", stiffness: 500, damping: 22 }}
                 onClick={() => handleReact(emoji)}
                 title={emoji}
               >

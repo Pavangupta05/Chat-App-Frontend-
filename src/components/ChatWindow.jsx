@@ -285,7 +285,11 @@ function ChatWindow({
                   className="chat-window__avatar"
                   style={{ "--avatar-accent": chat.accent }}
                 >
-                  {chat.avatar}
+                  {chat.avatar?.length > 4 ? (
+                    <img src={chat.avatar} alt={chat.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    chat.avatar
+                  )}
                 </div>
                 {(chat.status === "online" || chat.isTyping) && (
                   <span className="chat-header-online-ring" />

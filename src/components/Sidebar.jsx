@@ -242,7 +242,11 @@ function Sidebar({
                 style={{ borderRadius: "12px", margin: "2px 0", padding: "10px 12px" }}
               >
                 <div className="chat-list__avatar" style={{ "--avatar-accent": chat.accent, width: "40px", height: "40px" }}>
-                  {chat.avatar}
+                  {chat.avatar?.length > 4 ? (
+                    <img src={chat.avatar} alt={chat.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    chat.avatar
+                  )}
                 </div>
                 <div className="chat-list__body">
                   <div className="chat-list__row">
@@ -295,7 +299,11 @@ function Sidebar({
                     fontSize: "16px",
                   }}
                 >
-                  {chat.avatar}
+                  {chat.avatar?.length > 4 ? (
+                    <img src={chat.avatar} alt={chat.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    chat.avatar
+                  )}
                   {isUserOnline?.(String(chat.id)) && (
                     <span className="online-dot" style={{ width: "12px", height: "12px", border: "2px solid var(--sidebar-surface)" }} />
                   )}
