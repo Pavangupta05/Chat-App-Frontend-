@@ -278,15 +278,22 @@ function ChatWindow({
               )}
 
               <div
-                className="chat-window__avatar"
-                style={{ "--avatar-accent": chat.accent }}
+                className="chat-window__avatar-wrap"
                 aria-hidden="true"
               >
-                {chat.avatar}
+                <div
+                  className="chat-window__avatar"
+                  style={{ "--avatar-accent": chat.accent }}
+                >
+                  {chat.avatar}
+                </div>
+                {(chat.status === "online" || chat.isTyping) && (
+                  <span className="chat-header-online-ring" />
+                )}
               </div>
 
               <div style={{ minWidth: 0 }}>
-                <h2>{chat.name || "Unknown User"}</h2>
+                <h2 title={chat.name || "Unknown User"}>{chat.name || "Unknown User"}</h2>
                 <p className={chat.status === "online" || chat.isTyping ? "is-online" : ""}>
                   {chat.isTyping
                     ? `${(chat.name || "Unknown").split(" ")[0]} is typing…`
@@ -412,11 +419,11 @@ function ChatWindow({
         {(showScrollBottom || showNewPill) && (
           <motion.button
             key="scroll-bottom"
-            className={`scroll-bottom-btn ${showNewPill ? 'has-new' : ''}`}
-            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            className={`scroll-bottom-btn scroll-bottom-btn--glass ${showNewPill ? 'has-new' : ''}`}
+            initial={{ opacity: 0, scale: 0.75, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 10 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            exit={{ opacity: 0, scale: 0.75, y: 12 }}
+            transition={{ type: "spring", stiffness: 420, damping: 26 }}
             onClick={() => {
               isNearBottomRef.current = true;
               messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -426,12 +433,12 @@ function ChatWindow({
             style={{
               position: "absolute",
               right: "20px",
-              bottom: isMobileView ? "75px" : "80px", // Adjusted to sit exactly above the sleeker glass input bar
+              bottom: isMobileView ? "75px" : "80px",
               zIndex: 100,
             }}
           >
             {showNewPill && <span className="scroll-bottom-btn__badge" />}
-            <ChevronDown size={24} />
+            <ChevronDown size={22} />
           </motion.button>
         )}
       </AnimatePresence>

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { useOutletContext, useParams, useNavigate } from "react-router-dom";
 import ChatWindow from "./ChatWindow";
 import ChatLanding from "./ChatLanding";
+import { MessageSkeleton } from "./SkeletonLoaders";
 
 function ChatView() {
   const { id } = useParams();
@@ -27,20 +28,16 @@ function ChatView() {
     return (
       <div className="chat-window chat-window--error">
         <div className="chat-error-inner">
-          <span className="chat-error-icon">⚠️</span>
+          <div className="chat-error-icon-wrap">
+            <span className="chat-error-icon">⚠️</span>
+          </div>
           <p className="chat-error-title">Failed to load conversation</p>
           <p className="chat-error-body">{context.loadMessagesError}</p>
           <div className="chat-error-actions">
-            <button
-              className="btn-retry"
-              onClick={context.retryLoadMessages}
-            >
+            <button className="btn-retry" onClick={context.retryLoadMessages}>
               Try Again
             </button>
-            <button
-              className="btn-back"
-              onClick={() => navigate("/chat", { replace: true })}
-            >
+            <button className="btn-back" onClick={() => navigate("/chat", { replace: true })}>
               ← Back to chats
             </button>
           </div>
@@ -49,12 +46,18 @@ function ChatView() {
     );
   }
 
-  // ── Loading state ────────────────────────────────────────────────────────
+  // ── Loading state: show skeleton shimmer ─────────────────────────────────
   if (!context.currentChat) {
     return (
       <div className="chat-window chat-window--loading">
-        <div className="pulse-loader"></div>
-        <p>Loading conversation...</p>
+        <div className="chat-window__header chat-window__header--skeleton">
+          <div className="skeleton-header-avatar" />
+          <div className="skeleton-header-body">
+            <div className="skeleton-line skeleton-line--name" style={{ width: 120 }} />
+            <div className="skeleton-line skeleton-line--preview" style={{ width: 80 }} />
+          </div>
+        </div>
+        <MessageSkeleton />
       </div>
     );
   }

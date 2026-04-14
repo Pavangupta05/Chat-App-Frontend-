@@ -179,3 +179,31 @@
 :root.theme-indigo { --primary-hue: 240; --primary-sat:  60%; --primary-light: 65%; }
 :root.theme-yellow { --primary-hue:  48; --primary-sat: 100%; --primary-light: 50%; }
 :root.theme-amber  { --primary-hue:  38; --primary-sat: 100%; --primary-light: 55%; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   PREMIUM UI v3 — Additional Design Tokens
+   ════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Gradient sent bubble */
+  --bubble-sent-gradient: linear-gradient(135deg, var(--primary-color) 0%, hsl(var(--primary-hue), var(--primary-sat), calc(var(--primary-light) - 12%)) 100%);
+
+  /* Skeleton shimmer */
+  --skeleton-base:    rgba(255, 255, 255, 0.04);
+  --skeleton-light:   rgba(255, 255, 255, 0.09);
+
+  /* Reaction badges */
+  --reaction-bg:      rgba(255, 255, 255, 0.08);
+  --reaction-border:  rgba(255, 255, 255, 0.12);
+  --reaction-mine-bg: rgba(var(--accent-rgb), 0.18);
+  --reaction-mine-border: rgba(var(--accent-rgb), 0.35);
+}
+
+:root[data-theme="light"] {
+  --skeleton-base:    rgba(0, 0, 0, 0.06);
+  --skeleton-light:   rgba(0, 0, 0, 0.11);
+
+  --reaction-bg:      rgba(0, 0, 0, 0.05);
+  --reaction-border:  rgba(0, 0, 0, 0.1);
+  --reaction-mine-bg: rgba(var(--accent-rgb), 0.14);
+  --reaction-mine-border: rgba(var(--accent-rgb), 0.3);
+}

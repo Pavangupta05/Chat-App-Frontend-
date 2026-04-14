@@ -1,5 +1,6 @@
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useCallback } from "react";
 import MessageStatus from "./MessageStatus";
+import MessageReactions from "./MessageReactions";
 import { getImageUrl, handleImageError } from "../utils/imageHelper";
 
 const isImageFile = (msg) =>
@@ -43,34 +44,33 @@ function MessageBubble({
   const isVid      = isVideoFile(message);
   const canPreview = isImg || isVid;
   const [imageLoadError, setImageLoadError] = useState(false);
+  const [longPressActive, setLongPressActive] = useState(false);
 
   const longPressRef = useRef(null);
   const touchStartPos = useRef({ x: 0, y: 0 });
 
   const handlePointerDown = (e) => {
-    // Only handle primary button (left click / touch)
     if (e.button !== 0 && e.pointerType === "mouse") return;
-    
     if (isSelectionMode) return;
-    
-    // Store starting position to check for move threshold
+
     touchStartPos.current = { x: e.clientX, y: e.clientY };
-    
-    // 500ms delay for long press - Slightly shorter for responsiveness
+
     longPressRef.current = window.setTimeout(() => {
-      onToggleSelect();
-      // Provide haptic feedback if available
-      if (window.navigator.vibrate) window.navigator.vibrate(50);
+      // On mobile long-press: show reaction picker instead of select mode
+      if (e.pointerType === "touch") {
+        setLongPressActive(true);
+        if (window.navigator.vibrate) window.navigator.vibrate(40);
+      } else {
+        onToggleSelect();
+        if (window.navigator.vibrate) window.navigator.vibrate(50);
+      }
     }, 450);
   };
 
   const handlePointerMove = (e) => {
     if (!longPressRef.current) return;
-    
-    // If finger moves more than 10 pixels, it's a scroll, not a long press
     const moveX = Math.abs(e.clientX - touchStartPos.current.x);
     const moveY = Math.abs(e.clientY - touchStartPos.current.y);
-    
     if (moveX > 10 || moveY > 15) {
       window.clearTimeout(longPressRef.current);
       longPressRef.current = null;
@@ -87,6 +87,7 @@ function MessageBubble({
       e.stopPropagation();
       onToggleSelect();
     }
+    // Dismiss long-press reaction picker on outside click handled in MessageReactions
   };
 
   const handleContextMenu = (e) => {
@@ -94,14 +95,13 @@ function MessageBubble({
     if (!isSelectionMode) onToggleSelect();
   };
 
+  const dismissLongPress = useCallback(() => setLongPressActive(false), []);
+
   // Detect if message is purely emojis (up to 3) for large rendering
   const isOnlyEmoji = useMemo(() => {
     if (!message.text || message.type === "file") return false;
-    // Split by whitespace and check each character
     const chars = Array.from(message.text.trim());
     if (chars.length > 3) return false;
-    
-    // Simple check: if removing emojis leaves nothing but whitespace
     const emojiOnly = message.text.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF]/g, '').trim().length === 0;
     return emojiOnly && chars.length <= 3;
   }, [message.text, message.type]);
@@ -118,7 +118,7 @@ function MessageBubble({
         "message",
         isOutgoing ? "message--outgoing" : "message--incoming",
         isSelected ? "message--selected" : "",
-        isSelectionMode ? "message--selectable" : ""
+        isSelectionMode ? "message--selectable" : "",
       ].join(" ").trim()}
       onContextMenu={handleContextMenu}
       onPointerDown={handlePointerDown}
@@ -128,7 +128,7 @@ function MessageBubble({
       onClick={handleClick}
     >
       {isSelected && (
-        <div 
+        <div
           className="message-selection-overlay"
           style={{
             position: "absolute",
@@ -137,95 +137,103 @@ function MessageBubble({
             width: "4px",
             height: "100%",
             backgroundColor: "var(--accent)",
-            zIndex: 5
+            zIndex: 5,
           }}
         />
       )}
-      <div
-        className={bubbleClass}
-        style={{ pointerEvents: isSelectionMode ? "none" : "auto" }}
+
+      {/* Reactions wrapper: provides hover zone + picker + badges */}
+      <MessageReactions
+        isOutgoing={isOutgoing}
+        longPressActive={longPressActive}
+        onDismissLongPress={dismissLongPress}
       >
-        {/* Sender name (group / incoming) */}
-        {!isOutgoing && message.username && (
-          <strong className="message__author">{message.username}</strong>
-        )}
+        <div
+          className={bubbleClass}
+          style={{ pointerEvents: isSelectionMode ? "none" : "auto" }}
+        >
+          {/* Sender name (group / incoming) */}
+          {!isOutgoing && message.username && (
+            <strong className="message__author">{message.username}</strong>
+          )}
 
-        {/* Forwarded label */}
-        {message.forwarded && (
-          <span className="message__forwarded">↪ Forwarded</span>
-        )}
+          {/* Forwarded label */}
+          {message.forwarded && (
+            <span className="message__forwarded">↪ Forwarded</span>
+          )}
 
-        {/* Reply preview */}
-        {message.replyTo && (
-          <div className="message__reply">
-            <strong>{message.replyTo.username}</strong>
-            <p>{message.replyTo.message}</p>
-          </div>
-        )}
+          {/* Reply preview */}
+          {message.replyTo && (
+            <div className="message__reply">
+              <strong>{message.replyTo.username}</strong>
+              <p>{message.replyTo.message}</p>
+            </div>
+          )}
 
-        {/* Content */}
-        {message.deleted ? (
-          <p className="message__deleted">🚫 This message was deleted</p>
-        ) : isFile ? (
-          <div className="message__file">
-            {canPreview ? (
-              <button
-                className="message__preview"
-                type="button"
-                onClick={() => !isSelectionMode && onPreview?.(message)}
-              >
-                {isImg ? (
-                  imageLoadError ? (
-                    <div className="message__image-error">
-                      <span>🖼️ Image unavailable</span>
-                    </div>
+          {/* Content */}
+          {message.deleted ? (
+            <p className="message__deleted">🚫 This message was deleted</p>
+          ) : isFile ? (
+            <div className="message__file">
+              {canPreview ? (
+                <button
+                  className="message__preview"
+                  type="button"
+                  onClick={() => !isSelectionMode && onPreview?.(message)}
+                >
+                  {isImg ? (
+                    imageLoadError ? (
+                      <div className="message__image-error">
+                        <span>🖼️ Image unavailable</span>
+                      </div>
+                    ) : (
+                      <img
+                        className="message__image"
+                        src={getImageUrl(message.file)}
+                        alt={message.fileName || "Image"}
+                        onError={(e) => {
+                          setImageLoadError(true);
+                          handleImageError(e);
+                        }}
+                        loading="lazy"
+                      />
+                    )
                   ) : (
-                    <img
-                      className="message__image"
+                    <video
+                      className="message__video"
                       src={getImageUrl(message.file)}
-                      alt={message.fileName || "Image"}
-                      onError={(e) => {
-                        setImageLoadError(true);
-                        handleImageError(e);
-                      }}
-                      loading="lazy"
+                      muted
+                      playsInline
+                      onError={() => console.warn("❌ Video failed to load:", message.file)}
                     />
-                  )
-                ) : (
-                  <video
-                    className="message__video"
-                    src={getImageUrl(message.file)}
-                    muted
-                    playsInline
-                    onError={() => console.warn("❌ Video failed to load:", message.file)}
-                  />
-                )}
-              </button>
-            ) : (
-              <div className="message__file-card">
-                <div className="message__file-meta">
-                  <span className="message__file-icon">FILE</span>
-                  <div>
-                    <strong>{message.fileName || "Shared file"}</strong>
-                    <small>{message.mimeType}</small>
+                  )}
+                </button>
+              ) : (
+                <div className="message__file-card">
+                  <div className="message__file-meta">
+                    <span className="message__file-icon">FILE</span>
+                    <div>
+                      <strong>{message.fileName || "Shared file"}</strong>
+                      <small>{message.mimeType}</small>
+                    </div>
                   </div>
+                  <a className="message__file-link" href={getImageUrl(message.file)} download>
+                    Download
+                  </a>
                 </div>
-                <a className="message__file-link" href={getImageUrl(message.file)} download>
-                  Download
-                </a>
-              </div>
-            )}
-          </div>
-        ) : (
-          <p>{highlightText(message.text, searchTerm)}</p>
-        )}
+              )}
+            </div>
+          ) : (
+            <p>{highlightText(message.text, searchTerm)}</p>
+          )}
 
-        {/* Timestamp + read status */}
-        <div className="message__meta">
-          <span>{message.time}</span>
-          {isOutgoing && <MessageStatus status={message.status} />}
+          {/* Timestamp + read status */}
+          <div className="message__meta">
+            <span>{message.time}</span>
+            {isOutgoing && <MessageStatus status={message.status} />}
+          </div>
         </div>
-      </div>
+      </MessageReactions>
     </article>
   );
 }

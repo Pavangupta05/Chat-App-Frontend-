@@ -211,26 +211,77 @@ function ProfilePanel({ isOpen, onClose, editMode = false, isRouted = false, cha
           </div>
         ) : (
           <>
-            {/* Avatar Row */}
-            <div className="profile-avatar-wrap" onClick={handleFileClick} style={{ cursor: canModify ? 'pointer' : 'default' }}>
-              {displayImage && !imageLoadError ? (
-                <img src={displayImage} alt="Avatar" className="profile-avatar-img" onError={() => setImageLoadError(true)} />
-              ) : (
-                <div className="profile-avatar-fallback" style={!isMe ? { background: groupAccent } : {}}>{initials}</div>
-              )}
-              {canModify && <div className="profile-avatar-edit"><Camera size={18} /></div>}
+            {/* ── HERO AVATAR SECTION ─────────────────────────────────── */}
+            <div className="profile-hero">
+              <div
+                className={`profile-hero__avatar-ring ${(isMe && (chat?.status === 'online')) ? 'profile-hero__avatar-ring--online' : ''}`}
+                onClick={handleFileClick}
+                style={{ cursor: canModify ? 'pointer' : 'default' }}
+              >
+                {displayImage && !imageLoadError ? (
+                  <img
+                    src={displayImage}
+                    alt="Avatar"
+                    className="profile-hero__avatar-img"
+                    onError={() => setImageLoadError(true)}
+                  />
+                ) : (
+                  <div
+                    className="profile-hero__avatar-fallback"
+                    style={!isMe && groupAccent ? { background: groupAccent } : {}}
+                  >
+                    {initials}
+                  </div>
+                )}
+                {canModify && (
+                  <div className="profile-hero__camera-badge">
+                    <Camera size={16} />
+                  </div>
+                )}
+              </div>
               <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} accept="image/*" />
+
+              {isMe ? (
+                <>
+                  <h2 className="profile-hero__name">{username || 'Your Name'}</h2>
+                  <p className="profile-hero__sub">{user?.email ?? ''}</p>
+                </>
+              ) : isGroup ? (
+                <>
+                  <h2 className="profile-hero__name">{groupName || 'Group'}</h2>
+                  <p className="profile-hero__sub">{participants.length} members</p>
+                </>
+              ) : (
+                <>
+                  <h2 className="profile-hero__name">{chat?.name || 'Contact'}</h2>
+                  <p className="profile-hero__sub">{chat?.lastSeen || ''}</p>
+                </>
+              )}
             </div>
 
+            {/* ── EDITABLE FIELDS ────────────────────────────────────── */}
             {isMe ? (
               <div className="ios-list-group">
                 <label className="profile-label">
                   <span>Username</span>
-                  <input className="profile-input" type="text" value={username} onChange={(e) => setUsername(e.target.value)} readOnly={!editMode} />
+                  <input
+                    className="profile-input"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    readOnly={!editMode}
+                    placeholder="Enter username"
+                  />
                 </label>
                 <label className="profile-label" style={{ borderBottom: 'none' }}>
                   <span>Email</span>
-                  <input className="profile-input profile-input--readonly" type="email" value={user?.email ?? ""} readOnly style={{ opacity: 0.6 }} />
+                  <input
+                    className="profile-input profile-input--readonly"
+                    type="email"
+                    value={user?.email ?? ''}
+                    readOnly
+                    style={{ opacity: 0.55 }}
+                  />
                 </label>
               </div>
             ) : isGroup ? (
@@ -238,20 +289,30 @@ function ProfilePanel({ isOpen, onClose, editMode = false, isRouted = false, cha
                 <div className="ios-list-group">
                   <label className="profile-label">
                     <span>Group Name</span>
-                    <input className="profile-input" type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} readOnly={!isAdmin} />
+                    <input
+                      className="profile-input"
+                      type="text"
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                      readOnly={!isAdmin}
+                    />
                   </label>
                   {isAdmin && (
                     <div className="profile-label" style={{ borderBottom: 'none', justifyContent: 'space-between' }}>
                       <span>Anyone can add members</span>
-                      <input type="checkbox" checked={anyoneCanAdd} onChange={(e) => setAnyoneCanAdd(e.target.checked)} />
+                      <input
+                        type="checkbox"
+                        checked={anyoneCanAdd}
+                        onChange={(e) => setAnyoneCanAdd(e.target.checked)}
+                      />
                     </div>
                   )}
                 </div>
 
                 <div className="participants-section" style={{ marginTop: 24 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Users size={18} /> Participants ({participants.length})
+                    <h3 style={{ fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
+                      <Users size={17} /> Participants ({participants.length})
                     </h3>
                     {(isAdmin || anyoneCanAdd) && (
                       <button className="icon-button" style={{ color: 'var(--accent)' }} onClick={handleOpenAddMembers}>
@@ -261,13 +322,15 @@ function ProfilePanel({ isOpen, onClose, editMode = false, isRouted = false, cha
                   </div>
                   <ul className="participants-list" style={{ listStyle: 'none', padding: 0 }}>
                     {participants.map(p => (
-                      <li key={p._id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
-                        <div className="p-avatar" style={{ width: 32, height: 32, borderRadius: 16, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
+                      <li key={p._id} className="participant-row">
+                        <div className="participant-row__avatar">
                           {p.username?.[0]?.toUpperCase()}
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <span style={{ fontSize: 14 }}>{p.username}</span>
-                          {String(p._id) === String(chat.groupAdmin) && <span style={{ marginLeft: 8, fontSize: 10, background: 'rgba(124, 58, 237, 0.2)', color: '#a78bfa', padding: '2px 6px', borderRadius: 4 }}>Admin</span>}
+                        <div className="participant-row__info">
+                          <span className="participant-row__name">{p.username}</span>
+                          {String(p._id) === String(chat.groupAdmin) && (
+                            <span className="participant-row__admin-badge">Admin</span>
+                          )}
                         </div>
                       </li>
                     ))}
@@ -285,13 +348,13 @@ function ProfilePanel({ isOpen, onClose, editMode = false, isRouted = false, cha
 
             {error && <p className="profile-error">{error}</p>}
 
-            <div style={{ marginTop: "20px" }}>
-              {(editMode || (isGroup && isAdmin)) && (
+            {(editMode || (isGroup && isAdmin)) && (
+              <div style={{ padding: '20px 16px 0' }}>
                 <button className="profile-save-btn" onClick={handleSave} disabled={saving}>
-                  {saving ? "Saving…" : saved ? "✓ Saved!" : <><Save size={20} /> Save Changes</>}
+                  {saving ? 'Saving…' : saved ? '✓ Saved!' : <><Save size={18} style={{ marginRight: 8 }} />Save Changes</>}
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </>
         )}
       </div>

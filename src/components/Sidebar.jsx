@@ -5,6 +5,7 @@ import {
   Search, Menu, Sun, Moon, Edit, MessageSquare, Users, Trash2, UserPlus, User, Settings, Plus, X
 } from "lucide-react";
 import ModeToggle from "./ModeToggle";
+import { ChatListSkeleton } from "./SkeletonLoaders";
 
 const tabs = ["All Chats", "Groups", "Contacts"];
 
@@ -31,8 +32,8 @@ function Sidebar({
   const menuRef = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-
   const isMobile = viewport === "mobile";
+  const isConnecting = connectionLabel === "Connecting…" || connectionLabel?.startsWith("Connect");
 
   // Close hamburger dropdown on outside click
   useEffect(() => {
@@ -43,8 +44,6 @@ function Sidebar({
     document.addEventListener("pointerdown", handler);
     return () => document.removeEventListener("pointerdown", handler);
   }, [isMenuOpen]);
-
-
 
   const handlePanEnd = (e, info) => {
     const threshold = 50;
@@ -123,11 +122,32 @@ function Sidebar({
 
             <div className="sidebar__profile-info" style={{ gap: "2px" }}>
               <h1 className="sidebar__title" style={{ fontSize: "16px" }}>{username}</h1>
-              <span className="sidebar__status" style={{ fontSize: "11px", color: "var(--accent)" }}>{connectionLabel}</span>
+              <span
+                className="sidebar__status"
+                style={{
+                  fontSize: "11px",
+                  color: isConnecting ? "var(--text-muted)" : "var(--accent)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                {!isConnecting && (
+                  <span style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: "#4ade80",
+                    display: "inline-block",
+                    flexShrink: 0,
+                  }} />
+                )}
+                {connectionLabel}
+              </span>
             </div>
           </div>
 
-          {/* RIGHT: Consolidated Action Menu + Theme switch */}
+          {/* RIGHT: Theme toggle */}
           {!isMobile && (
             <div className="sidebar__section-right" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <motion.button
@@ -157,10 +177,19 @@ function Sidebar({
             onChange={(e) => onSearchChange(e.target.value)}
             style={{ fontSize: "15px" }}
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => onSearchChange("")}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex" }}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ── 3. TABS (Desktop Only) ────────────────────────────────────── */}
+      {/* ── 3. TABS ────────────────────────────────────────────────────── */}
       <div className="sidebar__tabs" role="tablist" style={{ padding: "0 16px 12px", gap: "8px" }}>
         {tabs.map((tab) => (
           <motion.button
@@ -179,13 +208,12 @@ function Sidebar({
       </div>
 
       {/* ── 4. CHAT LIST / CONTACTS LIST ──────────────────────────────── */}
-      <motion.div 
-        className="chat-list" 
+      <motion.div
+        className="chat-list"
         style={{ padding: "0 8px", flex: 1, overflowY: "auto" }}
         onPanEnd={handlePanEnd}
       >
         {activeTab === "Contacts" ? (
-          // RENDER CONTACTS VIEW
           (() => {
             const contacts = Array.from(new Set(chats.map(c => c.name))).map(name => {
               return chats.find(c => c.name === name);
@@ -193,9 +221,12 @@ function Sidebar({
 
             if (contacts.length === 0) {
               return (
-                <div style={{ padding: "48px 16px", textAlign: "center", color: "var(--text-muted)" }}>
-                  <User size={48} style={{ opacity: 0.3, marginBottom: "16px" }} />
-                  <p>No contacts found.</p>
+                <div className="sidebar__empty-state">
+                  <div className="sidebar__empty-icon">
+                    <User size={40} />
+                  </div>
+                  <p className="sidebar__empty-title">No contacts yet</p>
+                  <p className="sidebar__empty-sub">Start a new chat to add contacts</p>
                 </div>
               );
             }
@@ -208,11 +239,7 @@ function Sidebar({
                 tabIndex={0}
                 className={`chat-list__item ${String(chat.id) === String(activeChatId) ? "is-active" : ""}`}
                 onClick={() => onSelectChat(chat.id)}
-                style={{
-                  borderRadius: "12px",
-                  margin: "2px 0",
-                  padding: "10px 12px",
-                }}
+                style={{ borderRadius: "12px", margin: "2px 0", padding: "10px 12px" }}
               >
                 <div className="chat-list__avatar" style={{ "--avatar-accent": chat.accent, width: "40px", height: "40px" }}>
                   {chat.avatar}
@@ -228,22 +255,24 @@ function Sidebar({
               </motion.div>
             ));
           })()
+        ) : isConnecting && chats.length === 0 ? (
+          // Show skeleton while connecting and no chats loaded
+          <ChatListSkeleton />
         ) : chats.length === 0 ? (
-          // RENDER EMPTY CHATS
+          // Empty state
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            style={{
-              padding: "48px 16px",
-              textAlign: "center",
-              color: "var(--text-muted)",
-            }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="sidebar__empty-state"
           >
-            <div style={{ fontSize: "48px", marginBottom: "16px", filter: "grayscale(1)" }}>💬</div>
-            <p style={{ fontSize: "14px" }}>No messages here yet...</p>
+            <div className="sidebar__empty-icon">
+              <MessageSquare size={40} />
+            </div>
+            <p className="sidebar__empty-title">No chats yet</p>
+            <p className="sidebar__empty-sub">Tap the + button to start a new conversation</p>
           </motion.div>
         ) : (
-          // RENDER CHATS LIST
           chats.map((chat) => {
             const preview = getChatPreview(chat);
             const isActive = String(chat.id) === String(activeChatId);
@@ -255,19 +284,15 @@ function Sidebar({
                 tabIndex={0}
                 className={`chat-list__item ${isActive ? "is-active" : ""}`}
                 onClick={() => onSelectChat(chat.id)}
-                style={{
-                  borderRadius: "12px",
-                  margin: "2px 0",
-                  padding: "10px 12px",
-                }}
+                style={{ borderRadius: "12px", margin: "2px 0", padding: "10px 12px" }}
               >
                 <div
                   className="chat-list__avatar"
-                  style={{ 
+                  style={{
                     "--avatar-accent": chat.accent,
                     width: "50px",
                     height: "50px",
-                    fontSize: "16px"
+                    fontSize: "16px",
                   }}
                 >
                   {chat.avatar}
@@ -296,7 +321,7 @@ function Sidebar({
                           {chat.unreadCount}
                         </motion.span>
                       )}
-                      
+
                       {!isMobile && (
                         <button
                           type="button"
@@ -306,7 +331,7 @@ function Sidebar({
                             background: "none", border: "none", padding: "4px",
                             cursor: "pointer", color: "var(--text-muted)",
                             display: "flex", opacity: isActive ? 0.7 : 0,
-                            transition: "opacity 0.2s"
+                            transition: "opacity 0.2s",
                           }}
                         >
                           <Trash2 size={14} />
