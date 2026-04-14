@@ -39,7 +39,7 @@
   --surface-alt:       #181818;   /* secondary card / list items */
   --surface-hover:     #1e1e1e;   /* hover state */
   --surface-active:    #1c2b3a;   /* selected item */
-  --surface-header:    rgba(0, 0, 0, 0.85);
+  --surface-header:    rgba(20, 20, 20, 0.85);
 
   /* ── Borders ─────────────────────────────────────────────────────────── */
   --border-color:  rgba(255, 255, 255, 0.06);
@@ -47,8 +47,8 @@
 
   /* ── Text ────────────────────────────────────────────────────────────── */
   --text-primary:   #f1f1f1;
-  --text-secondary: #888888;
-  --text-muted:     #555555;
+  --text-secondary: #aaaaaa;
+  --text-muted:     #7f7f7f;
 
   /* ── Accent ──────────────────────────────────────────────────────────── */
   --accent:         var(--primary-color);
@@ -65,7 +65,7 @@
   --bubble-text-received: #f1f1f1;
 
   /* ── Inputs ──────────────────────────────────────────────────────────── */
-  --input-bg:     #111111;
+  --input-bg:     rgba(30, 30, 30, 0.65);
   --input-border: rgba(255, 255, 255, 0.08);
 
   /* ── Shadows ─────────────────────────────────────────────────────────── */
@@ -87,7 +87,7 @@
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
 
   /* ── Dock / Nav ──────────────────────────────────────────────────────── */
-  --nav-bg:     rgba(0, 0, 0, 0.92);
+  --nav-bg:     rgba(20, 20, 20, 0.85);
   --nav-border: rgba(255, 255, 255, 0.06);
 }
 
@@ -104,7 +104,7 @@
   --surface-alt:       #f0f0f0;   /* secondary surface */
   --surface-hover:     #e8e8e8;   /* hover */
   --surface-active:    #ddeeff;   /* selected item */
-  --surface-header:    rgba(255, 255, 255, 0.9);
+  --surface-header:    rgba(255, 255, 255, 0.85);
 
   /* ── Borders ─────────────────────────────────────────────────────────── */
   --border-color:  rgba(0, 0, 0, 0.08);
@@ -130,7 +130,7 @@
   --bubble-text-received: #111111;
 
   /* ── Inputs ──────────────────────────────────────────────────────────── */
-  --input-bg:     #f0f0f0;
+  --input-bg:     rgba(240, 240, 240, 0.8);
   --input-border: rgba(0, 0, 0, 0.1);
 
   /* ── Shadows ─────────────────────────────────────────────────────────── */
@@ -153,7 +153,7 @@
 
   /* ── Dock / Nav ──────────────────────────────────────────────────────── */
   --nav-bg:     rgba(255, 255, 255, 0.95);
-  --nav-border: rgba(0, 0, 0, 0.08);
+  --nav-border: rgba(0, 0, 0, 0.05);
 }
 
 /* ════════════════════════════════════════════════════════════════════════

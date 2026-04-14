@@ -24,6 +24,10 @@ const THEME_COLORS = [
 const BACKGROUND_DOODLES = [
   { name: "Light D", value: "light", label: "Light Doodle" },
   { name: "Dark D", value: "dark", label: "Dark Doodle" },
+  { name: "Mesh", value: "mesh", label: "Color Mesh" },
+  { name: "Cyber", value: "cyber", label: "Cyber Grid" },
+  { name: "Silk", value: "silk", label: "Silk Silk" },
+  { name: "Glass", value: "glass", label: "Glass Bubble" },
   { name: "Minimal", value: "minimal", label: "Minimal Pattern" },
   { name: "Wave", value: "wave", label: "Wave Pattern" },
   { name: "Midnight", value: "midnight", label: "Solid Midnight" },
@@ -230,8 +234,8 @@ function SettingsPanel({
           <div className="settings-row settings-row--expanded">
             <div className="settings-row__info">
               <div>
-                <strong>Background Transparency</strong>
-                <p>{Math.round(backgroundDoodle.opacity * 100)}% opacity</p>
+                <strong>Background Opacity</strong>
+                <p>{Math.round(backgroundDoodle.opacity * 100)}% visibility</p>
               </div>
             </div>
           </div>

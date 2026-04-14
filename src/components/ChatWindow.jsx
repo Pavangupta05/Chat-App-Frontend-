@@ -207,7 +207,7 @@ function ChatWindow({
       ) : (
         <div 
           className={`chat-window__bg chat-bg-doodle-${backgroundDoodle?.type || 'light'}`}
-          style={{ opacity: backgroundDoodle?.opacity || 0.3 }}
+          style={{ opacity: backgroundDoodle?.opacity !== undefined ? backgroundDoodle.opacity : 0.3 }}
         />
       )}
       <header className={`chat-window__header${hasSelection ? " chat-window__header--selection" : ""}`}>

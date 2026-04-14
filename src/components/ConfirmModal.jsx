@@ -12,7 +12,6 @@ function ConfirmModal({ actionLabel, description, isOpen, onCancel, onConfirm, t
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          style={{ backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", backgroundColor: "rgba(0,0,0,0.3)" }}
         >
           <motion.div 
             className="modal-card modal-card--confirm"

@@ -442,21 +442,18 @@ function ChatLayout() {
       </section>
 
       {/* SCREEN 2: DETAIL (Chat / Settings / Profile) */}
-      <div className="app-screen app-screen--detail">
-        <AnimatePresence mode="wait" initial={false}>
+      <div className="app-screen app-screen--detail" style={{ position: "relative" }}>
+        <AnimatePresence initial={false} mode="popLayout">
           <motion.div
-            key={location.pathname.split('/')[1] || 'empty'}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            key={location.pathname}
+            initial={{ opacity: 0, y: 15, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -15, scale: 0.98 }}
             transition={{ 
-              duration: 0.2, 
-              ease: "easeInOut"
+              duration: 0.35, 
+              ease: [0.33, 1, 0.68, 1] /* Quick but smooth cubic-bezier */
             }}
             style={{ 
-              position: 'absolute', 
-              top: 0, 
-              left: 0, 
               width: '100%', 
               height: '100%',
               zIndex: 1,

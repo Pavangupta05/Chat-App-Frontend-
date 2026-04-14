@@ -554,11 +554,12 @@ function useChatController() {
              // For transient network errors, fail silently so the chat view stays usable.
              // Never redirect or reset navigation from here.
              if (err.code === "ACCESS_DENIED") {
-               setLoadMessagesError(
-                 err.status === 404
-                   ? "Chat not found. It may have been deleted."
-                   : "Access denied. You are not a participant in this conversation."
-               );
+               if (err.status === 404) {
+                 console.warn("[chat] 404 chat fetch (optimistic/deleted). Ignoring to prevent flash.");
+                 setLoadMessagesError(null);
+               } else {
+                 setLoadMessagesError("Access denied. You are not a participant in this conversation.");
+               }
              } else {
                // Transient error — log but don't show error UI (chat may still work via socket)
                console.warn("[chat] Transient fetch error, not showing error UI:", err.message);

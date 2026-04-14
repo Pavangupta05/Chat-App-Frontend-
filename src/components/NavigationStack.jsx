@@ -31,7 +31,7 @@ const NavigationStack = ({ theme, onThemeToggle, onLogout, backgroundDoodle, onB
   };
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence initial={false}>
       {location.pathname === "/settings" && (
         <SettingsPanel 
           key="settings"

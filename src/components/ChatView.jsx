@@ -23,7 +23,7 @@ function ChatView() {
   }
 
   // ── Error state: access denied or failed fetch ───────────────────────────
-  if (context.loadMessagesError) {
+  if (context.loadMessagesError && !context.currentChat?.messages?.length && !context.currentChat?.isOptimistic) {
     return (
       <div className="chat-window chat-window--error">
         <div className="chat-error-inner">
