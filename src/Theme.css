@@ -184,8 +184,10 @@
    PREMIUM UI v3 — Additional Design Tokens
    ════════════════════════════════════════════════════════════════════════ */
 :root {
-  /* Gradient sent bubble */
-  --bubble-sent-gradient: linear-gradient(135deg, var(--primary-color) 0%, hsl(var(--primary-hue), var(--primary-sat), calc(var(--primary-light) - 12%)) 100%);
+  /* Gradient sent bubble — richer blue-to-deeper-blue */
+  --bubble-sent-gradient: linear-gradient(145deg,
+    hsl(var(--primary-hue), var(--primary-sat), calc(var(--primary-light) + 6%)) 0%,
+    hsl(var(--primary-hue), var(--primary-sat), calc(var(--primary-light) - 10%)) 100%);
 
   /* Skeleton shimmer */
   --skeleton-base:    rgba(255, 255, 255, 0.04);
@@ -206,4 +208,34 @@
   --reaction-border:  rgba(0, 0, 0, 0.1);
   --reaction-mine-bg: rgba(var(--accent-rgb), 0.14);
   --reaction-mine-border: rgba(var(--accent-rgb), 0.3);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   SMOOTH THEME TRANSITION — Animates dark ↔ light switch
+   Only applies when user hasn't requested reduced motion
+   ════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: no-preference) {
+  *,
+  *::before,
+  *::after {
+    transition:
+      background-color 0.22s ease,
+      color            0.22s ease,
+      border-color     0.22s ease,
+      box-shadow       0.22s ease !important;
+  }
+
+  /* Exclude elements where animated color transition causes visual glitches */
+  .message,
+  .message__bubble,
+  .typing-indicator span,
+  [class*="animate-"],
+  [class*="motion-"],
+  .framer-motion,
+  img,
+  video,
+  svg,
+  canvas {
+    transition: none !important;
+  }
 }

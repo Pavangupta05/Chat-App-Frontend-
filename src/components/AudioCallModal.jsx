@@ -1,12 +1,76 @@
-import { useEffect, useRef, useState } from "react";
-import { Minus, Maximize2, X } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import {
+  PhoneOff, Mic, MicOff, Volume2, Video, MoreHorizontal,
+  Share2, Bluetooth, ChevronDown, Delete, Phone,
+  Wifi, WifiOff, Lock, Signal
+} from "lucide-react";
 
+/* ── Format mm:ss ───────────────────────────────────────────────── */
 function formatDuration(seconds) {
-  const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
-  const remainder = String(seconds % 60).padStart(2, "0");
-  return `${minutes}:${remainder}`;
+  const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const s = String(seconds % 60).padStart(2, "0");
+  return `${m}:${s}`;
 }
 
+/* ── Keypad data ─────────────────────────────────────────────────── */
+const KEYS = [
+  { digit: "1", sub: "" },
+  { digit: "2", sub: "ABC" },
+  { digit: "3", sub: "DEF" },
+  { digit: "4", sub: "GHI" },
+  { digit: "5", sub: "JKL" },
+  { digit: "6", sub: "MNO" },
+  { digit: "7", sub: "PQRS" },
+  { digit: "8", sub: "TUV" },
+  { digit: "9", sub: "WXYZ" },
+  { digit: "*", sub: "" },
+  { digit: "0", sub: "+" },
+  { digit: "#", sub: "" },
+];
+
+/* ── iOS spring config ───────────────────────────────────────────── */
+const IOS_SPRING = { type: "spring", stiffness: 380, damping: 34, mass: 0.9 };
+const IOS_SPRING_SOFT = { type: "spring", stiffness: 260, damping: 28, mass: 1 };
+
+/* ── Signal quality indicator ───────────────────────────────────── */
+function SignalBars({ quality = 3 }) {
+  return (
+    <div className="wa-signal" aria-label={`Signal: ${quality}/4`}>
+      {[1, 2, 3, 4].map((bar) => (
+        <div
+          key={bar}
+          className={`wa-signal__bar ${bar <= quality ? "wa-signal__bar--active" : ""}`}
+          style={{ height: `${5 + bar * 3}px` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── Control button with iOS haptic-like feedback ────────────────── */
+function CtrlBtn({ icon, label, onClick, active, muted, disabled }) {
+  return (
+    <div className="wa-call__ctrl-item">
+      <motion.button
+        className={`wa-call__ctrl-btn${active ? " wa-call__ctrl-btn--active" : ""}${muted ? " wa-call__ctrl-btn--muted" : ""}`}
+        onClick={onClick}
+        disabled={disabled}
+        whileTap={{ scale: 0.84, opacity: 0.85 }}
+        whileHover={{ scale: 1.06 }}
+        transition={IOS_SPRING}
+        aria-label={label}
+      >
+        {icon}
+      </motion.button>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   AUDIO CALL MODAL — WhatsApp / iOS Style
+   ══════════════════════════════════════════════════════════════════ */
 function AudioCallModal({
   callError,
   callMode,
@@ -25,278 +89,383 @@ function AudioCallModal({
   secureContext,
 }) {
   const remoteAudioRef = useRef(null);
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const modalRef = useRef(null);
-  const headerRef = useRef(null);
+  const [showKeypad, setShowKeypad]   = useState(false);
+  const [dialInput, setDialInput]     = useState("");
+  const [isSpeaker, setIsSpeaker]     = useState(false);
+  const [isVideoOn, setIsVideoOn]     = useState(false);
+  const [signalQuality]               = useState(3); // Simulated
 
+  /* Attach remote audio */
   useEffect(() => {
     if (remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = remoteStream ?? null;
     }
   }, [remoteStream]);
 
-  // Handle drag start
-  const handleDragStart = (e) => {
-    if (e.target.closest(".audio-call-modal__window-controls")) return;
-    
-    setIsDragging(true);
-    const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
-    const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
-
-    // Use bounding rect so there's no jump when re-dragging after a previous drag
-    const rect = modalRef.current?.getBoundingClientRect();
-    setDragOffset({
-      x: clientX - (rect?.left ?? position.x),
-      y: clientY - (rect?.top  ?? position.y),
-    });
-  };
-
-  // Handle drag move
+  /* Reset on call end */
   useEffect(() => {
-    if (!isDragging) return;
+    if (callStatus === "idle") {
+      setShowKeypad(false);
+      setDialInput("");
+    }
+  }, [callStatus]);
 
-    const handleMove = (e) => {
-      const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
-      const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
+  const handleKey = useCallback((digit) => setDialInput((p) => p + digit), []);
+  const handleBackspace = useCallback(() => setDialInput((p) => p.slice(0, -1)), []);
 
-      let newX = clientX - dragOffset.x;
-      let newY = clientY - dragOffset.y;
+  const callerName = incomingCall?.username ?? chatName ?? "Unknown";
+  const initials   = callerName.slice(0, 2).toUpperCase();
 
-      // Keep modal within viewport bounds
-      const maxX = window.innerWidth - 320; // Modal width ~320px
-      const maxY = window.innerHeight - 100;
+  const statusLabel =
+    callError         ? callError
+    : callStatus === "calling"   ? "Calling…"
+    : callStatus === "ringing"   ? "Ringing…"
+    : callStatus === "in-call"   ? formatDuration(callDuration)
+    : incomingCall               ? "Incoming call"
+    : "Connecting…";
 
-      newX = Math.max(0, Math.min(newX, maxX));
-      newY = Math.max(0, Math.min(newY, maxY));
+  const isVisible =
+    callMode === "audio" &&
+    (callStatus !== "idle" || !!incomingCall || !!callError);
 
-      setPosition({ x: newX, y: newY });
-    };
+  if (!isVisible) return null;
 
-    const handleEnd = () => {
-      setIsDragging(false);
-    };
-
-    document.addEventListener("mousemove", handleMove);
-    document.addEventListener("mouseup", handleEnd);
-    document.addEventListener("touchmove", handleMove);
-    document.addEventListener("touchend", handleEnd);
-
-    return () => {
-      document.removeEventListener("mousemove", handleMove);
-      document.removeEventListener("mouseup", handleEnd);
-      document.removeEventListener("touchmove", handleMove);
-      document.removeEventListener("touchend", handleEnd);
-    };
-  }, [isDragging, dragOffset]);
-
-  if (callMode !== "audio") {
-    return null;
-  }
-
-  if (callStatus === "idle" && !incomingCall && !localStream && !remoteStream && !callError) {
-    return null;
-  }
-
-  const title = incomingCall?.username || chatName || "Audio call";
-  const statusLabel = callError
-    ? callError
-    : callStatus === "calling"
-      ? "Calling..."
-      : callStatus === "in-call"
-        ? "In Call"
-        : incomingCall
-          ? "Incoming audio call"
-          : "Preparing microphone...";
-
-  // Minimized state: show compact bar
-  if (isMinimized && callStatus === "in-call") {
+  /* ═══════════════════════════════════════════════════════════════
+     INCOMING CALL — iOS style slide-up sheet
+     ═══════════════════════════════════════════════════════════════ */
+  if (incomingCall && callStatus !== "in-call" && callStatus !== "calling") {
     return (
-      <div 
-        className="audio-call-modal audio-call-modal--minimized" 
-        role="dialog" 
-        aria-modal="true" 
-        aria-label="Audio call minimized"
-        style={{
-          position: "fixed",
-          top: `${position.y}px`,
-          left: `${position.x}px`,
-          zIndex: 5000,
-          cursor: isDragging ? "grabbing" : "grab",
-        }}
-        ref={modalRef}
-        onMouseDown={handleDragStart}
-        onTouchStart={handleDragStart}
-      >
-        <div className="audio-call-modal__minimized-bar">
-          <div className="audio-call-modal__minimized-info">
-            <span className="audio-call-modal__minimized-name">{title}</span>
-            <span className="audio-call-modal__minimized-duration">{formatDuration(callDuration)}</span>
+      <AnimatePresence>
+        <motion.div
+          className="wa-call wa-call--incoming"
+          initial={{ opacity: 0, scale: 0.94, y: 40 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.94, y: 40 }}
+          transition={IOS_SPRING}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Incoming call"
+        >
+          <div className="wa-call__bg-blur" aria-hidden="true" />
+
+          {/* Animated background rings */}
+          <div className="wa-call__bg-rings" aria-hidden="true">
+            {[0,1,2].map((i) => (
+              <motion.div
+                key={i}
+                className="wa-call__bg-ring"
+                animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0, 0.15] }}
+                transition={{ duration: 2.2, delay: i * 0.7, repeat: Infinity }}
+              />
+            ))}
           </div>
-          <div className="audio-call-modal__minimized-controls">
-            <button
-              type="button"
-              className="audio-call-modal__window-btn"
-              onClick={() => setIsMinimized(false)}
-              title="Expand call"
-              aria-label="Expand call"
-            >
-              <Maximize2 size={16} />
-            </button>
-            <button
-              type="button"
-              className="audio-call-modal__window-btn"
-              onClick={onEndCall}
-              title="End call"
-              aria-label="End call"
-            >
-              <X size={16} />
-            </button>
+
+          {/* Header */}
+          <div className="wa-call__incoming-header">
+            <div className="wa-call__enc-badge">
+              <Lock size={11} />
+              <span>End-to-end encrypted</span>
+            </div>
           </div>
-        </div>
-        <audio ref={remoteAudioRef} autoPlay />
-      </div>
+
+          {/* Caller info */}
+          <div className="wa-call__caller-info">
+            <p className="wa-call__incoming-label">
+              {incomingCall?.mediaType === "audio" ? "📞 Incoming audio call" : "📞 Incoming call"}
+            </p>
+            <motion.div
+              className="wa-call__avatar-ring"
+              animate={{ boxShadow: [
+                "0 0 0 0 rgba(34,197,94,0.4)",
+                "0 0 0 20px rgba(34,197,94,0)",
+              ]}}
+              transition={{ duration: 1.4, repeat: Infinity }}
+            >
+              <div className="wa-call__avatar wa-call__avatar--large">{initials}</div>
+            </motion.div>
+            <h2 className="wa-call__name">{callerName}</h2>
+            <p className="wa-call__subtext">ChatApp</p>
+          </div>
+
+          {/* Accept / Reject */}
+          <div className="wa-call__incoming-actions">
+            <div className="wa-call__action-item">
+              <motion.button
+                className="wa-call__action-btn wa-call__action-btn--reject"
+                onClick={onEndCall}
+                whileTap={{ scale: 0.88 }}
+                whileHover={{ scale: 1.06 }}
+                transition={IOS_SPRING}
+                aria-label="Decline call"
+              >
+                <PhoneOff size={28} />
+              </motion.button>
+              <span>Decline</span>
+            </div>
+            <div className="wa-call__action-item">
+              <motion.button
+                className="wa-call__action-btn wa-call__action-btn--accept"
+                onClick={onAcceptCall}
+                whileTap={{ scale: 0.88 }}
+                whileHover={{ scale: 1.06 }}
+                animate={{ boxShadow: [
+                  "0 0 0 0 rgba(34,197,94,0.5)",
+                  "0 0 0 16px rgba(34,197,94,0)",
+                ]}}
+                transition={{ ...IOS_SPRING, boxShadow: { duration: 1.2, repeat: Infinity } }}
+                aria-label="Accept call"
+              >
+                <Phone size={28} />
+              </motion.button>
+              <span>Accept</span>
+            </div>
+          </div>
+
+          <audio ref={remoteAudioRef} autoPlay />
+        </motion.div>
+      </AnimatePresence>
     );
   }
 
+  /* ═══════════════════════════════════════════════════════════════
+     ACTIVE CALL SCREEN
+     ═══════════════════════════════════════════════════════════════ */
   return (
-    <div 
-      className="audio-call-modal" 
-      role="dialog" 
-      aria-modal="true" 
-      aria-label="Audio call"
-      style={{
-        position: "fixed",
-        top: `${position.y}px`,
-        left: `${position.x}px`,
-        zIndex: 5000,
-        cursor: isDragging ? "grabbing" : "default",
-        userSelect: isDragging ? "none" : "auto",
-      }}
-      ref={modalRef}
-    >
-      <div 
-        className="audio-call-modal__card"
-        style={{
-          transition: isDragging ? "none" : "box-shadow 0.2s ease",
-        }}
+    <AnimatePresence>
+      <motion.div
+        className="wa-call wa-call--active"
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.96 }}
+        transition={IOS_SPRING_SOFT}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Audio call"
       >
-        {/* Header with window controls */}
-        <div 
-          className="audio-call-modal__header"
-          ref={headerRef}
-          onMouseDown={handleDragStart}
-          onTouchStart={handleDragStart}
-          style={{
-            cursor: isDragging ? "grabbing" : "grab",
-            userSelect: "none",
-          }}
+        <div className="wa-call__bg-blur" aria-hidden="true" />
+
+        {/* Top bar */}
+        <motion.div
+          className="wa-call__topbar"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...IOS_SPRING, delay: 0.12 }}
         >
-          <div></div> {/* Spacer for alignment */}
-          <div className="audio-call-modal__window-controls">
-            {callStatus === "in-call" && (
-              <button
-                type="button"
-                className="audio-call-modal__window-btn"
-                onClick={() => setIsMinimized(true)}
-                title="Minimize"
-                aria-label="Minimize call window"
-              >
-                <Minus size={16} />
-              </button>
+          <motion.button
+            className="wa-call__topbar-btn"
+            onClick={onEndCall}
+            whileTap={{ scale: 0.88 }}
+            aria-label="Minimize"
+          >
+            <ChevronDown size={24} />
+          </motion.button>
+
+          <div className="wa-call__topbar-title">
+            <span className="wa-call__name">{callerName}</span>
+            <span className="wa-call__enc-inline">
+              <Lock size={10} style={{ marginRight: 3 }} />
+              End-to-end encrypted
+            </span>
+          </div>
+
+          {/* Signal quality */}
+          <div className="wa-call__topbar-right">
+            {callStatus === "in-call" && <SignalBars quality={signalQuality} />}
+          </div>
+        </motion.div>
+
+        {/* Center — Avatar + Status */}
+        <div className="wa-call__center">
+          {(callStatus === "calling" || callStatus === "ringing") && (
+            <>
+              <motion.div className="wa-call__pulse wa-call__pulse--1"
+                animate={{ scale: [1, 1.18], opacity: [0.5, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+              />
+              <motion.div className="wa-call__pulse wa-call__pulse--2"
+                animate={{ scale: [1, 1.18], opacity: [0.35, 0] }}
+                transition={{ duration: 2, delay: 0.6, repeat: Infinity, ease: "easeOut" }}
+              />
+              <motion.div className="wa-call__pulse wa-call__pulse--3"
+                animate={{ scale: [1, 1.18], opacity: [0.2, 0] }}
+                transition={{ duration: 2, delay: 1.2, repeat: Infinity, ease: "easeOut" }}
+              />
+            </>
+          )}
+
+          <motion.div
+            className="wa-call__avatar wa-call__avatar--large"
+            initial={{ scale: 0.7, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ ...IOS_SPRING, delay: 0.08 }}
+          >
+            {initials}
+          </motion.div>
+
+          <motion.div
+            className="wa-call__status-block"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...IOS_SPRING, delay: 0.18 }}
+          >
+            {/* In-call: large timer */}
+            {callStatus === "in-call" ? (
+              <p className="wa-call__timer">{formatDuration(callDuration)}</p>
+            ) : (
+              <p className="wa-call__status">{statusLabel}</p>
             )}
-            <button
-              type="button"
-              className="audio-call-modal__window-btn"
-              onClick={onEndCall}
-              title="Close"
-              aria-label="Close call window"
+          </motion.div>
+
+          {/* Warnings */}
+          {!secureContext && (
+            <div className="wa-call__warning">
+              ❌ Mic requires HTTPS on mobile browsers
+            </div>
+          )}
+          {callError && <div className="wa-call__warning">{callError}</div>}
+          {permissionRetryable && callError && (
+            <motion.button
+              className="wa-call__retry-btn"
+              onClick={onRetryPermission}
+              whileTap={{ scale: 0.94 }}
             >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* Avatar */}
-        <div className="audio-call-modal__avatar" aria-hidden="true">
-          {title.slice(0, 2).toUpperCase()}
-        </div>
-
-        {/* Caller info */}
-        <h3 className="audio-call-modal__name">{title}</h3>
-        <p className="audio-call-modal__status">{statusLabel}</p>
-
-        {/* Call duration */}
-        {callStatus === "in-call" && (
-          <span className="audio-call-modal__duration">{formatDuration(callDuration)}</span>
-        )}
-
-        {/* Security Warning */}
-        {!secureContext && (
-          <div style={{ color: "#ff6b6b", fontSize: "12px", marginBottom: "12px", background: "rgba(229, 57, 53, 0.1)", padding: "10px", borderRadius: "8px", textAlign: "center", border: "1px solid rgba(229, 57, 53, 0.3)" }}>
-            ❌ Security Block: Phone browsers require HTTPS or Localhost for mic access.
-          </div>
-        )}
-
-        {/* Control buttons */}
-        <div className="audio-call-modal__controls">
-          {incomingCall && callStatus !== "calling" ? (
-            <>
-              <button 
-                className="call-button call-button--accept call-button--text-pill" 
-                type="button" 
-                onClick={onAcceptCall}
-                style={{ backgroundColor: "#22c55e", color: "white", border: "none" }}
-              >
-                ✓ Accept
-              </button>
-              <button 
-                className="call-button call-button--end call-button--text-pill" 
-                type="button" 
-                onClick={onEndCall}
-                style={{ border: "none" }}
-              >
-                ✕ Reject
-              </button>
-            </>
-          ) : permissionRetryable && callError && !localStream ? (
-            <>
-              <button
-                className="call-button call-button--secondary call-button--text-pill"
-                type="button"
-                onClick={onRetryPermission}
-              >
-                🔄 Retry Permission
-              </button>
-              <button className="call-button call-button--end call-button--text-pill" type="button" onClick={onEndCall}>
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              {callStatus === "in-call" ? (
-                <button
-                  className={`call-button ${isMuted ? "call-button--muted" : "call-button--secondary"}`}
-                  type="button"
-                  onClick={onToggleMute}
-                  title={isMuted ? "Unmute microphone" : "Mute microphone"}
-                >
-                  {isMuted ? "🔇 Unmute" : "🎤 Mute"}
-                </button>
-              ) : null}
-
-              <button className="call-button call-button--end call-button--text-pill" type="button" onClick={onEndCall}>
-                ✕ {callStatus === "calling" ? "Cancel" : "End Call"}
-              </button>
-            </>
+              🔄 Retry Permission
+            </motion.button>
           )}
         </div>
 
+        {/* ── KEYPAD PANEL ──────────────────────────────────────── */}
+        <AnimatePresence>
+          {showKeypad && (
+            <motion.div
+              className="wa-keypad"
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={IOS_SPRING}
+            >
+              <div className="wa-keypad__display">
+                <span className="wa-keypad__input">{dialInput || ""}</span>
+                <AnimatePresence>
+                  {dialInput && (
+                    <motion.button
+                      className="wa-keypad__back"
+                      onClick={handleBackspace}
+                      initial={{ opacity: 0, scale: 0.6 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.6 }}
+                      whileTap={{ scale: 0.82 }}
+                      transition={IOS_SPRING}
+                      aria-label="Backspace"
+                    >
+                      <Delete size={20} />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <div className="wa-keypad__grid">
+                {KEYS.map(({ digit, sub }, idx) => (
+                  <motion.button
+                    key={digit}
+                    className="wa-keypad__key"
+                    onClick={() => handleKey(digit)}
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ ...IOS_SPRING, delay: idx * 0.025 }}
+                    whileTap={{ scale: 0.84, backgroundColor: "rgba(255,255,255,0.22)" }}
+                    aria-label={`Dial ${digit}`}
+                  >
+                    <span className="wa-keypad__digit">{digit}</span>
+                    {sub && <span className="wa-keypad__sub">{sub}</span>}
+                  </motion.button>
+                ))}
+              </div>
+
+              <motion.button
+                className="wa-keypad__close"
+                onClick={() => setShowKeypad(false)}
+                whileTap={{ scale: 0.88 }}
+                aria-label="Close keypad"
+              >
+                <ChevronDown size={22} />
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── CALL CONTROLS (Glass Panel) ──────────────────────── */}
+        <motion.div
+          className="wa-call__controls"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...IOS_SPRING, delay: 0.22 }}
+        >
+          {/* Row 1 */}
+          <div className="wa-call__controls-row">
+            <CtrlBtn
+              icon={isSpeaker ? <Volume2 size={24} /> : <Bluetooth size={24} />}
+              label={isSpeaker ? "Speaker" : "Audio"}
+              active={isSpeaker}
+              onClick={() => setIsSpeaker((v) => !v)}
+            />
+            <CtrlBtn
+              icon={<Video size={24} />}
+              label="Video"
+              active={isVideoOn}
+              onClick={() => setIsVideoOn((v) => !v)}
+            />
+            <CtrlBtn
+              icon={isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+              label={isMuted ? "Unmute" : "Mute"}
+              muted={isMuted}
+              onClick={onToggleMute}
+            />
+          </div>
+
+          {/* Row 2 */}
+          <div className="wa-call__controls-row">
+            <CtrlBtn icon={<MoreHorizontal size={24} />} label="More" onClick={() => {}} />
+            <CtrlBtn
+              icon={
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect x="3"  y="3"  width="4" height="4" rx="1" fill="currentColor"/>
+                  <rect x="10" y="3"  width="4" height="4" rx="1" fill="currentColor"/>
+                  <rect x="17" y="3"  width="4" height="4" rx="1" fill="currentColor"/>
+                  <rect x="3"  y="10" width="4" height="4" rx="1" fill="currentColor"/>
+                  <rect x="10" y="10" width="4" height="4" rx="1" fill="currentColor"/>
+                  <rect x="17" y="10" width="4" height="4" rx="1" fill="currentColor"/>
+                  <rect x="3"  y="17" width="4" height="4" rx="1" fill="currentColor"/>
+                  <rect x="10" y="17" width="4" height="4" rx="1" fill="currentColor"/>
+                  <rect x="17" y="17" width="4" height="4" rx="1" fill="currentColor"/>
+                </svg>
+              }
+              label="Keypad"
+              active={showKeypad}
+              onClick={() => setShowKeypad((v) => !v)}
+            />
+            <CtrlBtn icon={<Share2 size={24} />} label="Share" onClick={() => {}} />
+          </div>
+
+          {/* End call */}
+          <div className="wa-call__end-row">
+            <motion.button
+              className="wa-call__end-btn"
+              onClick={onEndCall}
+              whileTap={{ scale: 0.84 }}
+              whileHover={{ scale: 1.06 }}
+              transition={IOS_SPRING}
+              aria-label="End call"
+            >
+              <PhoneOff size={28} />
+            </motion.button>
+            <span className="wa-call__end-label">End</span>
+          </div>
+        </motion.div>
+
         <audio ref={remoteAudioRef} autoPlay />
-      </div>
-    </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 

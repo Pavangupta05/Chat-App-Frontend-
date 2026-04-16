@@ -22,6 +22,8 @@ const THEME_COLORS = [
 ];
 
 const BACKGROUND_DOODLES = [
+  { name: "WhatsApp", value: "whatsapp", label: "WhatsApp Doodle" },
+  { name: "WA Night", value: "whatsapp-dark", label: "WhatsApp Dark" },
   { name: "Light D", value: "light", label: "Light Doodle" },
   { name: "Dark D", value: "dark", label: "Dark Doodle" },
   { name: "Mesh", value: "mesh", label: "Color Mesh" },

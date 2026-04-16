@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { formatListTime, getChatPreview } from "../utils/chat";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Menu, Sun, Moon, Edit, MessageSquare, Users, Trash2, UserPlus, User, Settings, Plus, X
+  Search, Menu, Sun, Moon, MessageSquare, Users, Trash2, User, Settings, X,
+  Phone, Video, ChevronLeft, Plus
 } from "lucide-react";
-import ModeToggle from "./ModeToggle";
 import { ChatListSkeleton } from "./SkeletonLoaders";
 
 const tabs = ["All Chats", "Groups", "Contacts"];
@@ -214,51 +214,11 @@ function Sidebar({
         onPanEnd={handlePanEnd}
       >
         {activeTab === "Contacts" ? (
-          (() => {
-            const contacts = Array.from(new Set(chats.map(c => c.name))).map(name => {
-              return chats.find(c => c.name === name);
-            }).sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
-
-            if (contacts.length === 0) {
-              return (
-                <div className="sidebar__empty-state">
-                  <div className="sidebar__empty-icon">
-                    <User size={40} />
-                  </div>
-                  <p className="sidebar__empty-title">No contacts yet</p>
-                  <p className="sidebar__empty-sub">Start a new chat to add contacts</p>
-                </div>
-              );
-            }
-
-            return contacts.map((chat) => (
-              <motion.div
-                whileTap={{ scale: 0.98 }}
-                key={`contact-${chat.id}`}
-                role="button"
-                tabIndex={0}
-                className={`chat-list__item ${String(chat.id) === String(activeChatId) ? "is-active" : ""}`}
-                onClick={() => onSelectChat(chat.id)}
-                style={{ borderRadius: "12px", margin: "2px 0", padding: "10px 12px" }}
-              >
-                <div className="chat-list__avatar" style={{ "--avatar-accent": chat.accent, width: "40px", height: "40px" }}>
-                  {chat.avatar?.length > 4 ? (
-                    <img src={chat.avatar} alt={chat.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                  ) : (
-                    chat.avatar
-                  )}
-                </div>
-                <div className="chat-list__body">
-                  <div className="chat-list__row">
-                    <h2 style={{ fontSize: "15px" }}>{chat.name}</h2>
-                  </div>
-                  <div className="chat-list__row chat-list__row--secondary">
-                    <p style={{ fontSize: "13px" }}>{chat.lastSeen || "Last seen recently"}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ));
-          })()
+          <ContactsTab
+            chats={chats}
+            activeChatId={activeChatId}
+            onSelectChat={onSelectChat}
+          />
         ) : isConnecting && chats.length === 0 ? (
           // Show skeleton while connecting and no chats loaded
           <ChatListSkeleton />
@@ -355,6 +315,183 @@ function Sidebar({
       </motion.div>
 
     </aside>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CONTACTS TAB — Stories row + detail card
+   ══════════════════════════════════════════════════════════════════ */
+function ContactsTab({ chats, activeChatId, onSelectChat }) {
+  const [selectedContact, setSelectedContact] = useState(null);
+
+  const contacts = Array.from(
+    new Map(chats.map((c) => [c.name, c])).values()
+  ).sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+
+  if (contacts.length === 0) {
+    return (
+      <div className="sidebar__empty-state">
+        <div className="sidebar__empty-icon"><User size={40} /></div>
+        <p className="sidebar__empty-title">No contacts yet</p>
+        <p className="sidebar__empty-sub">Start a new chat to add contacts</p>
+      </div>
+    );
+  }
+
+  /* ── Contact detail card ──────────────────────────────────────── */
+  if (selectedContact) {
+    const c = selectedContact;
+    const initials = c.name?.slice(0, 2).toUpperCase() || "?";
+    return (
+      <motion.div
+        className="contact-card"
+        initial={{ opacity: 0, x: 30 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 30 }}
+        transition={{ type: "spring", stiffness: 320, damping: 30 }}
+      >
+        {/* Back button */}
+        <button
+          className="contact-card__back"
+          onClick={() => setSelectedContact(null)}
+          aria-label="Back to contacts"
+        >
+          <ChevronLeft size={22} />
+          <span>Contacts</span>
+        </button>
+
+        {/* Avatar hero */}
+        <div className="contact-card__hero">
+          <div
+            className="contact-card__avatar-large"
+            style={{ "--avatar-accent": c.accent }}
+          >
+            {c.avatar?.length > 4 ? (
+              <img src={c.avatar} alt={c.name}
+                style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+              />
+            ) : initials}
+          </div>
+          <h2 className="contact-card__name">{c.name}</h2>
+          <p className="contact-card__status">
+            {c.lastSeen || "Last seen recently"}
+          </p>
+        </div>
+
+        {/* Quick action buttons */}
+        <div className="contact-card__actions">
+          <button
+            className="contact-card__action-btn"
+            onClick={() => onSelectChat(c.id)}
+            aria-label="Message"
+          >
+            <MessageSquare size={22} />
+            <span>Message</span>
+          </button>
+          <button
+            className="contact-card__action-btn"
+            onClick={() => onSelectChat(c.id)}
+            aria-label="Voice call"
+          >
+            <Phone size={22} />
+            <span>Audio</span>
+          </button>
+          <button
+            className="contact-card__action-btn"
+            onClick={() => onSelectChat(c.id)}
+            aria-label="Video call"
+          >
+            <Video size={22} />
+            <span>Video</span>
+          </button>
+        </div>
+
+        {/* Info rows */}
+        <div className="contact-card__info">
+          <div className="contact-card__info-row">
+            <span className="contact-card__info-label">About</span>
+            <span className="contact-card__info-value">Hey there! I am using ChatApp</span>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  /* ── Stories/avatar row ──────────────────────────────────────── */
+  return (
+    <div className="contacts-list">
+      {/* Horizontal story-style avatar row */}
+      <div className="contacts-stories" role="list" aria-label="Contacts">
+        {/* You */}
+        <div className="contacts-stories__item" role="listitem">
+          <div className="contacts-stories__avatar contacts-stories__avatar--add">
+            <Plus size={20} />
+          </div>
+          <span className="contacts-stories__name">You</span>
+        </div>
+
+        {contacts.map((c) => {
+          const initials = c.name?.slice(0, 2).toUpperCase() || "?";
+          return (
+            <motion.div
+              key={`story-${c.id}`}
+              className="contacts-stories__item"
+              role="listitem"
+              whileTap={{ scale: 0.93 }}
+              onClick={() => setSelectedContact(c)}
+            >
+              <div
+                className="contacts-stories__avatar"
+                style={{ "--avatar-accent": c.accent }}
+              >
+                {c.avatar?.length > 4 ? (
+                  <img src={c.avatar} alt={c.name}
+                    style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                  />
+                ) : initials}
+              </div>
+              <span className="contacts-stories__name">{c.name?.split(" ")[0]}</span>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Full contact list below */}
+      <div className="contacts-list__divider">All Contacts</div>
+      {contacts.map((c) => {
+        const initials = c.name?.slice(0, 2).toUpperCase() || "?";
+        return (
+          <motion.div
+            key={`contact-row-${c.id}`}
+            className={`chat-list__item ${String(c.id) === String(activeChatId) ? "is-active" : ""}`}
+            onClick={() => setSelectedContact(c)}
+            whileTap={{ scale: 0.98 }}
+            style={{ borderRadius: "12px", margin: "2px 0", padding: "10px 12px" }}
+            role="button"
+            tabIndex={0}
+          >
+            <div
+              className="chat-list__avatar"
+              style={{ "--avatar-accent": c.accent, width: "44px", height: "44px", fontSize: "15px" }}
+            >
+              {c.avatar?.length > 4 ? (
+                <img src={c.avatar} alt={c.name}
+                  style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                />
+              ) : initials}
+            </div>
+            <div className="chat-list__body">
+              <div className="chat-list__row">
+                <h2 style={{ fontSize: "15px" }}>{c.name}</h2>
+              </div>
+              <div className="chat-list__row chat-list__row--secondary">
+                <p style={{ fontSize: "13px" }}>{c.lastSeen || "Last seen recently"}</p>
+              </div>
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
   );
 }
 

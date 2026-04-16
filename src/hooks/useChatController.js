@@ -584,17 +584,24 @@ function useChatController() {
         return false;
       }
 
+      let backendGroupId = null;
+      let fullGroupData = null;
+
       // If peerUserId is missing, this is a Group Chat Creation request using the backend!
-      if (!peerUserId) {
+      if (!peerUserId && token) {
          try {
            const { createGroupChatApi } = await import("../services/messageService.js");
            const res = await createGroupChatApi(token, {
-              chatName: trimmedName,
-              groupAccent: accentOverride,
-              groupAvatar: avatarOverride,
+              name: trimmedName,
+              users: chatInput.members || [],
+              accent: accentOverride,
+              avatar: avatarOverride,
            });
            if (res && res._id) {
-             return res._id; // Return the valid backend _id dynamically
+             backendGroupId = String(res._id);
+             fullGroupData = res;
+           } else {
+             return false;
            }
          } catch (e) {
            console.error("Group creation failed:", e);
@@ -603,7 +610,7 @@ function useChatController() {
       }
 
       const createdAt = Date.now();
-      const chatId = peerUserId || createdAt;
+      const chatId = backendGroupId || peerUserId || createdAt;
       const welcomeMessage = buildTextMessage({
         id: `welcome-${createdAt}`,
         sender: "other",
@@ -612,8 +619,8 @@ function useChatController() {
         username: trimmedName,
       });
       const nextChat = createChatRecord({
-        accent: accentOverride ?? undefined,
-        avatar: avatarOverride ?? undefined,
+        accent: accentOverride || (fullGroupData?.groupAccent) || undefined,
+        avatar: avatarOverride || undefined, // group avatars usually don't default randomly
         createdAt,
         id: chatId,
         peerId: peerUserId || null,
@@ -621,8 +628,17 @@ function useChatController() {
         name: trimmedName,
       });
 
+      if (backendGroupId && fullGroupData) {
+         nextChat.isGroupChat = true;
+         nextChat.groupAdmin = String(fullGroupData.groupAdmin?._id || fullGroupData.groupAdmin || "");
+         nextChat.anyoneCanAdd = fullGroupData.anyoneCanAdd ?? true;
+      }
+
       setChats((currentChats) => {
         if (peerUserId && currentChats.some((c) => String(c.id) === peerUserId)) {
+          return currentChats;
+        }
+        if (backendGroupId && currentChats.some((c) => String(c.id) === backendGroupId)) {
           return currentChats;
         }
         return [nextChat, ...currentChats];
@@ -632,7 +648,10 @@ function useChatController() {
       setSearchTerm("");
       setNewChatName("");
 
-      if (peerUserId) {
+      if (backendGroupId) {
+         // Auto-join socket room for newly created group
+         emit("join_chat", { chatId: backendGroupId });
+      } else if (peerUserId) {
         emit("create_chat", {
           accent: nextChat.accent,
           avatar: nextChat.avatar,
