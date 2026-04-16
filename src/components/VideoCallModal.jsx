@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mic, MicOff, Video, VideoOff, PhoneOff, RefreshCcw,
-  ChevronDown, Bluetooth, Volume2, MoreHorizontal, Share2, Phone, Lock
+  ChevronDown, Bluetooth, Volume2, Share2, Phone, Lock, EyeOff
 } from "lucide-react";
+import "./Call.css";
 
 function formatDuration(seconds) {
   const m = String(Math.floor(seconds / 60)).padStart(2, "0");
@@ -47,11 +48,17 @@ function VideoCallModal({
   const hideTimer = useRef(null);
 
   useEffect(() => {
-    if (localVideoRef.current)  localVideoRef.current.srcObject  = localStream  ?? null;
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+      localVideoRef.current.play().catch(e => console.error("Local play failed:", e));
+    }
   }, [localStream]);
 
   useEffect(() => {
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream ?? null;
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play().catch(e => console.error("Remote play failed:", e));
+    }
   }, [remoteStream]);
 
   const revealControls = () => {
@@ -319,13 +326,20 @@ function VideoCallModal({
               </div>
 
               <div className="wa-call__controls-row">
-                <CtrlBtn stopProp icon={<MoreHorizontal size={24}/>} label="More" onClick={() => {}} />
+                <CtrlBtn stopProp icon={<EyeOff size={24}/>} label="Hide" onClick={() => setShowControls(false)} />
                 <CtrlBtn stopProp
                   icon={<RefreshCcw size={24}/>}
                   label="Flip"
                   onClick={onFlipCamera}
                 />
-                <CtrlBtn stopProp icon={<Share2 size={24}/>} label="Share" onClick={() => {}} />
+                <CtrlBtn stopProp icon={<Share2 size={24}/>} label="Share" onClick={() => {
+                   if (navigator.share) {
+                    navigator.share({ title: 'Call Link', url: window.location.href }).catch(() => {});
+                  } else {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert("Link copied to clipboard");
+                  }
+                }} />
               </div>
 
               <div className="wa-call__end-row">

@@ -59,6 +59,7 @@ function ChatWindow({
   onSendMessage,
   onStartAudioCall,
   onStartVideoCall,
+  onCameraClick,
   replyMessage,
   onClearReply,
   theme,
@@ -71,6 +72,7 @@ function ChatWindow({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [messageSearch, setMessageSearch] = useState("");
+  const [pinnedMessages, setPinnedMessages] = useState({}); // { chatId: messageId }
   const [previewMessage, setPreviewMessage] = useState(null);
   const [selectedMessageIds, setSelectedMessageIds] = useState(new Set());
   const [showNewPill, setShowNewPill] = useState(false);
@@ -175,6 +177,20 @@ function ChatWindow({
     if (msg) onForwardMessage(msg);
     setSelectedMessageIds(new Set());
   }, [selectedMessageIds, chat?.messages, onForwardMessage]);
+
+  const handlePinMessage = useCallback((msgId) => {
+    if (!chat?.id) return;
+    setPinnedMessages(prev => {
+      const isCurrentlyPinned = prev[chat.id] === msgId;
+      return { ...prev, [chat.id]: isCurrentlyPinned ? null : msgId };
+    });
+  }, [chat?.id]);
+
+  const pinnedMsgId = chat?.id ? pinnedMessages[chat.id] : null;
+  const pinnedMessage = useMemo(() => {
+    if (!pinnedMsgId) return null;
+    return chat?.messages.find(m => m.id === pinnedMsgId);
+  }, [chat?.messages, pinnedMsgId]);
 
   // Render empty state on mobile if no chat
   if (!chat) {
@@ -375,6 +391,50 @@ function ChatWindow({
         )}
       </header>
 
+      {/* ── Pinned Message Banner ───────────────────────────────────────── */}
+      <AnimatePresence>
+        {pinnedMessage && (
+          <motion.div
+            className="chat-window__pinned-banner"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            style={{
+              background: "rgba(30, 30, 30, 0.9)",
+              backdropFilter: "blur(10px)",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+              padding: "10px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              zIndex: 10,
+              position: "relative"
+            }}
+          >
+            <div style={{ color: "var(--accent)" }}>
+              <Pin size={20} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => {
+              // Scroll to message
+              const msgEl = document.getElementById(`msg-${pinnedMessage.id}`);
+              if (msgEl) msgEl.scrollIntoView({ behavior: "smooth", block: "center" });
+            }}>
+              <div style={{ color: "var(--accent)", fontSize: 13, fontWeight: 600 }}>Pinned Message</div>
+              <div style={{ color: "var(--text-primary)", fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {pinnedMessage.fileName ? `📎 ${pinnedMessage.fileName}` : pinnedMessage.text}
+              </div>
+            </div>
+            <button 
+              type="button" 
+              className="icon-button" 
+              onClick={() => handlePinMessage(pinnedMessage.id)}
+            >
+              <X size={16} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Messages ────────────────────────────────────────────────────── */}
       <div
         className="chat-window__messages"
@@ -392,24 +452,28 @@ function ChatWindow({
           const showSeparator = currentDate !== prevDate;
 
           return (
-            <div key={message.id ?? `msg-${index}`}>
-              {showSeparator && (
-                <DateSeparator date={formatDateSeparator(message.createdAt)} />
-              )}
-              <MessageBubble
-                message={message}
-                searchTerm={messageSearch}
-                isSelected={selectedMessageIds.has(message.id)}
-                onToggleSelect={() => toggleSelection(message.id)}
-                onPreview={setPreviewMessage}
-                onReply={onReplyMessage}
-                isSelectionMode={hasSelection}
-              />
-            </div>
+              <div key={message.id ?? `msg-${index}`} id={`msg-${message.id}`}>
+                {showSeparator && (
+                  <DateSeparator date={formatDateSeparator(message.createdAt)} />
+                )}
+                <MessageBubble
+                  message={message}
+                  searchTerm={messageSearch}
+                  isSelected={selectedMessageIds.has(message.id)}
+                  onToggleSelect={() => toggleSelection(message.id)}
+                  onPreview={setPreviewMessage}
+                  onReply={(msg) => onReplyMessage(msg)}
+                  onForward={() => onForwardMessage(message)}
+                  onPin={() => handlePinMessage(message.id)}
+                  onDeleteForMe={() => onDeleteMessageForMe(message.id)}
+                  onDeleteForEveryone={() => onDeleteMessageForEveryone(message.id)}
+                  isSelectionMode={hasSelection}
+                />
+              </div>
           );
         })}
 
-        <TypingIndicator text={typingText} />
+        {typingText && <TypingIndicator text={typingText} />}
         {/* Extra space at the bottom so messages aren't hidden by the floating input box */}
         <div 
           ref={messagesEndRef} 
@@ -458,6 +522,7 @@ function ChatWindow({
           onClearReply={onClearReply}
           onFileUpload={onFileUpload}
           onSend={onSendMessage}
+          onCameraClick={onCameraClick}
           replyMessage={replyMessage}
           theme={theme}
         />

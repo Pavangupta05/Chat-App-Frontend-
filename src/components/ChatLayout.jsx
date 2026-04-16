@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Users, Settings, User, Camera, ArrowLeft, UserPlus, Plus, X } from "lucide-react";
+import { MessageSquare, Users, Settings, User, Camera, ArrowLeft, UserPlus, Plus, X, FileText, MapPin } from "lucide-react";
 import ConfirmModal from "./ConfirmModal";
 import ForwardModal from "./ForwardModal";
 import NewChatModal from "./NewChatModal";
@@ -92,7 +92,6 @@ const UniversalFAB = ({
             animate="visible"
             exit="exit"
           >
-            {/* Action 1: Camera */}
             <motion.div className="fab-item-wrapper" variants={itemVariants}>
               <span className="fab-label">Camera</span>
               <button 
@@ -100,6 +99,37 @@ const UniversalFAB = ({
                 onClick={() => { onCameraClick(); setIsExpanded(false); }}
               >
                 <Camera size={22} />
+              </button>
+            </motion.div>
+
+             {/* Action: Files */}
+             <motion.div className="fab-item-wrapper" variants={itemVariants}>
+              <span className="fab-label">Files</span>
+              <button 
+                className="fab-item fab-item--sub fab-item--files" 
+                onClick={() => { setIsExpanded(false); }}
+                style={{ background: "linear-gradient(135deg, #7c4dff, #b388ff)" }}
+              >
+                <FileText size={22} />
+              </button>
+            </motion.div>
+
+            {/* Action: Location */}
+            <motion.div className="fab-item-wrapper" variants={itemVariants}>
+              <span className="fab-label">Location</span>
+              <button 
+                className="fab-item fab-item--sub fab-item--location" 
+                onClick={() => { 
+                  setIsExpanded(false);
+                  if ("geolocation" in navigator) {
+                    navigator.geolocation.getCurrentPosition((position) => {
+                      alert(`Location: ${position.coords.latitude}, ${position.coords.longitude}`);
+                    });
+                  }
+                }}
+                style={{ background: "linear-gradient(135deg, #4caf50, #81c784)" }}
+              >
+                <MapPin size={22} />
               </button>
             </motion.div>
 
@@ -373,6 +403,8 @@ function ChatLayout() {
                 selectChat(id);
                 setConfirmAction("delete-chat");
               }}
+              onStartAudioCall={() => call.startCall("audio")}
+              onStartVideoCall={() => call.startCall("video")}
               onTabChange={setActiveTab}
               onToggleSidebar={() => setIsSidebarOpen((v) => !v)}
               searchTerm={searchTerm}
@@ -397,7 +429,7 @@ function ChatLayout() {
         {isMobileView && (
           <nav className="mobile-nav">
             <button 
-              className={`mobile-nav__item ${activeTab === 'All Chats' ? 'is-active' : ''}`}
+              type="button" className={`mobile-nav__item ${activeTab === 'All Chats' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('All Chats')}
             >
               {activeTab === 'All Chats' && (
@@ -446,12 +478,14 @@ function ChatLayout() {
         <AnimatePresence initial={false} mode="popLayout">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 15, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -15, scale: 0.98 }}
+            initial={{ opacity: 0, x: isMobileView ? "100%" : 0, scale: 1 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: isMobileView ? "100%" : 0, scale: 0.96 }}
             transition={{ 
-              duration: 0.35, 
-              ease: [0.33, 1, 0.68, 1] /* Quick but smooth cubic-bezier */
+              type: "spring",
+              stiffness: 450,
+              damping: 35,
+              mass: 1
             }}
             style={{ 
               width: '100%', 
@@ -478,6 +512,7 @@ function ChatLayout() {
               handleMobileBack,
               setReplyMessage,
               sendMessage,
+              onCameraClick: () => setIsCameraModalOpen(true),
               replyMessage,
               socketState,
               typing,

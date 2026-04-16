@@ -2,9 +2,10 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import {
   PhoneOff, Mic, MicOff, Volume2, Video, MoreHorizontal,
-  Share2, Bluetooth, ChevronDown, Delete, Phone,
-  Wifi, WifiOff, Lock, Signal
+  Share2, Bluetooth, ChevronDown, UserPlus, Phone,
+  Lock, EyeOff, Maximize2, Minimize2, Delete
 } from "lucide-react";
+import "./Call.css";
 
 /* ── Format mm:ss ───────────────────────────────────────────────── */
 function formatDuration(seconds) {
@@ -93,12 +94,17 @@ function AudioCallModal({
   const [dialInput, setDialInput]     = useState("");
   const [isSpeaker, setIsSpeaker]     = useState(false);
   const [isVideoOn, setIsVideoOn]     = useState(false);
+  const [showControls, setShowControls] = useState(true);
   const [signalQuality]               = useState(3); // Simulated
 
   /* Attach remote audio */
   useEffect(() => {
-    if (remoteAudioRef.current) {
-      remoteAudioRef.current.srcObject = remoteStream ?? null;
+    if (remoteAudioRef.current && remoteStream) {
+      remoteAudioRef.current.srcObject = remoteStream;
+      const playPromise = remoteAudioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(e => console.error("Audio play failed:", e));
+      }
     }
   }, [remoteStream]);
 
@@ -241,6 +247,7 @@ function AudioCallModal({
         role="dialog"
         aria-modal="true"
         aria-label="Audio call"
+        onClick={() => setShowControls(true)}
       >
         <div className="wa-call__bg-blur" aria-hidden="true" />
 
@@ -395,73 +402,88 @@ function AudioCallModal({
         </AnimatePresence>
 
         {/* ── CALL CONTROLS (Glass Panel) ──────────────────────── */}
-        <motion.div
-          className="wa-call__controls"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ...IOS_SPRING, delay: 0.22 }}
-        >
-          {/* Row 1 */}
-          <div className="wa-call__controls-row">
-            <CtrlBtn
-              icon={isSpeaker ? <Volume2 size={24} /> : <Bluetooth size={24} />}
-              label={isSpeaker ? "Speaker" : "Audio"}
-              active={isSpeaker}
-              onClick={() => setIsSpeaker((v) => !v)}
-            />
-            <CtrlBtn
-              icon={<Video size={24} />}
-              label="Video"
-              active={isVideoOn}
-              onClick={() => setIsVideoOn((v) => !v)}
-            />
-            <CtrlBtn
-              icon={isMuted ? <MicOff size={24} /> : <Mic size={24} />}
-              label={isMuted ? "Unmute" : "Mute"}
-              muted={isMuted}
-              onClick={onToggleMute}
-            />
-          </div>
-
-          {/* Row 2 */}
-          <div className="wa-call__controls-row">
-            <CtrlBtn icon={<MoreHorizontal size={24} />} label="More" onClick={() => {}} />
-            <CtrlBtn
-              icon={
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <rect x="3"  y="3"  width="4" height="4" rx="1" fill="currentColor"/>
-                  <rect x="10" y="3"  width="4" height="4" rx="1" fill="currentColor"/>
-                  <rect x="17" y="3"  width="4" height="4" rx="1" fill="currentColor"/>
-                  <rect x="3"  y="10" width="4" height="4" rx="1" fill="currentColor"/>
-                  <rect x="10" y="10" width="4" height="4" rx="1" fill="currentColor"/>
-                  <rect x="17" y="10" width="4" height="4" rx="1" fill="currentColor"/>
-                  <rect x="3"  y="17" width="4" height="4" rx="1" fill="currentColor"/>
-                  <rect x="10" y="17" width="4" height="4" rx="1" fill="currentColor"/>
-                  <rect x="17" y="17" width="4" height="4" rx="1" fill="currentColor"/>
-                </svg>
-              }
-              label="Keypad"
-              active={showKeypad}
-              onClick={() => setShowKeypad((v) => !v)}
-            />
-            <CtrlBtn icon={<Share2 size={24} />} label="Share" onClick={() => {}} />
-          </div>
-
-          {/* End call */}
-          <div className="wa-call__end-row">
-            <motion.button
-              className="wa-call__end-btn"
-              onClick={onEndCall}
-              whileTap={{ scale: 0.84 }}
-              whileHover={{ scale: 1.06 }}
-              transition={IOS_SPRING}
-              aria-label="End call"
+        <AnimatePresence>
+          {showControls && (
+            <motion.div
+              className="wa-call__controls"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              transition={{ ...IOS_SPRING, delay: 0.1 }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <PhoneOff size={28} />
-            </motion.button>
-            <span className="wa-call__end-label">End</span>
-          </div>
-        </motion.div>
+              <div className="wa-call-grid">
+                {/* Audio/Speaker */}
+                <div className="wa-call-grid-item">
+                  <button 
+                    type="button" 
+                    className={`wa-call-grid-btn ${isSpeaker ? 'is-white' : ''}`}
+                    onClick={() => setIsSpeaker(!isSpeaker)}
+                  >
+                    {isSpeaker ? <Volume2 size={24} /> : <Bluetooth size={24} />}
+                  </button>
+                  <span className="wa-call-grid-label">Audio</span>
+                </div>
+
+                {/* Video Switch */}
+                <div className="wa-call-grid-item">
+                  <button 
+                    type="button" 
+                    className={`wa-call-grid-btn ${isVideoOn ? 'is-white' : ''}`}
+                    onClick={() => setIsVideoOn(!isVideoOn)}
+                  >
+                    <Video size={24} />
+                  </button>
+                  <span className="wa-call-grid-label">Video</span>
+                </div>
+
+                {/* Mute */}
+                <div className="wa-call-grid-item">
+                  <button 
+                    type="button" 
+                    className={`wa-call-grid-btn ${isMuted ? 'is-white' : ''}`}
+                    onClick={onToggleMute}
+                  >
+                    {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+                  </button>
+                  <span className="wa-call-grid-label">Mute</span>
+                </div>
+
+                {/* Hide */}
+                <div className="wa-call-grid-item">
+                  <button 
+                    type="button" 
+                    className="wa-call-grid-btn"
+                    onClick={() => setShowControls(false)}
+                  >
+                    <EyeOff size={24} />
+                  </button>
+                  <span className="wa-call-grid-label">Hide</span>
+                </div>
+
+                {/* Share */}
+                <div className="wa-call-grid-item">
+                  <button type="button" className="wa-call-grid-btn">
+                    <Share2 size={22} />
+                  </button>
+                  <span className="wa-call-grid-label">Share</span>
+                </div>
+
+                {/* End Call */}
+                <div className="wa-call-grid-item">
+                  <button 
+                    type="button" 
+                    className="wa-call-grid-btn is-danger"
+                    onClick={onEndCall}
+                  >
+                    <PhoneOff size={24} />
+                  </button>
+                  <span className="wa-call-grid-label">End</span>
+                </div>
+              </div>
+          </motion.div>
+        )}
+        </AnimatePresence>
 
         <audio ref={remoteAudioRef} autoPlay />
       </motion.div>

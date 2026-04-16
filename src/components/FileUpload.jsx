@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { AlertCircle, RotateCcw } from "lucide-react";
 import { uploadChatFile } from "../services/uploadService";
 
-function FileUpload({ disabled, icon, onUploadComplete }) {
+function FileUpload({ disabled, icon, onUploadComplete, id }) {
   const inputRef = useRef(null);
   const successTimeoutRef = useRef(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -79,7 +79,7 @@ function FileUpload({ disabled, icon, onUploadComplete }) {
       handleUploadError(uploadError, selectedFile);
     } finally {
       setIsUploading(false);
-      inputRef.current.value = "";
+      if (inputRef.current) inputRef.current.value = "";
     }
   };
 
@@ -126,12 +126,13 @@ function FileUpload({ disabled, icon, onUploadComplete }) {
   return (
     <div className="file-upload">
       <input
+        id={id}
         ref={inputRef}
         className="file-upload__input"
         type="file"
         name="file"
         onChange={handleFileChange}
-        accept="image/*,.pdf,.txt,.doc,.docx"
+        accept="image/*,video/*,audio/*,.pdf,.txt,.doc,.docx,.zip,.rar"
       />
 
       <motion.button

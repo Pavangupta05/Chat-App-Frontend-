@@ -23,6 +23,8 @@ function Sidebar({
   onSearchChange,
   onSelectChat,
   onDeleteChat,
+  onStartAudioCall,
+  onStartVideoCall,
   onTabChange,
   searchTerm,
   theme,
@@ -218,6 +220,8 @@ function Sidebar({
             chats={chats}
             activeChatId={activeChatId}
             onSelectChat={onSelectChat}
+            onStartAudioCall={onStartAudioCall}
+            onStartVideoCall={onStartVideoCall}
           />
         ) : isConnecting && chats.length === 0 ? (
           // Show skeleton while connecting and no chats loaded
@@ -321,7 +325,7 @@ function Sidebar({
 /* ══════════════════════════════════════════════════════════════════
    CONTACTS TAB — Stories row + detail card
    ══════════════════════════════════════════════════════════════════ */
-function ContactsTab({ chats, activeChatId, onSelectChat }) {
+function ContactsTab({ chats, activeChatId, onSelectChat, onStartAudioCall, onStartVideoCall }) {
   const [selectedContact, setSelectedContact] = useState(null);
 
   const contacts = Array.from(
@@ -378,7 +382,6 @@ function ContactsTab({ chats, activeChatId, onSelectChat }) {
           </p>
         </div>
 
-        {/* Quick action buttons */}
         <div className="contact-card__actions">
           <button
             className="contact-card__action-btn"
@@ -390,7 +393,10 @@ function ContactsTab({ chats, activeChatId, onSelectChat }) {
           </button>
           <button
             className="contact-card__action-btn"
-            onClick={() => onSelectChat(c.id)}
+            onClick={() => {
+              onSelectChat(c.id);
+              setTimeout(() => onStartAudioCall?.(), 100);
+            }}
             aria-label="Voice call"
           >
             <Phone size={22} />
@@ -398,7 +404,10 @@ function ContactsTab({ chats, activeChatId, onSelectChat }) {
           </button>
           <button
             className="contact-card__action-btn"
-            onClick={() => onSelectChat(c.id)}
+            onClick={() => {
+              onSelectChat(c.id);
+              setTimeout(() => onStartVideoCall?.(), 100);
+            }}
             aria-label="Video call"
           >
             <Video size={22} />

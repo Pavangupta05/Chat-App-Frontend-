@@ -88,6 +88,7 @@ function ChatView() {
         onSendMessage={context.sendMessage}
         onStartAudioCall={() => context.call?.startCall("audio")}
         onStartVideoCall={() => context.call?.startCall("video")}
+        onCameraClick={context.onCameraClick}
         replyMessage={context.replyMessage}
         theme={context.theme}
         typingText={context.socketState.isConnected ? context.typing.text : ""}

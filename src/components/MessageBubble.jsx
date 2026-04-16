@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo, useCallback } from "react";
+import { useRef, useState, useMemo, useCallback, useEffect, memo } from "react";
 import MessageStatus from "./MessageStatus";
 import MessageReactions from "./MessageReactions";
 import { getImageUrl, handleImageError } from "../utils/imageHelper";
@@ -36,6 +36,11 @@ function MessageBubble({
   isSelected,
   onToggleSelect,
   onPreview,
+  onReply,
+  onForward,
+  onDeleteForMe,
+  onDeleteForEveryone,
+  onPin,
   isSelectionMode,
 }) {
   const isOutgoing = message.sender === "me";
@@ -43,67 +48,68 @@ function MessageBubble({
   const isImg      = isImageFile(message);
   const isVid      = isVideoFile(message);
   const canPreview = isImg || isVid;
+  
   const [imageLoadError, setImageLoadError] = useState(false);
-  const [longPressActive, setLongPressActive] = useState(false);
-
-  const longPressRef = useRef(null);
-  const touchStartPos = useRef({ x: 0, y: 0 });
-
-  const handlePointerDown = (e) => {
-    if (e.button !== 0 && e.pointerType === "mouse") return;
-    if (isSelectionMode) return;
-
-    touchStartPos.current = { x: e.clientX, y: e.clientY };
-
-    longPressRef.current = window.setTimeout(() => {
-      // On mobile long-press: show reaction picker instead of select mode
-      if (e.pointerType === "touch") {
-        setLongPressActive(true);
-        if (window.navigator.vibrate) window.navigator.vibrate(40);
-      } else {
-        onToggleSelect();
-        if (window.navigator.vibrate) window.navigator.vibrate(50);
-      }
-    }, 450);
-  };
-
-  const handlePointerMove = (e) => {
-    if (!longPressRef.current) return;
-    const moveX = Math.abs(e.clientX - touchStartPos.current.x);
-    const moveY = Math.abs(e.clientY - touchStartPos.current.y);
-    if (moveX > 10 || moveY > 15) {
-      window.clearTimeout(longPressRef.current);
-      longPressRef.current = null;
-    }
-  };
-
-  const handlePointerUpOrLeave = () => {
-    window.clearTimeout(longPressRef.current);
-    longPressRef.current = null;
-  };
+  const [menuOpen, setMenuOpen] = useState(false);
+  const bubbleRef = useRef(null);
+  const [clickRect, setClickRect] = useState(null);
 
   const handleClick = (e) => {
     if (isSelectionMode) {
       e.stopPropagation();
       onToggleSelect();
+      return;
     }
-    // Dismiss long-press reaction picker on outside click handled in MessageReactions
+    if (e.target.closest("button") || e.target.closest("a")) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Capture rect before opening
+    if (bubbleRef.current) {
+      const rect = bubbleRef.current.getBoundingClientRect();
+      setClickRect(rect);
+      setMenuOpen(true);
+    }
   };
 
   const handleContextMenu = (e) => {
     e.preventDefault();
-    if (!isSelectionMode) onToggleSelect();
+    e.stopPropagation();
+    if (!isSelectionMode) {
+      if (bubbleRef.current) {
+        const rect = bubbleRef.current.getBoundingClientRect();
+        setClickRect(rect);
+        setMenuOpen(true);
+      }
+    }
   };
 
-  const dismissLongPress = useCallback(() => setLongPressActive(false), []);
+  // Helper to format time safely
+  const formatTime = (timeStr) => {
+    if (!timeStr) return "";
+    try {
+      const date = new Date(timeStr);
+      if (isNaN(date.getTime())) return timeStr;
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return timeStr;
+    }
+  };
+
+  useEffect(() => {
+    if (!menuOpen) setClickRect(null);
+  }, [menuOpen]);
 
   // Detect if message is purely emojis (up to 3) for large rendering
   const isOnlyEmoji = useMemo(() => {
     if (!message.text || message.type === "file") return false;
     const chars = Array.from(message.text.trim());
     if (chars.length > 3) return false;
-    const emojiOnly = message.text.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF]/g, '').trim().length === 0;
-    return emojiOnly && chars.length <= 3;
+    // Simple emoji regex
+    const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
+    const textWithoutEmojis = message.text.replace(emojiRegex, '').trim();
+    return textWithoutEmojis.length === 0 && chars.length <= 3;
   }, [message.text, message.type]);
 
   const bubbleClass = [
@@ -121,10 +127,6 @@ function MessageBubble({
         isSelectionMode ? "message--selectable" : "",
       ].join(" ").trim()}
       onContextMenu={handleContextMenu}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUpOrLeave}
-      onPointerLeave={handlePointerUpOrLeave}
       onClick={handleClick}
     >
       {isSelected && (
@@ -142,15 +144,27 @@ function MessageBubble({
         />
       )}
 
-      {/* Reactions wrapper: provides hover zone + picker + badges */}
+      {/* Reactions & Context Menu wrapper */}
       <MessageReactions
         isOutgoing={isOutgoing}
-        longPressActive={longPressActive}
-        onDismissLongPress={dismissLongPress}
+        message={message}
+        menuOpen={menuOpen}
+        triggerRect={clickRect}
+        onCloseMenu={() => setMenuOpen(false)}
+        onReply={() => onReply(message)}
+        onForward={onForward}
+        onSelect={onToggleSelect}
+        onPin={onPin}
+        onDeleteForMe={onDeleteForMe}
+        onDeleteForEveryone={onDeleteForEveryone}
       >
         <div
+          ref={bubbleRef}
           className={bubbleClass}
-          style={{ pointerEvents: isSelectionMode ? "none" : "auto" }}
+          style={{ 
+            pointerEvents: isSelectionMode ? "none" : "auto",
+            transition: "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)" 
+          }}
         >
           {/* Sender name (group / incoming) */}
           {!isOutgoing && message.username && (
@@ -229,7 +243,7 @@ function MessageBubble({
 
           {/* Timestamp + read status */}
           <div className="message__meta">
-            <span>{message.time}</span>
+            <span>{formatTime(message.time || message.createdAt)}</span>
             {isOutgoing && <MessageStatus status={message.status} />}
           </div>
         </div>
@@ -238,4 +252,4 @@ function MessageBubble({
   );
 }
 
-export default MessageBubble;
+export default memo(MessageBubble);

@@ -4,6 +4,7 @@ import { Smile, Paperclip, Send, X } from "lucide-react";
 import EmojiPicker from 'emoji-picker-react';
 import FileUpload from "./FileUpload";
 import ReplyPreview from "./ReplyPreview";
+import AttachmentMenu from "./AttachmentMenu";
 
 function InputBox({
   disabled,
@@ -11,6 +12,7 @@ function InputBox({
   onChange,
   onFileUpload,
   onSend,
+  onCameraClick,
   replyMessage,
   onClearReply,
   theme,
@@ -19,6 +21,7 @@ function InputBox({
   const emojiPickerRef = useRef(null);
   const inputRef = useRef(null);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
 
   // Auto-resize textarea logic
@@ -76,6 +79,22 @@ function InputBox({
       setImagePreview(null);
     }
     onFileUpload?.(filePayload);
+  };
+
+  const handleLocationSend = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const { latitude, longitude } = position.coords;
+        const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        onChange(mapsUrl);
+        setIsAttachmentMenuOpen(false);
+      }, (error) => {
+        console.error("Error getting location:", error);
+        alert("Unable to get location. Please allow location permissions.");
+      });
+    } else {
+      alert("Geolocation is not supported by your browser.");
+    }
   };
 
   const isSendable = Boolean(value?.trim());
@@ -151,18 +170,46 @@ function InputBox({
         />
 
         {/* Attach Icon */}
-        <FileUpload
-          disabled={disabled}
-          icon={
-            <motion.div
-              whileTap={{ scale: 0.9 }}
-              className="icon-btn"
-            >
-              <Paperclip size={24} />
-            </motion.div>
-          }
-          onUploadComplete={handleFileChange}
-        />
+        <div className="attachment-anchor">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            className={`icon-btn ${isAttachmentMenuOpen ? 'is-active' : ''}`}
+            type="button"
+            disabled={disabled}
+            onClick={() => setIsAttachmentMenuOpen((v) => !v)}
+          >
+            <Paperclip size={24} />
+          </motion.button>
+          
+          <AttachmentMenu 
+            isOpen={isAttachmentMenuOpen}
+            onClose={() => setIsAttachmentMenuOpen(false)}
+            onSelect={(id) => {
+              console.log("Selected attachment:", id);
+              if (id === 'media' || id === 'document') {
+                document.getElementById('hidden-file-upload')?.click();
+              } else if (id === 'camera' && onCameraClick) {
+                onCameraClick();
+              } else if (id === 'location') {
+                handleLocationSend();
+              } else if (id === 'audio') {
+                // Future audio recording logic
+                alert("Audio feature coming soon!");
+              } else if (id === 'poll' || id === 'event') {
+                alert(`${id.charAt(0).toUpperCase() + id.slice(1)} feature coming soon!`);
+              }
+            }}
+            isMobile={isMobile}
+          />
+          
+          <div style={{ display: 'none' }}>
+            <FileUpload
+              id="hidden-file-upload"
+              disabled={disabled}
+              onUploadComplete={handleFileChange}
+            />
+          </div>
+        </div>
 
         {/* Send Button */}
         <motion.button
